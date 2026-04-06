@@ -1,0 +1,36 @@
+# API: docker build -f docker/Dockerfile.api .
+FROM node:20-alpine AS build
+RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
+RUN apk add --no-cache tzdata
+ENV TZ=Europe/Moscow
+
+WORKDIR /app
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/api/package.json apps/api/
+COPY apps/api/prisma apps/api/prisma
+COPY apps/web/package.json apps/web/
+COPY packages/shared/package.json packages/shared/
+COPY apps/mobile/package.json apps/mobile/
+
+RUN pnpm install --frozen-lockfile
+
+COPY apps/api apps/api
+WORKDIR /app/apps/api
+RUN pnpm exec prisma generate
+RUN pnpm run build
+
+FROM node:20-alpine AS runner
+RUN apk add --no-cache tzdata wget
+ENV TZ=Europe/Moscow
+ENV NODE_ENV=production
+
+WORKDIR /app
+COPY --from=build /app /app
+
+WORKDIR /app/apps/api
+EXPOSE 3001
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=25s --retries=3 \
+  CMD wget -qO- http://127.0.0.1:3001/health || exit 1
+
+CMD ["node", "dist/server.js"]

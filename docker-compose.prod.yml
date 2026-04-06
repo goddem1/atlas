@@ -1,0 +1,58 @@
+# Продакшен-стек: PostgreSQL + API + nginx (SPA).
+#
+# 1. Скопируйте docker/.env.prod.example → docker/.env (или .env рядом с compose) и задайте секреты.
+# 2. docker compose -f docker-compose.prod.yml --env-file docker/.env up -d --build
+# 3. Первая БД: docker compose -f docker-compose.prod.yml exec api sh -c "cd /app/apps/api && npx prisma db push"
+# 4. Сид: docker compose -f docker-compose.prod.yml exec api sh -c "cd /app/apps/api && npx prisma db seed"
+#
+# Сайт: http://localhost:${HTTP_PORT:-8080}  (снаружи поставьте HTTPS reverse proxy).
+
+services:
+  db:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: atlas
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in env file}
+      POSTGRES_DB: atlas_v1
+    volumes:
+      - atlas_prod_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U atlas -d atlas_v1"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://atlas:${POSTGRES_PASSWORD}@db:5432/atlas_v1?schema=public
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?Set JWT secrets in env file}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?Set JWT secrets in env file}
+      HOST: 0.0.0.0
+      PORT: 3001
+      # Один origin с фронтом (браузер бьёт в /api на том же хосте) — можно оставить true
+      CORS_ORIGIN: ${CORS_ORIGIN:-true}
+      TRADING_DAY_SYMBOLS: ${TRADING_DAY_SYMBOLS:-BTCUSDT,ETHUSDT}
+      TRADING_DAY_CRON_DISABLED: ${TRADING_DAY_CRON_DISABLED:-false}
+
+  web:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.web
+      args:
+        VITE_API_URL: /api
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "${HTTP_PORT:-8080}:80"
+
+volumes:
+  atlas_prod_pg_data:

@@ -54,6 +54,41 @@ pnpm build
 | `pnpm lint`    | проверки TypeScript   |
 | `pnpm db:studio` | Prisma Studio       |
 
+## Docker (продакшен)
+
+Стек: **PostgreSQL** + **API** (образ из `docker/Dockerfile.api`) + **nginx** со статикой фронта и прокси **`/api/*` → API** (`docker/Dockerfile.web`, конфиг `docker/nginx/web.conf`). Сборка фронта с `VITE_API_URL=/api`, запросы идут на тот же хост.
+
+1. Создайте файл окружения (не коммитьте):
+
+   ```bash
+   cp docker/.env.prod.example docker/.env
+   # отредактируйте POSTGRES_PASSWORD, JWT_*
+   ```
+
+2. Сборка и запуск:
+
+   ```bash
+   docker compose -f docker-compose.prod.yml --env-file docker/.env up -d --build
+   ```
+
+3. Первая инициализация БД (один раз):
+
+   ```bash
+   docker compose -f docker-compose.prod.yml --env-file docker/.env exec api npx prisma db push
+   docker compose -f docker-compose.prod.yml --env-file docker/.env exec api npx prisma db seed
+   ```
+
+4. Исторические свечи (по желанию; в образе уже собран `dist`):
+
+   ```bash
+   docker compose -f docker-compose.prod.yml --env-file docker/.env exec api node dist/scripts/loadCryptoCandles.js
+   # Пример для ETH: добавьте -e SYMBOL=ETHUSDT -e START_MS=1514764800000 к docker compose exec
+   ```
+
+Сайт: `http://localhost:${HTTP_PORT:-8080}` (в проде перед контейнером обычно ставят HTTPS reverse proxy).
+
+Локальная разработка по-прежнему: `docker compose up -d` (только `db` + Adminer из корневого `docker-compose.yml`).
+
 ## Git
 
 Удалённый репозиторий: `https://github.com/goddem1/atlas.git`
