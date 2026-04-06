@@ -1,0 +1,72 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String      @id @default(cuid())
+  email        String      @unique
+  passwordHash String
+  createdAt    DateTime    @default(now())
+  dashboards   Dashboard[]
+}
+
+model Dashboard {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  layout    Json
+  updatedAt DateTime @updatedAt
+}
+
+model DashboardTemplate {
+  id       String @id @default(cuid())
+  name     String
+  category String
+  layout   Json
+}
+
+model NewsItem {
+  id          String   @id @default(cuid())
+  source      String
+  title       String
+  content     String
+  publishedAt DateTime
+}
+
+/// Справочник криптовалют проекта (иконки и прочие ресурсы).
+model CryptocurrencyList {
+  id      String @id @default(cuid())
+  symbol  String @unique
+  name    String
+  /// Публичный URL или путь к иконке (напр. `/assets/crypto/BTC.svg` для Vite `public`).
+  iconUrl String
+  /// Пара в `CryptoPriceCandle.symbol` (напр. BTCUSDT). Если null — используется `{symbol}USDT`.
+  pairSymbol String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("CryptocurrencyList")
+}
+
+/// Дневные свечи с Binance klines (data-api.binance.vision). Дубликаты по одной свече исключены.
+model CryptoPriceCandle {
+  id        String   @id @default(cuid())
+  symbol    String
+  /// В БД колонка `interval` (зарезервированное слово в PostgreSQL).
+  interval  String   @default("1d") @map("interval")
+  openTime  DateTime
+  open      Decimal  @db.Decimal(28, 12)
+  high      Decimal  @db.Decimal(28, 12)
+  low       Decimal  @db.Decimal(28, 12)
+  close     Decimal  @db.Decimal(28, 12)
+  volume    Decimal  @db.Decimal(38, 12)
+
+  @@unique([symbol, interval, openTime])
+  @@map("CryptoPriceCandle")
+}

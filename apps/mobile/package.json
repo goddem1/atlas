@@ -1,0 +1,10 @@
+{
+  "name": "@atlas-v1/mobile",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "echo \"Expo app: run pnpm create expo-app from apps/mobile when ready\" && exit 0",
+    "build": "echo \"Not configured\" && exit 0",
+    "lint": "echo \"Not configured\" && exit 0"
+  }
+}
