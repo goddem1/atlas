@@ -1,0 +1,250 @@
+.price-widget-card {
+  display: flex;
+  position: relative;
+  width: 100%;
+  max-width: 350px;
+  height: 200px;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 20px 10px 20px 20px;
+  background: #ffffff;
+  color: #171717;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.portfolio-menu-wrap {
+  position: absolute;
+  inset-inline-end: 0;
+  inset-block-start: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  z-index: 25;
+}
+
+.portfolio-menu-trigger {
+  width: 20px;
+  height: 20px;
+  border: 0;
+  border-radius: 0 10px 0 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+}
+
+.portfolio-menu-trigger-icon {
+  width: 12px;
+  height: 12px;
+  object-fit: contain;
+  transform: rotate(45deg);
+  filter: brightness(0) saturate(100%) invert(35%) sepia(0%) saturate(1%) hue-rotate(173deg)
+    brightness(95%) contrast(90%);
+}
+
+.portfolio-menu-rail {
+  position: absolute;
+  top: 0;
+  height: 46px;
+  padding: 6px 10px;
+  border-radius: 0 10px 0 22px;
+  background: rgba(200, 200, 200, 0.8);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  transform: translateX(0px);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 180ms ease, opacity 160ms ease;
+}
+
+.portfolio-menu-wrap.is-open .portfolio-menu-rail,
+.portfolio-menu-wrap:hover .portfolio-menu-rail {
+  transform: translateX(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.portfolio-menu-circle-btn {
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 999px;
+  background: white;
+  color: #595959;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.portfolio-menu-circle-icon {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  filter: brightness(0) saturate(100%) invert(35%) sepia(0%) saturate(1%) hue-rotate(173deg)
+    brightness(95%) contrast(90%);
+}
+
+.portfolio-menu-circle-icon-close {
+  width: 18px;
+  height: 18px;
+}
+
+.price-widget-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  column-gap: 12px;
+  padding: 15px 15px 5px 15px;
+}
+
+.price-widget-default-icon {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: #171717;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.price-widget-asset-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  object-fit: contain;
+  padding: 2px;
+}
+
+.price-widget-icon-button {
+  flex-shrink: 0;
+  border: 0;
+  background: transparent;
+  border-radius: 999px;
+  outline: none;
+  cursor: pointer;
+}
+
+.price-widget-icon-button:focus-visible {
+  box-shadow: 0 0 0 2px #0ea5e9;
+}
+
+.price-widget-drag-handle {
+  cursor: grab;
+  user-select: none;
+}
+
+.price-widget-asset-head {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  justify-self: start;
+}
+
+.price-widget-drag-handle:active {
+  cursor: grabbing;
+}
+
+.price-widget-symbol {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 400;
+  color: #595959;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.price-widget-price-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-self: center;
+}
+
+.price-widget-price {
+  font-size: 24px;
+  color: #595959;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+}
+
+.price-widget-usdt-badge {
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.price-widget-change-badge {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 4px;
+  border: 1.5px solid;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  justify-self: end;
+}
+
+.price-widget-chart-wrap {
+  position: relative;
+  flex: 1;
+  padding: 0 20px 4px;
+  cursor: crosshair;
+}
+
+.price-widget-svg {
+  width: 100%;
+}
+
+.price-widget-hover-line {
+  stroke: rgba(23, 23, 23, 0.35);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+  vector-effect: non-scaling-stroke;
+}
+
+.price-widget-axis-svg {
+  display: block;
+  width: 100%;
+  margin-top: -12px;
+  overflow: visible;
+}
+
+.price-widget-axis-text {
+  fill: #a3a3a3;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  transition: fill 0.15s ease;
+}
+
+.price-widget-axis-text-active {
+  fill: #595959;
+  font-weight: 500;
+}
+
+.price-widget-status {
+  margin: 0;
+  padding: 0 4px 4px;
+  text-align: center;
+  color: #b45309;
+  font-size: 11px;
+}

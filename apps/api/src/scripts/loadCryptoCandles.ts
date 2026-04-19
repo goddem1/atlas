@@ -33,51 +33,59 @@ async function fetchKlinesPage(symbol: string, startTimeMs: number): Promise<Kli
 }
 
 async function main(): Promise<void> {
-  const symbol = process.env.SYMBOL ?? "BTCUSDT";
+  const symbolsRaw = process.env.SYMBOLS?.trim();
+  const symbols =
+    symbolsRaw && symbolsRaw.length > 0
+      ? symbolsRaw
+          .split(",")
+          .map((s) => s.trim().toUpperCase())
+          .filter(Boolean)
+      : [process.env.SYMBOL ?? "BTCUSDT"];
   const startMs = Number(process.env.START_MS ?? 1514764800000);
   if (!Number.isFinite(startMs)) {
     throw new Error("START_MS must be a number (Unix ms)");
   }
 
   const prisma = new PrismaClient();
-  let cursor = startMs;
-  let inserted = 0;
-  let pages = 0;
-
   try {
-    for (;;) {
-      const rows = await fetchKlinesPage(symbol, cursor);
-      if (rows.length === 0) break;
+    for (const symbol of symbols) {
+      let cursor = startMs;
+      let inserted = 0;
+      let pages = 0;
+      console.log(`[${symbol}] start`);
+      for (;;) {
+        const rows = await fetchKlinesPage(symbol, cursor);
+        if (rows.length === 0) break;
 
-      const lastOpen = rows[rows.length - 1]![0]!;
-      const data = rows.map((k) => ({
-        symbol,
-        interval: INTERVAL,
-        openTime: new Date(k[0]!),
-        open: k[1]!,
-        high: k[2]!,
-        low: k[3]!,
-        close: k[4]!,
-        volume: k[5]!,
-      }));
+        const lastOpen = rows[rows.length - 1]![0]!;
+        const data = rows.map((k) => ({
+          symbol,
+          interval: INTERVAL,
+          openTime: new Date(k[0]!),
+          open: k[1]!,
+          high: k[2]!,
+          low: k[3]!,
+          close: k[4]!,
+          volume: k[5]!,
+        }));
 
-      const result = await prisma.cryptoPriceCandle.createMany({
-        data,
-        skipDuplicates: true,
-      });
-      inserted += result.count;
-      pages += 1;
-      console.log(
-        `page ${pages}: fetched ${rows.length}, inserted ${result.count}, lastOpen=${new Date(lastOpen).toISOString()}`,
-      );
+        const result = await prisma.cryptoPriceCandle.createMany({
+          data,
+          skipDuplicates: true,
+        });
+        inserted += result.count;
+        pages += 1;
+        console.log(
+          `[${symbol}] page ${pages}: fetched ${rows.length}, inserted ${result.count}, lastOpen=${new Date(lastOpen).toISOString()}`,
+        );
 
-      if (rows.length < PAGE_LIMIT) break;
+        if (rows.length < PAGE_LIMIT) break;
 
-      cursor = lastOpen + 1;
-      await new Promise((r) => setTimeout(r, 150));
+        cursor = lastOpen + 1;
+        await new Promise((r) => setTimeout(r, 150));
+      }
+      console.log(`[${symbol}] done. New rows inserted (duplicates skipped): ${inserted}`);
     }
-
-    console.log(`Done. New rows inserted (duplicates skipped): ${inserted}`);
   } finally {
     await prisma.$disconnect();
   }

@@ -1,5 +1,5 @@
 import { useId, useMemo, useState, type MouseEvent, type ReactNode } from "react";
-import { formatPriceTicker } from "../../lib/formatChart";
+import { formatPriceTicker } from "../../../lib/formatChart";
 
 const VIEW_W = 320;
 const VIEW_H = 132;
@@ -28,12 +28,15 @@ export interface PriceSparklineCardProps {
   onIconClick?: () => void;
   /** Сообщение об ошибке / состоянии под графиком */
   statusText?: string | null;
+  onDeleteWidget?: () => void;
   className?: string;
   /** Класс только для зоны перетаскивания (тикер), не вся шапка */
   dragHandleClassName?: string;
 }
 
-function buildPoints(values: number[]) {
+type ChartPoint = { x: number; y: number; seriesIndex: number };
+
+function buildPoints(values: number[]): ChartPoint[] {
   if (values.length < 2) return [];
   const innerW = VIEW_W - PAD.l - PAD.r;
   const innerH = VIEW_H - PAD.t - PAD.b;
@@ -49,21 +52,31 @@ function buildPoints(values: number[]) {
   return finite.map(({ v, i }) => {
     const x = PAD.l + (denom <= 0 ? 0 : (i / denom) * innerW);
     const y = PAD.t + innerH - ((v - min) / span) * innerH;
-    return { x: Number.isFinite(x) ? x : PAD.l, y: Number.isFinite(y) ? y : PAD.t + innerH };
+    const px = Number.isFinite(x) ? x : PAD.l;
+    const py = Number.isFinite(y) ? y : PAD.t + innerH;
+    return { x: px, y: py, seriesIndex: i };
   });
 }
 
-function areaPath(pts: { x: number; y: number }[], bottomY: number) {
-  if (pts.length === 0) return "";
-  const line = pts.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x.toFixed(2)} ${p.y.toFixed(2)}`).join(" ");
+function areaPath(pts: ChartPoint[], bottomY: number) {
+  if (pts.length === 0 || !Number.isFinite(bottomY)) return "";
+  const line = pts
+    .filter((p) => Number.isFinite(p.x) && Number.isFinite(p.y))
+    .map((p, i) => `${i === 0 ? "M" : "L"} ${p.x.toFixed(2)} ${p.y.toFixed(2)}`)
+    .join(" ");
+  if (!line) return "";
   const last = pts[pts.length - 1]!;
   const first = pts[0]!;
-  return `${line} L ${last.x.toFixed(2)} ${bottomY} L ${first.x.toFixed(2)} ${bottomY} Z`;
+  if (!Number.isFinite(last.x) || !Number.isFinite(first.x)) return "";
+  return `${line} L ${last.x.toFixed(2)} ${bottomY.toFixed(2)} L ${first.x.toFixed(2)} ${bottomY.toFixed(2)} Z`;
 }
 
-function linePath(pts: { x: number; y: number }[]) {
+function linePath(pts: ChartPoint[]) {
   if (pts.length === 0) return "";
-  return pts.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x.toFixed(2)} ${p.y.toFixed(2)}`).join(" ");
+  return pts
+    .filter((p) => Number.isFinite(p.x) && Number.isFinite(p.y))
+    .map((p, i) => `${i === 0 ? "M" : "L"} ${p.x.toFixed(2)} ${p.y.toFixed(2)}`)
+    .join(" ");
 }
 
 export function PriceSparklineCard({
@@ -75,10 +88,12 @@ export function PriceSparklineCard({
   icon,
   onIconClick,
   statusText,
+  onDeleteWidget,
   className = "",
   dragHandleClassName,
 }: PriceSparklineCardProps) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
   const fillGradientId = `spark-fill-${useId().replace(/:/g, "")}`;
   const pts = buildPoints(series);
   const bottomY = VIEW_H - PAD.b;
@@ -109,14 +124,20 @@ export function PriceSparklineCard({
 
   const dragCn = cn("price-widget-drag-handle", dragHandleClassName);
   const canHover = pts.length > 1;
-  const fallbackIndex = Math.max(0, series.length - 1);
-  const activeIndex = hoveredIndex ?? fallbackIndex;
-  const activePoint = pts[activeIndex] ?? pts[pts.length - 1] ?? null;
+  const fallbackPtsIndex = pts.length > 0 ? pts.length - 1 : 0;
+  const activePtsIndex =
+    hoveredIndex !== null && hoveredIndex !== undefined && pts[hoveredIndex]
+      ? hoveredIndex
+      : fallbackPtsIndex;
+  const activePoint = pts[activePtsIndex] ?? null;
+  const activeSeriesIndex = activePoint?.seriesIndex ?? Math.max(0, series.length - 1);
+  const gridActiveIndex = Math.min(Math.max(0, activeSeriesIndex), WEEK_DIVISIONS - 1);
+
   const displayPrice = useMemo(() => {
-    const value = series[activeIndex];
+    const value = series[activeSeriesIndex];
     if (value !== undefined && Number.isFinite(value)) return formatPriceTicker(value);
     return priceDisplay;
-  }, [activeIndex, priceDisplay, series]);
+  }, [activeSeriesIndex, priceDisplay, series]);
 
   const handleMouseMove = (e: MouseEvent<HTMLDivElement>) => {
     if (!canHover) return;
@@ -137,6 +158,31 @@ export function PriceSparklineCard({
 
   return (
     <div className={cn("price-widget-card", className)}>
+      <div
+        className={`portfolio-menu-wrap${menuOpen ? " is-open" : ""}`}
+        onMouseEnter={() => setMenuOpen(true)}
+        onMouseLeave={() => setMenuOpen(false)}
+      >
+        <button
+          type="button"
+          className="portfolio-menu-trigger"
+          onClick={() => setMenuOpen((v) => !v)}
+          aria-label="Меню виджета"
+          aria-expanded={menuOpen}
+        >
+          <img src="/assets/portfolio-ui/arrow_down.svg" alt="" className="portfolio-menu-trigger-icon" />
+        </button>
+        <div className="portfolio-menu-rail" aria-hidden={!menuOpen}>
+          <button
+            type="button"
+            className="portfolio-menu-circle-btn"
+            onClick={() => onDeleteWidget?.()}
+            aria-label="Удалить виджет"
+          >
+            <img src="/assets/portfolio-ui/close.svg" alt="" className="portfolio-menu-circle-icon portfolio-menu-circle-icon-close" />
+          </button>
+        </div>
+      </div>
       <div className={cn("price-widget-header", dragCn)}>
         <div className="price-widget-asset-head">
           {iconEl}
@@ -184,8 +230,8 @@ export function PriceSparklineCard({
               y1={PAD.t}
               x2={gx}
               y2={bottomY}
-              stroke={gi === activeIndex ? accent : "#e5e5e5"}
-              strokeOpacity={gi === activeIndex ? 0.35 : 1}
+              stroke={gi === gridActiveIndex ? accent : "#e5e5e5"}
+              strokeOpacity={gi === gridActiveIndex ? 0.35 : 1}
               strokeWidth="1"
               vectorEffect="non-scaling-stroke"
             />
@@ -203,7 +249,7 @@ export function PriceSparklineCard({
                 strokeLinejoin="round"
                 vectorEffect="non-scaling-stroke"
               />
-              {hoveredIndex !== null && activePoint ? (
+              {hoveredIndex !== null && activePoint && Number.isFinite(activePoint.x) ? (
                 <line
                   x1={activePoint.x}
                   y1={PAD.t}
@@ -212,7 +258,9 @@ export function PriceSparklineCard({
                   className="price-widget-hover-line"
                 />
               ) : null}
-              {activePoint ? <circle cx={activePoint.x} cy={activePoint.y} r="4" fill={accent} /> : null}
+              {activePoint && Number.isFinite(activePoint.x) && Number.isFinite(activePoint.y) ? (
+                <circle cx={activePoint.x} cy={activePoint.y} r="4" fill={accent} />
+              ) : null}
             </>
           )}
         </svg>
@@ -226,7 +274,7 @@ export function PriceSparklineCard({
               textAnchor="middle"
               className={cn(
                 "price-widget-axis-text",
-                i === activeIndex ? "price-widget-axis-text-active" : undefined,
+                i === gridActiveIndex ? "price-widget-axis-text-active" : undefined,
               )}
             >
               {label}

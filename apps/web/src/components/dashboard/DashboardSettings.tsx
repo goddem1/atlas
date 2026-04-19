@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { DashboardPrefs } from "../../lib/dashboardPrefs";
-import { clampGridSize } from "../../lib/dashboardPrefs";
+import { clampGridOpacity } from "../../lib/dashboardPrefs";
 
 type Props = {
   prefs: DashboardPrefs;
@@ -39,8 +39,10 @@ export function DashboardSettings({ prefs, onChange }: Props) {
     onChange({
       ...prefs,
       ...partial,
-      gridSize:
-        partial.gridSize !== undefined ? clampGridSize(partial.gridSize) : prefs.gridSize,
+      gridOpacity:
+        partial.gridOpacity !== undefined
+          ? clampGridOpacity(partial.gridOpacity)
+          : prefs.gridOpacity,
     });
   };
 
@@ -66,65 +68,55 @@ export function DashboardSettings({ prefs, onChange }: Props) {
           <h2 className="mb-3 text-sm font-semibold text-slate-100">Настройки</h2>
           <div className="flex flex-col gap-4 text-sm">
             <label className="flex flex-col gap-1.5 text-slate-300">
-              <span>Цвет фона</span>
-              <div className="flex items-center gap-2">
-                <input
-                  type="color"
-                  value={prefs.background}
-                  onChange={(e) => patch({ background: e.target.value })}
-                  className="h-9 w-12 cursor-pointer rounded border border-slate-600 bg-slate-800 p-0.5"
-                />
-                <input
-                  type="text"
-                  value={prefs.background}
-                  onChange={(e) => patch({ background: e.target.value })}
-                  className="min-w-0 flex-1 rounded-lg border border-slate-600 bg-slate-950 px-2 py-1.5 font-mono text-xs text-slate-200"
-                  spellCheck={false}
-                />
+              <span>Тема</span>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => patch({ theme: "light" })}
+                  className={`rounded-lg border px-2 py-2 text-xs font-medium transition ${
+                    prefs.theme === "light"
+                      ? "border-sky-500 bg-sky-500/20 text-sky-200"
+                      : "border-slate-600 bg-slate-950 text-slate-200"
+                  }`}
+                >
+                  Светлая
+                </button>
+                <button
+                  type="button"
+                  onClick={() => patch({ theme: "dark" })}
+                  className={`rounded-lg border px-2 py-2 text-xs font-medium transition ${
+                    prefs.theme === "dark"
+                      ? "border-sky-500 bg-sky-500/20 text-sky-200"
+                      : "border-slate-600 bg-slate-950 text-slate-200"
+                  }`}
+                >
+                  Темная
+                </button>
               </div>
             </label>
 
             <label className="flex flex-col gap-1.5 text-slate-300">
-              <span>Цвет линий сетки</span>
-              <div className="flex items-center gap-2">
-                <input
-                  type="color"
-                  value={prefs.gridColor}
-                  onChange={(e) => patch({ gridColor: e.target.value })}
-                  className="h-9 w-12 cursor-pointer rounded border border-slate-600 bg-slate-800 p-0.5"
-                />
-                <input
-                  type="text"
-                  value={prefs.gridColor}
-                  onChange={(e) => patch({ gridColor: e.target.value })}
-                  className="min-w-0 flex-1 rounded-lg border border-slate-600 bg-slate-950 px-2 py-1.5 font-mono text-xs text-slate-200"
-                  spellCheck={false}
-                />
-              </div>
-            </label>
-
-            <label className="flex flex-col gap-1.5 text-slate-300">
-              <span>Шаг сетки (px)</span>
+              <span>Прозрачность сетки (%)</span>
               <input
                 type="number"
-                min={8}
-                max={200}
+                min={0}
+                max={100}
                 step={1}
-                value={prefs.gridSize}
-                onChange={(e) => patch({ gridSize: Number(e.target.value) })}
+                value={prefs.gridOpacity}
+                onChange={(e) => patch({ gridOpacity: Number(e.target.value) })}
                 className="rounded-lg border border-slate-600 bg-slate-950 px-2 py-1.5 font-mono text-slate-200"
               />
               <input
                 type="range"
-                min={8}
-                max={200}
+                min={0}
+                max={100}
                 step={1}
-                value={prefs.gridSize}
-                onChange={(e) => patch({ gridSize: Number(e.target.value) })}
+                value={prefs.gridOpacity}
+                onChange={(e) => patch({ gridOpacity: Number(e.target.value) })}
                 className="w-full accent-sky-500"
-                aria-label="Шаг сетки"
+                aria-label="Прозрачность сетки"
               />
-              <p className="text-xs text-slate-500">Диапазон 8–200 px.</p>
+              <p className="text-xs text-slate-500">0 — скрыть, 100 — максимум.</p>
             </label>
           </div>
         </div>

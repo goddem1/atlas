@@ -22,7 +22,7 @@ type JobLog = {
 };
 
 function parseSymbols(): string[] {
-  const raw = process.env.TRADING_DAY_SYMBOLS ?? "BTCUSDT,ETHUSDT";
+  const raw = process.env.TRADING_DAY_SYMBOLS ?? "BTCUSDT,ETHUSDT,HBARUSDT,SUIUSDT,PEPEUSDT";
   return raw
     .split(",")
     .map((s) => s.trim().toUpperCase())

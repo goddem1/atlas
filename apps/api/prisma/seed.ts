@@ -3,35 +3,30 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 async function main() {
-  await prisma.cryptocurrencyList.upsert({
-    where: { symbol: "BTC" },
-    create: {
-      symbol: "BTC",
-      name: "Bitcoin",
-      iconUrl: "/assets/crypto/BTC.svg",
-      pairSymbol: "BTCUSDT",
-    },
-    update: {
-      name: "Bitcoin",
-      iconUrl: "/assets/crypto/BTC.svg",
-      pairSymbol: "BTCUSDT",
-    },
-  });
+  const coins = [
+    { symbol: "BTC", name: "Bitcoin", pairSymbol: "BTCUSDT" },
+    { symbol: "ETH", name: "Ethereum", pairSymbol: "ETHUSDT" },
+    { symbol: "HBAR", name: "Hedera", pairSymbol: "HBARUSDT" },
+    { symbol: "SUI", name: "Sui", pairSymbol: "SUIUSDT" },
+    { symbol: "PEPE", name: "Pepe", pairSymbol: "PEPEUSDT" },
+  ] as const;
 
-  await prisma.cryptocurrencyList.upsert({
-    where: { symbol: "ETH" },
-    create: {
-      symbol: "ETH",
-      name: "Ethereum",
-      iconUrl: "/assets/crypto/ETH.svg",
-      pairSymbol: "ETHUSDT",
-    },
-    update: {
-      name: "Ethereum",
-      iconUrl: "/assets/crypto/ETH.svg",
-      pairSymbol: "ETHUSDT",
-    },
-  });
+  for (const coin of coins) {
+    await prisma.cryptocurrencyList.upsert({
+      where: { symbol: coin.symbol },
+      create: {
+        symbol: coin.symbol,
+        name: coin.name,
+        iconUrl: `/assets/crypto/${coin.symbol}.svg`,
+        pairSymbol: coin.pairSymbol,
+      },
+      update: {
+        name: coin.name,
+        iconUrl: `/assets/crypto/${coin.symbol}.svg`,
+        pairSymbol: coin.pairSymbol,
+      },
+    });
+  }
 }
 
 main()
