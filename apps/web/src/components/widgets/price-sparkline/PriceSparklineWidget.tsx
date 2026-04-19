@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import type { CandleApiRow, CryptocurrencyListItem } from "@atlas-v1/shared";
-import { fetchCandles, fetchCryptocurrencies } from "../../services/api";
-import { formatPriceTicker, formatRuDayMonth, percentChangeLast } from "../../lib/formatChart";
-import { CryptoPickerModal } from "./CryptoPickerModal";
+import { fetchCandles, fetchCryptocurrencies } from "../../../services/api";
+import { formatPriceTicker, formatRuDayMonth, percentChangeLast } from "../../../lib/formatChart";
+import { CryptoPickerModal } from "../shared/CryptoPickerModal";
 import { PriceSparklineCard } from "./PriceSparklineCard";
-import "./price-widget.css";
+import "./price-sparkline-widget.css";
 
 function pairFor(c: CryptocurrencyListItem): string {
   return (c.pairSymbol?.trim() || `${c.symbol}USDT`).toUpperCase();
@@ -19,12 +19,14 @@ type Props = {
   preferredSymbol?: string | null;
   /** Вызов при выборе актива в модалке (родитель пишет в localStorage). */
   onPreferredSymbolChange?: (symbol: string) => void;
+  onDeleteWidget?: () => void;
 };
 
 export function PriceSparklineWidget({
   dragHandleClassName,
   preferredSymbol,
   onPreferredSymbolChange,
+  onDeleteWidget,
 }: Props) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [list, setList] = useState<CryptocurrencyListItem[]>([]);
@@ -138,6 +140,7 @@ export function PriceSparklineWidget({
     <>
       <PriceSparklineCard
         dragHandleClassName={dragHandleClassName}
+        onDeleteWidget={onDeleteWidget}
         symbol={selected?.symbol ?? "…"}
         priceDisplay={priceDisplay}
         changePercent={changePercent}

@@ -1,19 +1,32 @@
 const STORAGE_KEY = "atlas-v1-dashboard-prefs";
 
+export const DASHBOARD_GRID_SIZE = 50;
+
+export type DashboardTheme = "light" | "dark";
+
 export type DashboardPrefs = {
-  background: string;
-  gridColor: string;
-  gridSize: number;
+  theme: DashboardTheme;
+  /** Прозрачность линий сетки в процентах (0..100). */
+  gridOpacity: number;
 };
 
 export const defaultDashboardPrefs: DashboardPrefs = {
-  background: "#020617",
-  gridColor: "#94a3b8",
-  gridSize: 50,
+  theme: "light",
+  gridOpacity: 20,
 };
 
-/** Прозрачность линий сетки поверх фона (не выносим в UI, чтобы не перегружать панель). */
-export const GRID_LINE_ALPHA = 0.12;
+export function getThemeColors(theme: DashboardTheme): { background: string; gridColor: string } {
+  if (theme === "dark") {
+    return {
+      background: "#0f0f0f",
+      gridColor: "#F2F2F7",
+    };
+  }
+  return {
+    background: "#F2F2F7",
+    gridColor: "#0f0f0f",
+  };
+}
 
 export function hexToRgba(hex: string, alpha: number): string {
   const h = hex.trim().replace(/^#/, "");
@@ -33,20 +46,34 @@ export function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-export function clampGridSize(n: number): number {
-  return Math.min(200, Math.max(8, Math.round(n)));
+export function clampGridOpacity(n: number): number {
+  return Math.min(100, Math.max(0, Math.round(n)));
 }
 
 export function loadDashboardPrefs(): DashboardPrefs {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return { ...defaultDashboardPrefs };
-    const j = JSON.parse(raw) as Partial<DashboardPrefs>;
+    const j = JSON.parse(raw) as Partial<DashboardPrefs> & {
+      background?: string;
+      gridColor?: string;
+      gridSize?: number;
+    };
+    let theme: DashboardTheme = defaultDashboardPrefs.theme;
+    if (j.theme === "light" || j.theme === "dark") {
+      theme = j.theme;
+    } else if (typeof j.background === "string" && typeof j.gridColor === "string") {
+      // Миграция старого формата prefs: background + gridColor
+      if (j.background.toLowerCase() === "#0f0f0f") {
+        theme = "dark";
+      } else if (j.background.toLowerCase() === "#f2f2f7") {
+        theme = "light";
+      }
+    }
     return {
-      background: typeof j.background === "string" ? j.background : defaultDashboardPrefs.background,
-      gridColor: typeof j.gridColor === "string" ? j.gridColor : defaultDashboardPrefs.gridColor,
-      gridSize: clampGridSize(
-        typeof j.gridSize === "number" ? j.gridSize : defaultDashboardPrefs.gridSize,
+      theme,
+      gridOpacity: clampGridOpacity(
+        typeof j.gridOpacity === "number" ? j.gridOpacity : defaultDashboardPrefs.gridOpacity,
       ),
     };
   } catch {
@@ -59,8 +86,8 @@ export function saveDashboardPrefs(prefs: DashboardPrefs): void {
     localStorage.setItem(
       STORAGE_KEY,
       JSON.stringify({
-        ...prefs,
-        gridSize: clampGridSize(prefs.gridSize),
+        theme: prefs.theme,
+        gridOpacity: clampGridOpacity(prefs.gridOpacity),
       }),
     );
   } catch {

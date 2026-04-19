@@ -1,6 +1,6 @@
 const STORAGE_KEY = "atlas-v1-dashboard-widgets";
 
-export type DashboardWidgetType = "price-sparkline";
+export type DashboardWidgetType = "price-sparkline" | "portfolio";
 
 export type DashboardWidget = {
   id: string;
@@ -20,6 +20,11 @@ export const WIDGET_CATALOG: {
     type: "price-sparkline",
     title: "График цены",
     description: "Криптовалюта, свечи за 7 дней и динамика",
+  },
+  {
+    type: "portfolio",
+    title: "Портфель",
+    description: "Стоимость портфеля, P&L и структура активов",
   },
 ];
 
@@ -42,7 +47,7 @@ function defaultWidgets(gridSize: number): DashboardWidget[] {
 }
 
 function isWidgetType(v: unknown): v is DashboardWidgetType {
-  return v === "price-sparkline";
+  return v === "price-sparkline" || v === "portfolio";
 }
 
 function normalizeWidgets(raw: unknown, gridSize: number): DashboardWidget[] {

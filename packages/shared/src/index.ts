@@ -58,3 +58,77 @@ export interface CandleApiRow {
   close: string;
   volume: string;
 }
+
+export type PortfolioTimeframe = "d" | "m" | "y" | "all";
+
+export type PortfolioTransactionType = "BUY" | "SELL";
+
+export interface PortfolioAssetSummary {
+  symbol: string;
+  name: string;
+  iconUrl: string;
+  currentPriceUsd: string;
+  currentValueUsd: string;
+  pnlUsd: string;
+  coinsHeld: string;
+}
+
+export interface PortfolioSummaryResponse {
+  totalValueUsd: string;
+  totalPnlUsd: string;
+  assets: PortfolioAssetSummary[];
+}
+
+export interface PortfolioChartPoint {
+  date: string;
+  valueUsd: string;
+}
+
+export interface PortfolioChartResponse {
+  timeframe: PortfolioTimeframe;
+  points: PortfolioChartPoint[];
+}
+
+export interface PortfolioTransactionGoalInput {
+  targetPriceUsd: string;
+  sellCoins: string;
+}
+
+export interface PortfolioTransactionUpsertInput {
+  symbol: string;
+  type: PortfolioTransactionType;
+  date: string;
+  priceUsd: string;
+  amountCoins: string;
+  amountUsd: string;
+  goals?: PortfolioTransactionGoalInput[];
+}
+
+export interface PortfolioGoalDto {
+  id: string;
+  targetPriceUsd: string;
+  sellCoins: string;
+  potentialProfitUsd: string;
+  createdAt: string;
+}
+
+export interface PortfolioTransactionDto {
+  id: string;
+  type: PortfolioTransactionType;
+  date: string;
+  priceUsd: string;
+  amountCoins: string;
+  amountUsd: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PortfolioAssetDetailResponse {
+  symbol: string;
+  name: string;
+  iconUrl: string;
+  averageBuyPriceUsd: string;
+  coinsHeld: string;
+  transactions: PortfolioTransactionDto[];
+  goals: PortfolioGoalDto[];
+}

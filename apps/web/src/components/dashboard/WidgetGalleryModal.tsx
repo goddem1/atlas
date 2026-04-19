@@ -2,7 +2,8 @@ import { useEffect } from "react";
 import { createPortal } from "react-dom";
 import type { DashboardWidgetType } from "../../lib/dashboardWidgets";
 import { WIDGET_CATALOG } from "../../lib/dashboardWidgets";
-import "../widgets/price-widget.css";
+import "../widgets/shared/asset-picker.css";
+import "../widgets/shared/widget-gallery.css";
 
 type Props = {
   open: boolean;
@@ -39,7 +40,7 @@ export function WidgetGalleryModal({ open, onClose, onPick }: Props) {
             Добавить виджет
           </h2>
           <button type="button" onClick={onClose} className="asset-picker-close-button" aria-label="Закрыть">
-            ×
+            <img src="/assets/portfolio-ui/close.svg" alt="" className="asset-picker-close-icon" />
           </button>
         </div>
 

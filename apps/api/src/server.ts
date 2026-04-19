@@ -5,6 +5,7 @@ import cron from "node-cron";
 import { PrismaClient } from "@prisma/client";
 import { runTradingDayJob } from "./jobs/tradingDayJob.js";
 import { registerMarketRoutes } from "./routes/market.js";
+import { registerPortfolioRoutes } from "./routes/portfolio.js";
 
 const prisma = new PrismaClient();
 
@@ -24,6 +25,7 @@ app.get("/health", async () => ({
 }));
 
 registerMarketRoutes(app, prisma);
+registerPortfolioRoutes(app, prisma);
 
 const port = Number(process.env.PORT ?? 3001);
 const host = process.env.HOST ?? "0.0.0.0";

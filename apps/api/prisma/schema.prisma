@@ -70,3 +70,41 @@ model CryptoPriceCandle {
   @@unique([symbol, interval, openTime])
   @@map("CryptoPriceCandle")
 }
+
+model PortfolioAsset {
+  id           String        @id @default(cuid())
+  userId       Int
+  symbol       String
+  createdAt    DateTime      @default(now())
+  transactions Transaction[]
+  goals        Goal[]
+
+  @@unique([userId, symbol])
+}
+
+model Transaction {
+  id             String          @id @default(cuid())
+  portfolioAsset PortfolioAsset  @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  assetId        String
+  type           TransactionType
+  date           DateTime
+  priceUsd       Decimal         @db.Decimal(28, 12)
+  amountCoins    Decimal         @db.Decimal(28, 12)
+  amountUsd      Decimal         @db.Decimal(28, 12)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+}
+
+model Goal {
+  id             String         @id @default(cuid())
+  portfolioAsset PortfolioAsset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  assetId        String
+  targetPriceUsd Decimal        @db.Decimal(28, 12)
+  sellCoins      Decimal        @default(0) @db.Decimal(28, 12)
+  createdAt      DateTime       @default(now())
+}
+
+enum TransactionType {
+  BUY
+  SELL
+}

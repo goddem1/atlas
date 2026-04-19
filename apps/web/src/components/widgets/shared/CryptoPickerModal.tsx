@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import type { CryptocurrencyListItem } from "@atlas-v1/shared";
+import "./asset-picker.css";
 
 type Props = {
   open: boolean;
@@ -76,7 +77,7 @@ export function CryptoPickerModal({ open, items, loadError, onClose, onSelect }:
             className="asset-picker-close-button"
             aria-label="Закрыть"
           >
-            ×
+            <img src="/assets/portfolio-ui/close.svg" alt="" className="asset-picker-close-icon" />
           </button>
         </div>
 
@@ -111,11 +112,11 @@ export function CryptoPickerModal({ open, items, loadError, onClose, onSelect }:
                     className="asset-picker-item-icon"
                   />
                   <div className="asset-picker-item-text">
-                    <p className="asset-picker-item-name">
-                      {c.name}
-                    </p>
                     <p className="asset-picker-item-symbol">
                       {c.symbol}
+                    </p>
+                    <p className="asset-picker-item-name">
+                      {c.name}
                     </p>
                   </div>
                 </button>
