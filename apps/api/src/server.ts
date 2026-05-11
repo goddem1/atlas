@@ -3,13 +3,18 @@ import cors from "@fastify/cors";
 import Fastify from "fastify";
 import cron from "node-cron";
 import { PrismaClient } from "@prisma/client";
+import { runMacroMonthEndPrefetch } from "./jobs/macroCalendarPrefetchJob.js";
+import { startMacroReleaseActualsScheduler, stopMacroReleaseActualsScheduler } from "./jobs/macroReleaseActualsScheduler.js";
 import { runTradingDayJob } from "./jobs/tradingDayJob.js";
 import { registerMarketRoutes } from "./routes/market.js";
+import { registerMacroRoutes } from "./routes/macro.js";
 import { registerPortfolioRoutes } from "./routes/portfolio.js";
 
 const prisma = new PrismaClient();
 
 let tradingDayCron: ReturnType<typeof cron.schedule> | null = null;
+let macroMonthEndCron: ReturnType<typeof cron.schedule> | null = null;
+let macroReleaseSchedulerStop: (() => void) | null = null;
 
 const app = Fastify({
   logger: true,
@@ -25,6 +30,7 @@ app.get("/health", async () => ({
 }));
 
 registerMarketRoutes(app, prisma);
+registerMacroRoutes(app, prisma);
 registerPortfolioRoutes(app, prisma);
 
 const port = Number(process.env.PORT ?? 3001);
@@ -44,6 +50,21 @@ try {
     );
     app.log.info("Cron: tradingDay job at 23:55 Europe/Moscow (MSK)");
   }
+
+  if (process.env.MACRO_PREFETCH_CRON_DISABLED !== "true") {
+    macroMonthEndCron = cron.schedule(
+      "58 23 * * *",
+      () => {
+        void runMacroMonthEndPrefetch(app.log, prisma);
+      },
+      { timezone: "Europe/Moscow" },
+    );
+    app.log.info("Cron: macro month-end prefetch at 23:58 Europe/Moscow (next 2 months)");
+  }
+
+  if (process.env.MACRO_RELEASE_SCHEDULER_DISABLED !== "true") {
+    macroReleaseSchedulerStop = startMacroReleaseActualsScheduler(app.log, prisma).stop;
+  }
 } catch (err) {
   app.log.error(err);
   await prisma.$disconnect();
@@ -53,6 +74,11 @@ try {
 const shutdown = async () => {
   tradingDayCron?.stop();
   tradingDayCron = null;
+  macroMonthEndCron?.stop();
+  macroMonthEndCron = null;
+  macroReleaseSchedulerStop?.();
+  macroReleaseSchedulerStop = null;
+  stopMacroReleaseActualsScheduler();
   await app.close();
   await prisma.$disconnect();
 };

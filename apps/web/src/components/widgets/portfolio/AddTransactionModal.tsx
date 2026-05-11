@@ -86,6 +86,8 @@ export function AddTransactionModal({
   const [assetMenuRect, setAssetMenuRect] = useState<{ left: number; top: number; width: number } | null>(null);
   const [goalRows, setGoalRows] = useState<GoalRow[]>([{ id: "goal-1", targetUsd: "", sellCoins: "" }]);
   const [goalPartOpenIndex, setGoalPartOpenIndex] = useState<number | null>(null);
+  const goalPartAnchorsRef = useRef<Record<number, HTMLDivElement | null>>({});
+  const [goalPartMenuRect, setGoalPartMenuRect] = useState<{ left: number; top: number; width: number } | null>(null);
   const [activeGoalIndex, setActiveGoalIndex] = useState(0);
   const [hoverGoalIndex, setHoverGoalIndex] = useState<number | null>(null);
   const [localError, setLocalError] = useState<string | null>(null);
@@ -174,6 +176,27 @@ export function AddTransactionModal({
       window.removeEventListener("scroll", update, true);
     };
   }, [assetMenuOpen, open]);
+
+  useEffect(() => {
+    if (!open) return;
+    if (goalPartOpenIndex == null) {
+      setGoalPartMenuRect(null);
+      return;
+    }
+    const el = goalPartAnchorsRef.current[goalPartOpenIndex] ?? null;
+    if (!el) return;
+    const update = () => {
+      const r = el.getBoundingClientRect();
+      setGoalPartMenuRect({ left: r.left, top: r.bottom + 5, width: r.width });
+    };
+    update();
+    window.addEventListener("resize", update);
+    window.addEventListener("scroll", update, true);
+    return () => {
+      window.removeEventListener("resize", update);
+      window.removeEventListener("scroll", update, true);
+    };
+  }, [goalPartOpenIndex, open]);
 
   useEffect(() => {
     if (!open) return;
@@ -493,6 +516,25 @@ export function AddTransactionModal({
     return { size, fontSize, radius, plusSize };
   }, [drafts.length, formSectionHeight]);
 
+  const openGoalIndex = goalPartOpenIndex;
+  const openGoalAllowed = useMemo(() => {
+    if (openGoalIndex == null) return null;
+    const row = goalRows[openGoalIndex];
+    if (!row) return null;
+    const usedWithoutCurrent = goalRows.reduce((acc, g, i) => {
+      if (i === openGoalIndex) return acc;
+      const v = Number(g.sellCoins);
+      return acc + (Number.isFinite(v) && v > 0 ? v : 0);
+    }, 0);
+    const remainingForRow = Math.max(0, totalCoinsAllTx - usedWithoutCurrent);
+    return {
+      all: totalCoinsAllTx * 1 <= remainingForRow + 1e-8,
+      half: totalCoinsAllTx * 0.5 <= remainingForRow + 1e-8,
+      third: totalCoinsAllTx * (1 / 3) <= remainingForRow + 1e-8,
+      quarter: totalCoinsAllTx * 0.25 <= remainingForRow + 1e-8,
+    };
+  }, [goalPartOpenIndex, goalRows, totalCoinsAllTx]);
+
   if (!open || typeof document === "undefined") return null;
 
   return createPortal(
@@ -502,14 +544,14 @@ export function AddTransactionModal({
         {assetMenuOpen && assetMenuRect
           ? createPortal(
               <div
-                className="portfolio-asset-select-menu portfolio-asset-select-menu-portal"
+                className="portfolio-asset-select-menu"
                 style={{ left: assetMenuRect.left, top: assetMenuRect.top, width: assetMenuRect.width }}
               >
                 {filtered.map((a) => (
                   <button
                     key={a.id}
                     type="button"
-                    className={`portfolio-asset-option${a.symbol === activeDraft.symbol ? " active" : ""}`}
+                    className={`portfolio-asset-option list-on-glass${a.symbol === activeDraft.symbol ? " active portfolio-asset-option--active" : ""}`}
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={() => {
                       setActiveDraft((d) => ({ ...d, symbol: a.symbol, assetInput: `${a.symbol}USDT` }));
@@ -521,6 +563,68 @@ export function AddTransactionModal({
                   </button>
                 ))}
                 {filtered.length === 0 ? <div className="portfolio-asset-option-empty">Ничего не найдено</div> : null}
+              </div>,
+              document.body,
+            )
+          : null}
+        {openGoalIndex != null && goalPartMenuRect && openGoalAllowed
+          ? createPortal(
+              <div
+                className="portfolio-asset-select-menu"
+                style={{ left: goalPartMenuRect.left, top: goalPartMenuRect.top, width: goalPartMenuRect.width }}
+              >
+                <button
+                  type="button"
+                  disabled={!openGoalAllowed.all}
+                  className="portfolio-asset-option list-on-glass"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => {
+                    if (openGoalAllowed.all) applyGoalPreset(openGoalIndex, "all");
+                    setGoalPartOpenIndex(null);
+                  }}
+                >
+                  <span>Все</span>
+                  <span className="portfolio-goal-part-fraction">1/1</span>
+                </button>
+                <button
+                  type="button"
+                  disabled={!openGoalAllowed.half}
+                  className="portfolio-asset-option list-on-glass"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => {
+                    if (openGoalAllowed.half) applyGoalPreset(openGoalIndex, "half");
+                    setGoalPartOpenIndex(null);
+                  }}
+                >
+                  <span>Половина</span>
+                  <span className="portfolio-goal-part-fraction">1/2</span>
+                </button>
+                <button
+                  type="button"
+                  disabled={!openGoalAllowed.third}
+                  className="portfolio-asset-option list-on-glass"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => {
+                    if (openGoalAllowed.third) applyGoalPreset(openGoalIndex, "third");
+                    setGoalPartOpenIndex(null);
+                  }}
+                >
+                  <span>Треть</span>
+                  <span className="portfolio-goal-part-fraction">1/3</span>
+                </button>
+                <button
+                  type="button"
+                  disabled={!openGoalAllowed.quarter}
+                  className="portfolio-asset-option list-on-glass"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => {
+                    if (openGoalAllowed.quarter) applyGoalPreset(openGoalIndex, "quarter");
+                    setGoalPartOpenIndex(null);
+                  }}
+                >
+                  <span>Четверть</span>
+                  <span className="portfolio-goal-part-fraction">1/4</span>
+                </button>
               </div>,
               document.body,
             )
@@ -561,7 +665,7 @@ export function AddTransactionModal({
                     window.setTimeout(() => setAssetMenuOpen(false), 120);
                   }}
                   placeholder=" "
-                  className="portfolio-input portfolio-input-ghost portfolio-asset-combobox-input"
+                  className={`portfolio-input-ghost${selectedAsset ? " portfolio-input-ghost-select-active" : ""}`}
                   disabled={mode === "edit"}
                 />
                 <img
@@ -599,7 +703,7 @@ export function AddTransactionModal({
                 value={activeDraft.date}
                 max={todayIsoDate()}
                 onChange={(e) => setActiveDraft((d) => ({ ...d, date: e.target.value }))}
-                className="portfolio-input portfolio-input-ghost"
+                className="portfolio-input-ghost"
                 placeholder=" "
               />
             </label>
@@ -609,7 +713,7 @@ export function AddTransactionModal({
               <input
                 value={activeDraft.priceUsd}
                 onChange={(e) => onPriceChange(e.target.value)}
-                className="portfolio-input portfolio-input-ghost"
+                className="portfolio-input-ghost"
                 placeholder=" "
               />
             </label>
@@ -628,7 +732,7 @@ export function AddTransactionModal({
                 <input
                   value={activeDraft.amountMode === "usd" ? activeDraft.amountUsd : activeDraft.amountCoins}
                   onChange={(e) => onAmountChange(e.target.value)}
-                  className="portfolio-input portfolio-input-ghost"
+                  className="portfolio-input-ghost"
                   placeholder=" "
                 />
               </label>
@@ -663,7 +767,7 @@ export function AddTransactionModal({
                     <button
                       key={`draft-${idx + 1}`}
                       type="button"
-                      className={`portfolio-tx-multi-btn${isActive ? " active" : ""}`}
+                      className={`portfolio-tx-multi-btn${isActive ? " active" : ""} btn-glass`}
                       style={{
                         height: `${txMenu.size}px`,
                         borderRadius: `${txMenu.radius}px`,
@@ -695,12 +799,12 @@ export function AddTransactionModal({
                 {mode !== "edit" ? (
                   <button
                     type="button"
-                    className="portfolio-tx-multi-btn portfolio-tx-multi-plus"
+                    className="portfolio-tx-multi-btn btn-glass "
                     style={{ height: `${txMenu.plusSize}px` }}
                     onClick={addDraft}
                     aria-label="Добавить транзакцию"
                   >
-                    <img src="/assets/portfolio-ui/plus.svg" alt="" className="portfolio-tx-multi-icon" />
+                    <img src="/assets/portfolio-ui/plus.svg" alt="" className="main-portfolio-tx-multi-icon" />
                   </button>
                 ) : null}
               </div>
@@ -719,12 +823,6 @@ export function AddTransactionModal({
                 return acc + (Number.isFinite(v) && v > 0 ? v : 0);
               }, 0);
               const remainingForRow = Math.max(0, totalCoinsAllTx - usedWithoutCurrent);
-              const allowed = {
-                all: totalCoinsAllTx * 1 <= remainingForRow + 1e-8,
-                half: totalCoinsAllTx * 0.5 <= remainingForRow + 1e-8,
-                third: totalCoinsAllTx * (1 / 3) <= remainingForRow + 1e-8,
-                quarter: totalCoinsAllTx * 0.25 <= remainingForRow + 1e-8,
-              };
               const rowTargetNum = Number(row.targetUsd);
               const rowSellCoinsRaw = Number(row.sellCoins);
               const rowSellCoins =
@@ -747,15 +845,24 @@ export function AddTransactionModal({
                     <input
                       value={row.targetUsd}
                       onChange={(e) => setGoalTarget(idx, e.target.value)}
-                      className="portfolio-input portfolio-input-ghost"
+                      className="portfolio-input-ghost"
                       placeholder=" "
                     />
                   </label>
-                  <div className={`portfolio-goal-part-wrap portfolio-field portfolio-ghost-field${goalPartOpenIndex === idx || row.sellCoins ? " is-floated" : ""}`}>
+                  <div
+                    className={`portfolio-field portfolio-ghost-field${
+                      goalPartOpenIndex === idx || row.sellCoins ? " is-floated" : ""
+                    }`}
+                  >
                     <span className="portfolio-ghost-label">Объем</span>
-                    <div className="portfolio-asset-combobox">
+                    <div
+                      ref={(el) => {
+                        goalPartAnchorsRef.current[idx] = el;
+                      }}
+                      className="portfolio-asset-combobox"
+                    >
                       <input
-                        className="portfolio-input portfolio-input-ghost portfolio-asset-combobox-input portfolio-goal-part-btn"
+                        className="portfolio-input-ghost"
                         value={row.sellCoins}
                         onFocus={() => setGoalPartOpenIndex(idx)}
                         onClick={() => setGoalPartOpenIndex(idx)}
@@ -770,50 +877,6 @@ export function AddTransactionModal({
                         className="portfolio-asset-combobox-arrow"
                       />
                     </div>
-                    {goalPartOpenIndex === idx ? (
-                      <div className="portfolio-asset-select-menu portfolio-goal-part-menu">
-                        <button
-                          type="button"
-                          disabled={!allowed.all}
-                          className="portfolio-asset-option"
-                          onMouseDown={(e) => e.preventDefault()}
-                          onClick={() => { if (allowed.all) applyGoalPreset(idx, "all"); setGoalPartOpenIndex(null); }}
-                        >
-                          <span>Все</span>
-                          <span className="portfolio-goal-part-fraction">1/1</span>
-                        </button>
-                        <button
-                          type="button"
-                          disabled={!allowed.half}
-                          className="portfolio-asset-option"
-                          onMouseDown={(e) => e.preventDefault()}
-                          onClick={() => { if (allowed.half) applyGoalPreset(idx, "half"); setGoalPartOpenIndex(null); }}
-                        >
-                          <span>Половина</span>
-                          <span className="portfolio-goal-part-fraction">1/2</span>
-                        </button>
-                        <button
-                          type="button"
-                          disabled={!allowed.third}
-                          className="portfolio-asset-option"
-                          onMouseDown={(e) => e.preventDefault()}
-                          onClick={() => { if (allowed.third) applyGoalPreset(idx, "third"); setGoalPartOpenIndex(null); }}
-                        >
-                          <span>Треть</span>
-                          <span className="portfolio-goal-part-fraction">1/3</span>
-                        </button>
-                        <button
-                          type="button"
-                          disabled={!allowed.quarter}
-                          className="portfolio-asset-option"
-                          onMouseDown={(e) => e.preventDefault()}
-                          onClick={() => { if (allowed.quarter) applyGoalPreset(idx, "quarter"); setGoalPartOpenIndex(null); }}
-                        >
-                          <span>Четверть</span>
-                          <span className="portfolio-goal-part-fraction">1/4</span>
-                        </button>
-                      </div>
-                    ) : null}
                   </div>
                   <p className={`portfolio-goal-potential portfolio-goal-potential-profit ${rowPotentialProfit >= 0 ? "portfolio-asset-pnl-positive" : "portfolio-asset-pnl-negative"}`}>
                     Потенциальная прибыль: {rowPotentialProfit >= 0 ? "+" : "-"}${Math.abs(rowPotentialProfit).toFixed(0)}
@@ -834,7 +897,7 @@ export function AddTransactionModal({
                   <button
                     key={`goal-${idx + 1}`}
                     type="button"
-                    className={`portfolio-tx-multi-btn${isActive ? " active" : ""}`}
+                    className={`portfolio-tx-multi-btn${isActive ? " active" : ""} btn-glass`}
                     style={{
                       height: `${goalMenu.size}px`,
                       borderRadius: `${goalMenu.radius}px`,
@@ -861,13 +924,13 @@ export function AddTransactionModal({
               })}
               <button
                 type="button"
-                className="portfolio-tx-multi-btn portfolio-tx-multi-plus"
+                className="portfolio-tx-multi-btn btn-glass"
                 style={{ height: `${goalMenu.plusSize}px` }}
                 onClick={addGoalRow}
                 disabled={!canAddMoreGoals}
                 aria-label="Добавить цель"
               >
-                <img src="/assets/portfolio-ui/plus.svg" alt="" className="portfolio-tx-multi-icon" />
+                <img src="/assets/portfolio-ui/plus.svg" alt="" className="main-portfolio-tx-multi-icon" />
               </button>
             </div>
           </div>

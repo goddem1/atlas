@@ -13,6 +13,8 @@
     "lint": "tsc -p tsconfig.json --noEmit",
     "postinstall": "prisma generate",
     "load:candles": "tsx src/scripts/loadCryptoCandles.ts",
+    "macro:import-range": "tsx src/scripts/importMacroCalendarRange.ts",
+    "macro:prefetch-next-two-months": "tsx src/scripts/prefetchMacroNextTwoMonths.ts",
     "db:push": "prisma db push",
     "db:seed": "prisma db seed"
   },
@@ -21,7 +23,9 @@
     "@prisma/client": "^6.1.0",
     "dotenv": "^16.4.7",
     "fastify": "^5.2.1",
-    "node-cron": "^4.2.1"
+    "node-cron": "^4.2.1",
+    "sharp": "^0.34.5",
+    "undici": "^8.2.0"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",

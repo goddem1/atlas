@@ -104,57 +104,8 @@ model Goal {
   createdAt      DateTime       @default(now())
 }
 
-/// База справочника макро-индикаторов (англ. референс).
-model MacroIndicator {
-  id          String   @id @default(cuid())
-  name        String
-  category    String
-  country     String
-  source      String
-  unit        String
-  frequency   String
-  importance  String
-  description String?
-  createdAt   DateTime @default(now())
-
-  dataPoints   MacroDataPoint[]
-  translations MacroIndicatorTranslation[]
-}
-
-/// Переводы полей макро-индикатора по локали (по одному на locale).
-model MacroIndicatorTranslation {
-  id          String         @id @default(cuid())
-  indicatorId String
-  indicator   MacroIndicator @relation(fields: [indicatorId], references: [id], onDelete: Cascade)
-  locale      String
-  name        String
-  category    String
-  country     String
-  unit        String
-  frequency   String
-  description String?
-
-  @@unique([indicatorId, locale])
-}
-
-/// Исторические значения и будущие публикации макро-индикаторов.
-model MacroDataPoint {
-  id          String         @id @default(cuid())
-  indicatorId String
-  indicator   MacroIndicator @relation(fields: [indicatorId], references: [id], onDelete: Cascade)
-  date        DateTime
-  actual      Decimal?
-  forecast    Decimal?
-  previous    Decimal?
-  reference   String?
-  isPending   Boolean        @default(true)
-  createdAt   DateTime       @default(now())
-
-  @@index([indicatorId, date])
-  @@index([date, isPending])
-}
-
 enum TransactionType {
   BUY
   SELL
 }
+

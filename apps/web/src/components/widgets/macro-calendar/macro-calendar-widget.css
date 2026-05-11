@@ -1,0 +1,226 @@
+/* Меню как у price-widget (импорт price-sparkline-widget.css). */
+.macro-cal-shell {
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.macro-cal-card {
+  position: relative;
+  isolation: isolate;
+  box-sizing: border-box;
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 20px 10px 20px 20px;
+  color: var(--atlas-fg-primary);
+}
+
+.macro-cal-head {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 15px 20px 0px 20px;
+  cursor: grab;
+}
+
+.macro-cal-head:active {
+  cursor: grabbing;
+}
+
+.macro-cal-head-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.macro-cal-date {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  min-width: 0;
+}
+
+.macro-cal-col-labels {
+  display: flex;
+  justify-content: flex-end;
+  gap: 20px;
+  padding: 0 4px 0 0;
+  font-size: 20px;
+  color: var(--atlas-second-primary);
+  flex: 0 0 auto;
+}
+
+.macro-cal-col-labels span:nth-child(2) {
+  color: var(--atlas-second-color);
+}
+
+.macro-cal-divider {
+  position: absolute;
+  pointer-events: none;
+}
+
+.macro-cal-divider--rotated {
+  left: 50%;
+  top: 16.5%;
+  width: calc(100% - 24px);
+  height: 1px;
+  margin: 0;
+  transform-origin: center;
+  transform: translate(-50%, 0%) rotate(360deg);
+  background: linear-gradient(90deg, transparent, rgba(148, 163, 184, 0.35), transparent);
+}
+
+.macro-cal-list {
+  list-style: none;
+  margin: 0;
+  padding: 6px 6px 15px 20px;
+  flex: 1;
+  min-height: 0;
+}
+
+.macro-cal-row {
+  display: grid;
+  grid-template-columns: 22px 52px minmax(0, 1fr) 56px 56px;
+  align-items: center;
+  gap: 6px 8px;
+  padding: 8px 4px;
+  font-size: 20px;
+  line-height: 1.25;
+}
+
+.macro-cal-row--clickable {
+  cursor: pointer;
+}
+
+.macro-cal-row--clickable:hover {
+  background: rgba(148, 163, 184, 0.08);
+  border-radius: 10px;
+}
+
+.macro-cal-row--no-alert {
+  grid-template-columns: 52px minmax(0, 1fr) 56px 56px;
+}
+
+.macro-cal-alert-slot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.macro-cal-alert {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  color: #dc2626;
+  line-height: 1;
+  text-align: center;
+}
+
+.macro-cal-alert--mba {
+  color: #16a34a;
+}
+
+.macro-cal-time {
+  color: var(--atlas-fg-primary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.macro-cal-name {
+  margin: 0;
+  color: var(--atlas-fg-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.macro-cal-name span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.macro-cal-name span:nth-child(2) {
+  color: var(--atlas-second-color);
+  flex: 0 0 auto;
+}
+
+.macro-cal-val {
+  text-align: start;
+  font-variant-numeric: tabular-nums;
+  color: var(--atlas-fg-primary);
+}
+
+.macro-cal-val.is-loading {
+  animation: macro-cal-loading-pulse 0.9s ease-in-out infinite;
+}
+
+.macro-cal-val--second {
+  color: var(--atlas-second-color);
+}
+
+.macro-cal-val--muted {
+  color: #cbd5e1;
+}
+
+.macro-cal-footer {
+  padding: 0px 5px 16px 20px;
+  margin-top: auto;
+}
+
+.macro-cal-expand {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 16px;
+  color: var(--atlas-second-color);
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.macro-cal-expand:hover {
+  color: var(--atlas-third-color);
+}
+
+.macro-cal-msg {
+  margin: 0;
+  padding: 16px;
+  font-size: 14px;
+  color: var(--atlas-second-color);
+  text-align: center;
+}
+
+.macro-cal-msg--err {
+  color: #b91c1c;
+}
+
+@keyframes macro-cal-loading-pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-1px);
+  }
+}

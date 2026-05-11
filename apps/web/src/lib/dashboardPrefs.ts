@@ -1,7 +1,5 @@
 const STORAGE_KEY = "atlas-v1-dashboard-prefs";
 
-export const DASHBOARD_GRID_SIZE = 50;
-
 export type DashboardTheme = "light" | "dark";
 
 export type DashboardPrefs = {
