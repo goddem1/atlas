@@ -39,7 +39,7 @@ export function WidgetGalleryModal({ open, onClose, onPick }: Props) {
           <h2 id="widget-gallery-title" className="widget-gallery-title">
             Добавить виджет
           </h2>
-          <button type="button" onClick={onClose} className="asset-picker-close-button" aria-label="Закрыть">
+          <button type="button" onClick={onClose} className="asset-picker-close-button btn-glass" aria-label="Закрыть">
             <img src="/assets/portfolio-ui/close.svg" alt="" className="asset-picker-close-icon" />
           </button>
         </div>

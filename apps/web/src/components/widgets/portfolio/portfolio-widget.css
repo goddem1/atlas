@@ -1,3 +1,12 @@
+/* «Стекло»: класс .atlas-glass в разметке (src/styles/atlas-glass.css). */
+@import url("../shared/portfolio-menu.css");
+
+.portfolio-widget-shell {
+  position: relative;
+  width: 100%;
+  max-width: 500px;
+}
+
 .portfolio-widget-card {
   position: relative;
   display: grid;
@@ -9,20 +18,22 @@
   height: 250px;
   border-radius: 25px 10px 25px 25px;
   overflow: hidden;
-  background: white;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  cursor: grab;
+}
+
+.portfolio-widget-card:active {
+  cursor: grabbing;
 }
 
 .portfolio-widget-left {
   padding: 20px 10px 20px 20px;
-  border-right: 1px solid #e5e7eb;
 }
 
 .portfolio-total {
   font-size: 34px;
   line-height: 1;
   letter-spacing: -0.03em;
-  color: #595959;
+  color: var(--atlas-fg-primary);
   font-weight: 400;
 }
 
@@ -34,7 +45,7 @@
 }
 
 .portfolio-pnl-positive {
-  color: #595959;
+  color: var(--atlas-fg-primary);
   font-size: 20px;
   line-height: 1;
   font-weight: 400;
@@ -64,7 +75,7 @@
 .portfolio-chart-tooltip {
   border-radius: 14px;
   font-size: 12px;
-  color: #595959;
+  color: var(--atlas-fg-primary);
   background: rgba(183, 183, 183, 0.5);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
@@ -74,14 +85,14 @@
 }
 
 .portfolio-chart-tooltip-date {
-  color: #595959;
+  color: var(--atlas-fg-primary);
   font-size: 12px;
   line-height: 1;
   font-weight: 400;
 }
 
 .portfolio-chart-tooltip-value {
-  color: #595959;
+  color: var(--atlas-fg-primary);
   font-size: 24px;
   line-height: 1;
   font-weight: 400;
@@ -93,21 +104,24 @@
   gap: 12.6px;
 }
 
-.portfolio-timeframe-button {
-  border: 0;
+.portfolio-timeframe-switcher > .btn-on-glass {
   border-radius: 7.5px;
-  min-width: 45px;
+  min-width: 44px;
   height: 24px;
-  background: #e5e7eb;
-  color: #555;
   font-size: 16px;
-  line-height: 1;
-  cursor: pointer;
-  transition: all 0.15s ease;
 }
 
-.portfolio-timeframe-button-active {
-  background: #1d9bf0;
+.portfolio-timeframe-switcher > .btn-on-glass.portfolio-timeframe-button-active,
+.portfolio-timeframe-switcher > .btn-on-glass.portfolio-timeframe-button-active:hover,
+.portfolio-timeframe-switcher > .btn-on-glass.portfolio-timeframe-button-active:active {
+  background-color: #1d9bf0;
+  color: #fff;
+}
+
+html[data-dashboard-theme="dark"] .portfolio-timeframe-switcher > .btn-on-glass.portfolio-timeframe-button-active:not(:disabled):not(.disabled),
+html[data-dashboard-theme="dark"] .portfolio-timeframe-switcher > .btn-on-glass.portfolio-timeframe-button-active:hover:not(:disabled):not(.disabled),
+html[data-dashboard-theme="dark"] .portfolio-timeframe-switcher > .btn-on-glass.portfolio-timeframe-button-active:active:not(:disabled):not(.disabled) {
+  background-color: #1d9bf0;
   color: #fff;
 }
 
@@ -116,108 +130,21 @@
   padding: 20px 20px 20px 10px;
 }
 
-.portfolio-menu-wrap {
+.portfolio-widget-divider {
   position: absolute;
-  inset-inline-end: 0;
-  inset-block-start: 0;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  z-index: 25;
-}
-
-.portfolio-menu-trigger {
-  width: 20px;
-  height: 20px;
-  border: 0;
-  border-radius: 0 10px 0 30px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  padding: 0;
-}
-
-.portfolio-menu-trigger-icon {
-  width: 12px;
-  height: 12px;
-  object-fit: contain;
-  transform: rotate(45deg);
-  filter: brightness(0) saturate(100%) invert(35%) sepia(0%) saturate(1%) hue-rotate(173deg)
-    brightness(95%) contrast(90%);
-}
-
-.portfolio-menu-rail {
-  position: absolute;
-  top: 0;
-  height: 46px;
-  padding: 6px 10px;
-  border-radius: 0px 10px 0 22px;
-  background: rgba(200, 200, 200, 0.8);
-  backdrop-filter: blur(3px);
-  -webkit-backdrop-filter: blur(3px);
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  transform: translateX(0px);
-  opacity: 0;
+  left: 50%;
+  top: 12px;
+  bottom: 12px;
+  width: 1px;
+  margin: 0;
+  transform: translateX(-0.5px) rotate(180deg);
+  background: linear-gradient(180deg, transparent, rgba(148, 163, 184, 0.35), transparent);
   pointer-events: none;
-  transition: transform 180ms ease, opacity 160ms ease;
 }
 
-.portfolio-menu-wrap.is-open .portfolio-menu-rail,
-.portfolio-menu-wrap:hover .portfolio-menu-rail {
-  transform: translateX(0);
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.portfolio-menu-circle-btn {
-  width: 36px;
-  height: 36px;
-  border: 0;
-  border-radius: 999px;
-  background: white;
-  color: #595959;
-  font-size: 26px;
-  line-height: 1;
-  font-weight: 400;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-}
-
-.portfolio-menu-circle-icon {
-  width: 18px;
-  height: 18px;
-  object-fit: contain;
-  filter: brightness(0) saturate(100%) invert(35%) sepia(0%) saturate(1%) hue-rotate(173deg)
-    brightness(95%) contrast(90%);
-}
-
-.portfolio-menu-circle-icon-add {
-  width: 17px;
-  height: 17px;
-}
-
-.portfolio-menu-circle-icon-close {
+.portfolio-widget-shell .portfolio-menu-circle-icon-close {
   width: 14px;
   height: 14px;
-}
-
-.portfolio-menu-circle-icon-arrow {
-  transform: rotate(45deg);
-}
-
-.portfolio-menu-circle-btn:hover {
-  background: #ffffff;
-}
-
-.portfolio-menu-circle-btn.disabled,
-.portfolio-menu-circle-btn:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
 }
 
 .portfolio-asset-list {
@@ -245,7 +172,7 @@
 .portfolio-asset-symbol {
   font-size: 18px;
   line-height: 1;
-  color: #595959;
+  color: var(--atlas-fg-primary);
 }
 
 .portfolio-asset-values {
@@ -259,11 +186,11 @@
 }
 
 .portfolio-asset-value-positive {
-  color: #595959;
+  color: var(--atlas-fg-primary);
 }
 
 .portfolio-asset-value-negative {
-  color: #595959;
+  color: var(--atlas-fg-primary);
 }
 
 .portfolio-asset-pnl-positive,
@@ -274,7 +201,7 @@
 }
 
 .portfolio-asset-pnl-positive {
-  color: #595959;
+  color: #34C759;
 }
 
 .portfolio-asset-pnl-negative {
@@ -284,7 +211,7 @@
 .portfolio-more-button {
   border: 0;
   background: transparent;
-  color: #595959;
+  color: var(--atlas-fg-primary);
   margin-top: 10px;
   font-size: 16px;
   cursor: pointer;
@@ -314,11 +241,9 @@
   font-size: 13px;
 }
 
-.portfolio-input {
-  border-radius: 10px;
-  padding: 8px 10px;
-  font-size: 14px;
-  background: #fff;
+.portfolio-input::placeholder {
+  color: var(--atlas-input-placeholder);
+  opacity: 1;
 }
 
 .portfolio-toggle {
@@ -370,8 +295,16 @@
 }
 
 .portfolio-button-primary {
-  background: #0088FF;
+  background: var(--atlas-primary-btn-bg);
   color: #fff;
+}
+
+.portfolio-button-primary:hover {
+  background: var(--atlas-primary-btn-hover-bg);
+}
+
+.portfolio-button-primary:active {
+  background: var(--atlas-primary-btn-active-bg);
 }
 
 .portfolio-error {
@@ -403,7 +336,7 @@
 
 .portfolio-all-assets-item-value {
   margin: 0;
-  color: #595959;
+  color: var(--atlas-fg-primary);
   font-size: 24px;
   line-height: 1.2;
   font-weight: 400;
@@ -416,11 +349,13 @@
 }
 
 .portfolio-confirm-dialog {
-  width: min(420px, calc(100vw - 32px));
+  width: min(500px, calc(100vw - 32px));
   border-radius: 30px;
-  background: rgba(236, 236, 236, 0.35);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  background-color: var(--atlas-glass-bg);
+  border: var(--atlas-glass-border);
+  box-shadow: var(--atlas-glass-shadow);
+  backdrop-filter: var(--atlas-glass-backdrop);
+  -webkit-backdrop-filter: var(--atlas-glass-backdrop);
   padding: 20px 30px;
 }
 
@@ -436,13 +371,12 @@
 
 .portfolio-confirm-text {
   margin: 0;
-  color: #595959;
+  color: var(--atlas-fg-primary);
   font-size: 20px;
   line-height: 1.3;
 }
 
 .portfolio-confirm-actions {
-  margin-top: 16px;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
@@ -451,9 +385,7 @@
 .portfolio-transaction-modal {
   width: min(500px, calc(100vw - 32px));
   border-radius: 36px;
-  background: transparent;
   box-shadow: none;
-  border: 0;
 }
 
 /* Выпадающие списки (combobox) не должны обрезаться базовым overflow у .asset-picker-dialog */
@@ -464,8 +396,11 @@
 .portfolio-detail-modal {
   width: min(500px, calc(100vw - 32px));
   border-radius: 30px;
-  background: rgba(236, 236, 236, 0.8);
-  backdrop-filter: blur(6px);
+  background-color: var(--atlas-input-bg-light);
+  border: var(--atlas-glass-border);
+  box-shadow: var(--atlas-glass-shadow);
+  backdrop-filter: var(--atlas-glass-backdrop);
+  -webkit-backdrop-filter: var(--atlas-glass-backdrop);
 }
 
 .asset-picker-dialog.portfolio-detail-modal {
@@ -488,7 +423,7 @@
   font-size: 20px;
   line-height: 1;
   letter-spacing: -0.02em;
-  color: #595959;
+  color: var(--atlas-fg-primary);
 }
 
 .portfolio-icon-circle-btn {
@@ -508,8 +443,7 @@
   width: 22px;
   height: 22px;
   object-fit: contain;
-  filter: brightness(0) saturate(100%) invert(35%) sepia(0%) saturate(1%) hue-rotate(173deg)
-    brightness(95%) contrast(90%);
+  filter: var(--atlas-search-icon-filter);
 }
 
 .portfolio-ui-fallback {
@@ -522,7 +456,7 @@
   z-index: 0;
   border-radius: 28px;
   background: rgba(236, 236, 236, 0.55);
-  padding: 20px 30px;
+  padding: 20px;
   display: grid;
   gap: 15px;
   backdrop-filter: blur(6px);
@@ -553,7 +487,7 @@
   border-radius: 18px;
   border: 0;
   background: white;
-  color: #595959;
+  color: var(--atlas-fg-primary);
   font-size: 22px;
   line-height: 1;
   display: inline-flex;
@@ -568,25 +502,28 @@
   color: #fff;
 }
 
-.portfolio-tx-multi-plus {
-  background: rgba(255, 255, 255, 0.92);
-  color: #6b6b70;
-}
-
 .portfolio-tx-multi-icon {
   width: 22px;
   height: 22px;
+  filter: brightness(0) saturate(100%) invert(95%) sepia(0%) saturate(300%) hue-rotate(201deg) brightness(100%) contrast(100%);
+  object-fit: contain;
+}
+
+.main-portfolio-tx-multi-icon {
+  width: 22px;
+  height: 22px;
+  filter: var(--atlas-search-icon-filter);
   object-fit: contain;
 }
 
 .portfolio-tx-multi-btn:hover {
-  background: #E5E5EA;
+  background-color: var(--atlas-btn-glass-hover-bg);
 }
 
 /* Hover on active enables delete affordance (×) */
 .portfolio-tx-multi-btn.active:hover {
-  background: #ffffff;
-  color: #595959;
+  background: rgba(0, 0, 255, 0.7);
+  color: #f2f2f7;
 }
 
 .portfolio-transaction-modal .portfolio-buy-sell-toggle {
@@ -687,7 +624,7 @@
   height: 44px;
   border-radius: 12.5px;
   font-size: 20px;
-  color: #595959;
+  color: var(--atlas-fg-primary);
   background: transparent;
   cursor: pointer;
 }
@@ -714,7 +651,7 @@
   left: 22px;
   top: 50%;
   transform: translateY(-50%);
-  color: #a4a4a9;
+  color: var(--atlas-ghost-label-color);
   font-size: 20px;
   z-index: 2;
   pointer-events: none;
@@ -726,18 +663,32 @@
   top: 6px;
   transform: none;
   font-size: 10px;
-  color: #9e9ea5;
+  color: var(--atlas-ghost-label-floated-color);
   z-index: 90;
   border-radius: 8px;
 }
 
 .portfolio-input-ghost {
+  width: 100%;
+  display: block;
   height: 50px;
   border-radius: 15px;
-  background: #FFFFFF;
+  box-sizing: border-box;
   font-size: 20px;
-  color: #595959;
+  color: var(--atlas-input-fg);
+  background: var(--atlas-input-bg);
+  border: 1.5px solid transparent;
+  caret-color: var(--atlas-input-fg);
   padding: 0px 20px;
+}
+
+.portfolio-input-ghost-select-active {
+  padding-left: 52px;
+}
+
+.portfolio-input-ghost::placeholder {
+  color: var(--atlas-input-placeholder);
+  opacity: 1;
 }
 
 .portfolio-ghost-field:focus-within .portfolio-input-ghost,
@@ -750,7 +701,7 @@
 }
 
 .portfolio-ghost-field:focus-within .portfolio-input-ghost {
-  border: 1.5px solid #0088FF;
+  border-color: var(--atlas-input-focus-border);
 }
 
 .portfolio-asset-combobox {
@@ -762,10 +713,9 @@
   z-index: 60;
 }
 
-.portfolio-asset-combobox-input {
-  width: 100%;
-  display: block;
-  padding-left: 48px;
+.portfolio-asset-combobox-input::placeholder {
+  color: var(--atlas-input-placeholder);
+  opacity: 1;
 }
 
 .portfolio-asset-combobox-arrow {
@@ -777,8 +727,12 @@
   height: 18px;
   object-fit: contain;
   pointer-events: none;
-  filter: brightness(0) saturate(100%) invert(35%) sepia(0%) saturate(1%) hue-rotate(173deg)
-    brightness(95%) contrast(90%);
+  transition: transform 0.18s ease;
+  filter: var(--atlas-search-icon-filter);
+}
+
+.portfolio-asset-combobox:focus-within .portfolio-asset-combobox-arrow {
+  transform: translateY(-50%) rotate(180deg);
 }
 
 .portfolio-asset-combobox .portfolio-inline-coin {
@@ -794,10 +748,10 @@
   gap: 14px;
 }
 
-/* Иконки выпадающего меню */
+/* Иконки выпадающего меню выбора монеты при добавлении транзакции*/
 .portfolio-inline-coin {
-  width: 20px;
-  height: 20px;
+  width: 26px;
+  height: 26px;
   border-radius: 999px;
   object-fit: cover;
 }
@@ -822,43 +776,53 @@
   top: calc(100% + 5px);
   margin-top: 1px;
   border-radius: 15px;
-  background: rgba(232, 232, 232, 0.8);
-  -webkit-backdrop-filter: blur(20px);
-  backdrop-filter: blur(20px);
-  padding: 3px;
+  padding: 5px;
   max-height: 240px;
   overflow-y: auto;
-  z-index: 80;
-}
-
-.portfolio-asset-select-menu-portal {
-  position: fixed;
-  /* Выше .portfolio-transaction-overlay (1160), ниже confirm (1200) */
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  background: var(--atlas-glass-bg);
+  border: var(--atlas-glass-border);
+  box-shadow: var(--atlas-glass-shadow);
+  backdrop-filter: var(--atlas-glass-backdrop);
+  -webkit-backdrop-filter: var(--atlas-glass-backdrop);
   z-index: 1190;
-  background: rgba(232, 232, 232, 0.35);
-  -webkit-backdrop-filter: blur(18px);
-  backdrop-filter: blur(10px);
 }
 
+.portfolio-asset-select-menu::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+/* Добавление транзакции - Элементы в меню выбора монет */
 .portfolio-asset-option {
   width: 100%;
   height: 40px;
   background: transparent;
   border-radius: 12.5px;
-  padding: 8px 20px;
+  padding: 7px 10px;
+  margin: 5px 0px 5px 0px;
   display: flex;
   align-items: center;
   gap: 5px;
   font-size: 20px;
-  color: #4d4d53;
+  color: var(--atlas-fg-primary);
   cursor: pointer;
   text-align: left;
 }
 
 .portfolio-asset-option.active,
 .portfolio-asset-option:hover {
-  background: #C7C7CC;
+  background: #00000020;
+}
+
+.portfolio-asset-option:hover {
   color: #f6fbff;
+}
+
+.portfolio-asset-option--active {
+  color: #F2F2F7;
 }
 
 .portfolio-asset-option-empty {
@@ -961,7 +925,7 @@
 }
 
 .portfolio-goal-split-divider {
-  color: #595959;
+  color: var(--atlas-fg-primary);
   font-size: 20px;
   font-weight: 400;
 }
@@ -979,7 +943,7 @@
   line-height: 1;
   font-size: 20px;
   font-weight: 400;
-  color: #595959;
+  color: var(--atlas-fg-primary);
 }
 
 .portfolio-goal-part-btn {
@@ -1007,12 +971,13 @@
   z-index: 80;
 }
 
+/* Меню выбора монеты */
 .portfolio-goal-part-menu-hint {
   border-radius: 10px;
   padding: 8px 10px;
   background: #dbdbde;
   color: #9a9aa0;
-  font-size: 18px;
+  font-size: 20px;
 }
 
 .portfolio-goal-part-menu button {
@@ -1026,6 +991,21 @@
 
 .portfolio-goal-part-menu button:hover {
   background: #C7C7CC;
+}
+
+/* Единое «стекло» для подложек внутри add/edit transaction модалки. */
+.portfolio-modal-body.portfolio-transaction-body .portfolio-transaction-section,
+.portfolio-modal-body.portfolio-transaction-body .portfolio-buy-sell-toggle,
+.portfolio-modal-body.portfolio-transaction-body .portfolio-currency-switch,
+.portfolio-modal-body.portfolio-transaction-body .portfolio-goal-part-btn,
+.portfolio-modal-body.portfolio-transaction-body .portfolio-goal-part-menu-hint,
+.portfolio-modal-body.portfolio-transaction-body .portfolio-transaction-tile-btn,
+.portfolio-modal-body.portfolio-transaction-body .portfolio-goal-add-btn {
+  background-color: var(--atlas-glass-bg);
+  border: var(--atlas-glass-border);
+  box-shadow: var(--atlas-glass-shadow);
+  backdrop-filter: var(--atlas-glass-backdrop);
+  -webkit-backdrop-filter: var(--atlas-glass-backdrop);
 }
 
 .portfolio-goal-part-fraction {
@@ -1059,6 +1039,7 @@
   display: flex;
   align-items: center;
   gap: 15px;
+  color: var(--atlas-third-color);
 }
 
 .portfolio-icon-soft-btn {
@@ -1067,7 +1048,7 @@
   border: 0;
   border-radius: 12px;
   background: transparent;
-  color: #b5b5ba;
+  color: inherit;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1075,13 +1056,13 @@
 }
 
 .portfolio-modal-body.portfolio-detail-body {
-  padding: 15px 30px 30px;
+  padding: 5px 30px 30px;
   gap: 15px;
 }
 
 .portfolio-detail-summary {
-  border-top: 2px solid #bcbcc1;
-  border-bottom: 2px solid #bcbcc1;
+  border-top: 2px solid var(--atlas-third-color);
+  border-bottom: 2px solid var(--atlas-third-color);
   padding: 15px 0;
   display: grid;
   gap: 10px;
@@ -1093,12 +1074,12 @@
   align-items: center;
   font-weight: 400;
   font-size: 20px;
-  color: #595959;
+  color: var(--atlas-fg-primary);
 }
 
 .portfolio-detail-summary-row strong {
   font-size: 20px;
-  color: #595959;
+  color: var(--atlas-fg-primary);
   font-weight: 400;
 }
 
@@ -1111,7 +1092,7 @@
 }
 
 .portfolio-detail-list-transactions {
-  border-bottom: 2px solid #bcbcc1;
+  border-bottom: 2px solid var(--atlas-third-color);
   padding-bottom: 15px;
 }
 
@@ -1129,14 +1110,14 @@
 
 .portfolio-detail-sub {
   font-size: 20px;
-  color: #595959;
+  color: var(--atlas-fg-primary);
   line-height: 1;
   font-weight: 400;
 }
 
 .portfolio-detail-goal-title {
   font-size: 14px;
-  color: #595959;
+  color: var(--atlas-fg-primary);
   font-weight: 400;
 }
 
@@ -1146,16 +1127,16 @@
 }
 
 .portfolio-detail-goal-label {
-  color: #595959;
+  color: var(--atlas-third-color);
   font-size: 12px;
 }
 
 .portfolio-detail-goal-price {
-  color: #595959;
+  color: var(--atlas-fg-primary);
 }
 
 .portfolio-detail-goal-volume {
-  color: #595959;
+  color: var(--atlas-fg-primary);
   font-size: 12px;
   font-weight: 400;
   line-height: 1;
@@ -1172,11 +1153,11 @@
 }
 
 .portfolio-detail-tx-price {
-  color: #595959;
+  color: var(--atlas-fg-primary);
 }
 
 .portfolio-detail-tx-date {
-  color: #595959;
+  color: var(--atlas-third-color);
   font-size: 12px;
 }
 
@@ -1190,7 +1171,7 @@
 .portfolio-detail-tx-values {
   font-size: 20px;
   font-weight: 400;
-  color: #595959;
+  color: var(--atlas-fg-primary);
 }
 
 .portfolio-detail-actions {
@@ -1200,7 +1181,7 @@
 }
 
 .portfolio-detail-actions .portfolio-ui-icon {
-  opacity: 0.24; /* ~ #D7D7D7 when base icon is #595959 on light bg */
+  opacity: 0.24; /* ~ #D7D7D7 when base icon uses --atlas-fg-primary on light bg */
   transition: opacity 120ms ease;
 }
 
@@ -1209,7 +1190,7 @@
 }
 
 .portfolio-detail-actions .portfolio-icon-soft-btn:active .portfolio-ui-icon {
-  opacity: 1; /* #595959 */
+  opacity: 1; /* --atlas-fg-primary */
 }
 
 .portfolio-goal-add-line {

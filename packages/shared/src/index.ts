@@ -132,3 +132,59 @@ export interface PortfolioAssetDetailResponse {
   transactions: PortfolioTransactionDto[];
   goals: PortfolioGoalDto[];
 }
+
+export type MacroEventImportance = "low" | "medium" | "high";
+
+export interface MacroEventRow {
+  id: string;
+  indicatorId: string;
+  locale: string;
+  country: string;
+  category: string;
+  name: string;
+  unit: string;
+  importance: MacroEventImportance;
+  date: string; // scheduled datetime ISO
+  reference: string | null;
+  isPending: boolean;
+  actual: string | null;
+  forecast: string | null;
+  previous: string | null;
+}
+
+export interface MacroEventsResponse {
+  events: MacroEventRow[];
+  chartByIndicator?: Record<
+    string,
+    {
+      unit: string;
+      tiny: Array<{ label: string; value: number }>;
+      year: Array<{ label: string; value: number }>;
+    }
+  >;
+}
+
+export interface MacroSeriesIndicatorDto {
+  id: string;
+  name: string;
+  unit: string;
+  country: string;
+  category: string;
+  /** Например `weekly`, `monthly` — для оси X и подсказки графика. */
+  frequency?: string;
+}
+
+export interface MacroSeriesPointDto {
+  id: string;
+  date: string;
+  reference: string | null;
+  isPending: boolean;
+  actual: string | null;
+  forecast: string | null;
+  previous: string | null;
+}
+
+export interface MacroSeriesResponse {
+  indicator: MacroSeriesIndicatorDto;
+  points: MacroSeriesPointDto[];
+}

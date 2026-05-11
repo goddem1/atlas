@@ -21,7 +21,7 @@ export function TimeframeSwitcher({ value, onChange }: Props) {
         <button
           key={option.id}
           type="button"
-          className={`portfolio-timeframe-button${
+          className={`btn-on-glass${
             value === option.id ? " portfolio-timeframe-button-active" : ""
           }`}
           onClick={() => onChange(option.id)}

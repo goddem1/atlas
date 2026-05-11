@@ -12,31 +12,106 @@
   position: absolute;
   inset: 0;
   border: 0;
-  background: rgba(0, 0, 0, 0.35);
+  background: rgba(0, 0, 0, 0.1);
   backdrop-filter: blur(4px);
 }
 
 .asset-picker-dialog {
   position: relative;
+  isolation: isolate;
   display: flex;
   flex-direction: column;
-  width: min(700px, calc(100vw - 32px));
+  gap: 15px;
+  width: min(550px, calc(100vw - 32px));
   max-height: calc(100dvh - 32px);
+  /*
   overflow: hidden;
-  border-radius: 36px;
-  background: rgba(200, 200, 200, 0.6);
+  border-radius: 34px;
+  background-color: var(--atlas-glass-bg);
+  border: var(--atlas-glass-border);
+  box-shadow: var(--atlas-glass-shadow);
+  backdrop-filter: var(--atlas-glass-backdrop);
+  -webkit-backdrop-filter: var(--atlas-glass-backdrop);
+  */
+}
+
+.asset-picker-dialog::before {
+  /* content: ""; */
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background:
+    radial-gradient(circle at 20% 100%, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0) 52%),
+    radial-gradient(circle at 100% 20%, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0) 52%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.asset-picker-dialog::after {
+  /* content: ""; */
+  position: absolute;
+  inset: -35% -20% auto;
+  height: 55%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0) 70%);
+  filter: blur(2px);
+  opacity: 0.7;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.asset-picker-dialog > * {
+  position: relative;
+  z-index: 1;
 }
 
 .asset-picker-header {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 20px 30px 10px;
+  gap: 15px;
+  padding: 0;
+}
+
+.asset-picker-search-panel {
+  flex: 1;
+  /* 
+  min-width: 0;
+  border-radius: 999px;
+  background-color: var(--atlas-glass-bg);
+  border: var(--atlas-glass-border);
+  box-shadow: var(--atlas-glass-shadow);
+  */
+  backdrop-filter: var(--atlas-glass-backdrop);
+  -webkit-backdrop-filter: var(--atlas-glass-backdrop);
+}
+
+.asset-picker-close-panel {
+  flex-shrink: 0;
 }
 
 .asset-picker-search-label {
+  position: relative;
   min-width: 0;
-  flex: 1;
+  display: block;
+}
+
+.asset-picker-search-icon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  width: 32px;
+  height: 32px;
+  transform: translateY(-50%);
+  color: var(--atlas-fg-primary);
+  background-color: currentColor;
+  -webkit-mask: url("/assets/portfolio-ui/search.svg") center / contain no-repeat;
+  mask: url("/assets/portfolio-ui/search.svg") center / contain no-repeat;
+  opacity: 0.85;
+  pointer-events: none;
 }
 
 .asset-picker-sr-only {
@@ -52,67 +127,87 @@
 
 .asset-picker-search-input {
   width: 100%;
-  padding: 10px 16px;
+  height: 60px;
+  padding: 10px 16px 10px 60px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.4);
-  color: #595959;
-  font-size: 20px;
+  border: var(--atlas-glass-border);
+  background-color: var(--atlas-glass-bg);
+  box-shadow: var(--atlas-glass-shadow);
+  backdrop-filter: var(--atlas-glass-backdrop);
+  -webkit-backdrop-filter: var(--atlas-glass-backdrop);
+  color: var(--atlas-fg-primary);
+  font-size: 22px;
   outline: none;
 }
 
 .asset-picker-search-input::placeholder {
-  color: #6b7280;
+  color: #808080;
+  font-size: 22px;
+  opacity: 1;
 }
 
-.asset-picker-search-input:focus {
-  border-color: #0088FF;
-  /*box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.3);*/
+.asset-picker-search-input::-webkit-search-cancel-button,
+.asset-picker-search-input::-webkit-search-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+  display: none;
 }
 
 .asset-picker-close-button {
-  width: 50px;
-  height: 50px;
-  flex-shrink: 0;
-  border: 0;
+  width: 60px;
+  height: 60px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.35);
-  color: #595959;
-  font-size: 24px;
-  line-height: 1;
-  cursor: pointer;
-  transition: background-color 0.15s ease;
   display: inline-flex;
   align-items: center;
   justify-content: center;
 }
 
 .asset-picker-close-button .asset-picker-close-icon {
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
   object-fit: contain;
-  filter: brightness(0) saturate(100%) invert(35%) sepia(0%) saturate(1%) hue-rotate(173deg)
-    brightness(95%) contrast(90%);
+  filter: var(--atlas-search-icon-filter);
 }
 
 .asset-picker-close-button:hover {
-  background: rgba(255, 255, 255, 0.5);
+  background-color: var(--atlas-btn-glass-hover-bg);
+}
+
+.asset-picker-close-button:active {
+  background-color: var(--atlas-btn-glass-active-bg);
 }
 
 .asset-picker-list {
   min-height: 0;
   flex: 1;
   margin: 0;
-  padding: 0px 20px 20px;
+  padding: 15px;
   list-style: none;
   overflow-y: auto;
   overscroll-behavior: contain;
 }
 
+.asset-picker-list-panel {
+  min-height: 0;
+  flex: 1;
+  border-radius: 35px;
+  background-color: var(--atlas-glass-bg);
+  border: var(--atlas-glass-border);
+  box-shadow: var(--atlas-glass-shadow);
+  backdrop-filter: var(--atlas-glass-backdrop);
+  -webkit-backdrop-filter: var(--atlas-glass-backdrop);
+  overflow: hidden;
+}
+
+.asset-picker-list > li + li {
+  margin-top: 5px;
+}
+
 .asset-picker-message {
   padding: 32px 16px;
   text-align: center;
-  color: #4b5563;
-  font-size: 14px;
+  color: var(--atlas-second-color);
+  font-size: 20px;
 }
 
 .asset-picker-message-error {
@@ -130,7 +225,7 @@
   width: 100%;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 5px;
   padding: 10px;
   border: 0;
   border-radius: 16px;
@@ -141,21 +236,23 @@
 }
 
 .asset-picker-item-button:hover {
-  background: rgba(255, 255, 255, 0.35);
+  background: var(--atlas-list-on-glass-hover-bg);
 }
 
 .asset-picker-item-icon {
-  width: 50px;
-  height: 50px;
+  width: 30px;
+  height: 30px;
   flex-shrink: 0;
   border-radius: 12px;
   object-fit: contain;
-  padding: 4px;
 }
 
 .asset-picker-item-text {
   min-width: 0;
   flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 5px;
 }
 
 .asset-picker-item-name {
@@ -163,21 +260,19 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  color: #595959;
+  color: var(--atlas-second-color);
   font-size: 14px;
   font-weight: 400;
-  line-height: 1;
-  margin: 4px 0 0;
+  padding-top: 1px;
 }
 
 .asset-picker-item-symbol {
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  color: #595959;
+  color: var(--atlas-fg-primary);
   font-size: 24px;
   font-weight: 400;
   line-height: 1;
+  margin: 0;
 }
 
 @media (max-width: 640px) {

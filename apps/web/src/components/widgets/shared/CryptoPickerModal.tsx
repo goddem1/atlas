@@ -58,72 +58,79 @@ export function CryptoPickerModal({ open, items, loadError, onClose, onSelect }:
         onClick={(e) => e.stopPropagation()}
       >
         <div className="asset-picker-header">
-          <label className="asset-picker-search-label">
-            <span className="asset-picker-sr-only" id="crypto-picker-title">
-              Поиск актива
-            </span>
-            <input
-              type="search"
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Поиск по имени или тикеру…"
-              className="asset-picker-search-input"
-              autoFocus
-            />
-          </label>
-          <button
-            type="button"
-            onClick={onClose}
-            className="asset-picker-close-button"
-            aria-label="Закрыть"
-          >
-            <img src="/assets/portfolio-ui/close.svg" alt="" className="asset-picker-close-icon" />
-          </button>
+          <div className="asset-picker-search-panel">
+            <label className="asset-picker-search-label">
+              <span className="asset-picker-sr-only" id="crypto-picker-title">
+                Поиск актива
+              </span>
+              <span className="asset-picker-search-icon" aria-hidden />
+              <input
+                type="search"
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Введите название или тикер актива"
+                className="asset-picker-search-input"
+                autoFocus
+              />
+            </label>
+          </div>
+          <div className="asset-picker-close-panel">
+            <button
+              type="button"
+              onClick={onClose}
+              className="asset-picker-close-button btn-glass"
+              aria-label="Закрыть"
+            >
+              <img src="/assets/portfolio-ui/close.svg" alt="" className="asset-picker-close-icon" />
+            </button>
+          </div>
         </div>
 
-        <ul className="asset-picker-list">
-          {loadError ? (
-            <li className="asset-picker-message asset-picker-message-error">
-              Не удалось загрузить активы: {loadError}
-            </li>
-          ) : items.length === 0 ? (
-            <li className="asset-picker-message">
-              В справочнике нет записей. Запустите API, БД и{" "}
-              <code className="asset-picker-code">pnpm db:seed</code>.
-            </li>
-          ) : filtered.length === 0 ? (
-            <li className="asset-picker-message">
-              Ничего не найдено
-            </li>
-          ) : (
-            filtered.map((c) => (
-              <li key={c.id}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    onSelect(c);
-                    onClose();
-                  }}
-                  className="asset-picker-item-button"
-                >
-                  <img
-                    src={c.iconUrl}
-                    alt=""
-                    className="asset-picker-item-icon"
-                  />
-                  <div className="asset-picker-item-text">
-                    <p className="asset-picker-item-symbol">
-                      {c.symbol}
-                    </p>
-                    <p className="asset-picker-item-name">
-                      {c.name}
-                    </p>
-                  </div>
-                </button>
+        <div className="asset-picker-list-panel">
+          <ul className="asset-picker-list">
+            {loadError ? (
+              <li className="asset-picker-message asset-picker-message-error">
+                Не удалось загрузить активы: {loadError}
               </li>
-            ))
-          )}
-        </ul>
+            ) : items.length === 0 ? (
+              <li className="asset-picker-message">
+                В справочнике нет записей. Запустите API, БД и{" "}
+                <code className="asset-picker-code">pnpm db:seed</code>.
+              </li>
+            ) : filtered.length === 0 ? (
+              <li className="asset-picker-message">
+                Ничего не найдено
+              </li>
+            ) : (
+              filtered.map((c) => (
+                <li key={c.id}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onSelect(c);
+                      onClose();
+                    }}
+                    className="asset-picker-item-button list-on-glass"
+                  >
+                    <img
+                      src={c.iconUrl}
+                      alt=""
+                      className="asset-picker-item-icon"
+                    />
+                    <div className="asset-picker-item-text">
+                      <p className="asset-picker-item-symbol">
+                        {c.symbol}
+                      </p>
+                      <p className="asset-picker-item-name">
+                        {c.name}
+                      </p>
+                    </div>
+                  </button>
+                </li>
+              ))
+            )}
+          </ul>
+        </div>
       </div>
     </div>,
     document.body,

@@ -157,7 +157,7 @@ export function PriceSparklineCard({
   };
 
   return (
-    <div className={cn("price-widget-card", className)}>
+    <div className={cn("price-widget-shell", className)}>
       <div
         className={`portfolio-menu-wrap${menuOpen ? " is-open" : ""}`}
         onMouseEnter={() => setMenuOpen(true)}
@@ -165,7 +165,7 @@ export function PriceSparklineCard({
       >
         <button
           type="button"
-          className="portfolio-menu-trigger"
+          className="portfolio-menu-trigger atlas-fg-primary"
           onClick={() => setMenuOpen((v) => !v)}
           aria-label="Меню виджета"
           aria-expanded={menuOpen}
@@ -175,7 +175,7 @@ export function PriceSparklineCard({
         <div className="portfolio-menu-rail" aria-hidden={!menuOpen}>
           <button
             type="button"
-            className="portfolio-menu-circle-btn"
+            className="btn-on-glass btn-on-glass--soft"
             onClick={() => onDeleteWidget?.()}
             aria-label="Удалить виджет"
           >
@@ -183,6 +183,7 @@ export function PriceSparklineCard({
           </button>
         </div>
       </div>
+      <div className="atlas-glass price-widget-card">
       <div className={cn("price-widget-header", dragCn)}>
         <div className="price-widget-asset-head">
           {iconEl}
@@ -285,6 +286,7 @@ export function PriceSparklineCard({
         {statusText ? (
           <p className="price-widget-status">{statusText}</p>
         ) : null}
+      </div>
       </div>
     </div>
   );

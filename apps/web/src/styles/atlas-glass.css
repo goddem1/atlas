@@ -1,0 +1,291 @@
+/**
+ * Единое «стекло» для карточек и панелей (визуал как у price-widget-card).
+ * Настройка в одном месте: токены :root и при необходимости правки .atlas-glass.
+ *
+ * Основной цвет текста UI: --atlas-fg-primary. На дашборде значение
+ * переключается через `data-dashboard-theme` на `document.documentElement`
+ * (см. DashboardPage).
+ */
+:root {
+  --atlas-fg-primary: #595959;
+  --atlas-glass-bg: rgba(255, 255, 255, 0.05);
+  --atlas-side-glass-bg: rgba(0, 0, 0, 0.3);
+  --atlas-glass-bg-light: rgba(255, 255, 255, 0.1);
+  /* Светлая тема по умолчанию; на дашборде см. html[data-dashboard-theme]. */
+  --atlas-glass-border: 1px solid rgba(255, 255, 255, 0.6);
+  --atlas-glass-shadow:
+    0 20px 50px 0 rgba(0, 0, 0, 0.05), 
+    inset -4px -4px 12px 0px rgba(255, 255, 255, 0.08);
+  --atlas-glass-backdrop: blur(22px) saturate(150%);
+  /* Поля (.portfolio-input, ghost, комбобокс, период в макро) — править цвета здесь. */
+  --atlas-input-bg: #ffffff;
+  --atlas-input-fg: var(--atlas-fg-primary);
+  --atlas-input-border: 1px solid rgba(203, 213, 225, 0.95);
+  --atlas-input-placeholder: #64748b;
+  --atlas-input-focus-border: #0088ff;
+  --atlas-ghost-label-color: #a4a4a9;
+  --atlas-ghost-label-floated-color: #9e9ea5;
+  --atlas-search-icon-filter: brightness(0) saturate(100%) invert(35%) sepia(0%) saturate(1%) hue-rotate(173deg) brightness(95%) contrast(90%);
+  
+  
+  /* Кнопки на стекле - btn-glass */
+  --atlas-btn-glass-hover-bg: rgba(255, 255, 255, 0.4);
+  --atlas-btn-glass-active-bg: rgba(255, 255, 255, 0.8);
+
+  /* 
+  Основной синий action-цвет 
+  */
+  --atlas-primary-btn-bg: #0088ff;
+  --atlas-primary-btn-hover-bg: #007DEB;
+  --atlas-primary-btn-active-bg: #0072D6;
+  
+  /* Список на стекеле - наведение -- list-on-glass:hover/click/active */
+  --atlas-list-on-glass-hover-bg: rgba(255, 255, 255, 0.2);
+  --atlas-list-on-glass-click-bg: rgba(255, 255, 255, 0.8);
+  --atlas-list-on-glass-active-bg: rgba(255, 255, 255, 0.8);
+}
+
+html[data-dashboard-theme="light"] {
+  --atlas-invert-primary: #f2f2f7;
+  
+
+  --atlas-side-glass-bg: rgba(255, 255, 255, 0.3);  --atlas-side-glass-bg: rgba(0, 0, 0, 0.3);
+
+  
+  --atlas-input-bg: rgba(255, 255, 255, 0.2);
+  --atlas-input-bg-light: rgba(255, 255, 255, 0.3);
+  --atlas-input-fg: var(--atlas-fg-primary);
+  --atlas-input-border: 1px solid rgba(203, 213, 225, 0.95);
+  --atlas-input-placeholder: #64748b;
+  --atlas-input-focus-border: #0088ff;
+
+  /* 
+  Цвет плейсхолдера и лейбла сверху в полях ввода 
+  */
+  --atlas-ghost-label-color: #808080;
+  --atlas-ghost-label-floated-color: #808080;
+  
+  /* 
+  Цвет иконок 
+  */
+  --atlas-search-icon-filter: brightness(0) saturate(100%) invert(64%) sepia(0%) saturate(275%) hue-rotate(202deg) brightness(54%) contrast(100%);
+  
+  
+  --atlas-second-color: #808080;
+  --atlas-third-color: #A5A5A5;
+  
+  /* 
+  Кнопки на стекле - btn-glass 
+  */
+  --atlas-btn-glass-hover-bg: rgba(255, 255, 255, 0.4);
+  --atlas-btn-glass-active-bg: rgba(255, 255, 255, 0.8);
+
+  /* 
+  Основной синий action-цвет 
+  */
+  --atlas-primary-btn-bg: #0088ff;
+  --atlas-primary-btn-hover-bg: #007DEB;
+  --atlas-primary-btn-active-bg: #0072D6;
+
+  /* 
+  Список на стекеле - наведение -- list-on-glass:hover/click/active 
+  */
+  --atlas-list-on-glass-hover-bg: rgba(126, 126, 126, 0.2);
+  --atlas-list-on-glass-click-bg: rgba(0, 0, 255, 0.2);
+  --atlas-list-on-glass-active-bg: rgba(255, 255, 255, 0.8);
+}
+
+
+/*
+ТЕМНАЯ
+*/
+html[data-dashboard-theme="dark"] {
+  --atlas-fg-primary: #f2f2f7;
+  --atlas-invert-primary: #595959;
+
+  --atlas-glass-border: 1px solid rgba(255, 255, 255, 0.15);
+  --atlas-side-glass-bg: rgba(255, 255, 255, 0.05);
+
+  --atlas-input-bg: rgba(255, 255, 255, 0.2);
+  --atlas-input-bg-light: rgba(255, 255, 255, 0.3);
+  --atlas-input-fg: var(--atlas-fg-primary);
+  --atlas-input-border: 1px solid rgba(255, 255, 255, 0.14);
+  --atlas-input-placeholder: rgba(242, 242, 247, 0.42);
+  --atlas-input-focus-border: #4da3ff;
+
+  /* Цвет плейсхолдера и лейбла сверху в полях ввода */
+  --atlas-ghost-label-color: #A5A5A5;
+  --atlas-ghost-label-floated-color: #A5A5A5;
+  
+  /* 
+  Цвет иконок 
+  */
+  --atlas-search-icon-filter: brightness(0) saturate(100%) invert(95%) sepia(0%) saturate(300%) hue-rotate(201deg) brightness(100%) contrast(100%);
+  
+  
+  --atlas-second-color: #808080;
+  --atlas-third-color: #A5A5A5;
+
+  /* 
+  Кнопки на стекле - btn-glass 
+  */
+  --atlas-btn-glass-hover-bg: rgba(255, 255, 255, 0.3);
+  --atlas-btn-glass-active-bg: rgba(255, 255, 255, 0.6);
+
+  /* 
+  Основной синий action-цвет 
+  */
+  --atlas-primary-btn-bg: #0088ff;
+  --atlas-primary-btn-hover-bg: #007DEB;
+  --atlas-primary-btn-active-bg: #0072D6;
+
+  /* 
+  Список на стекеле - наведение -- list-on-glass:hover/click/active 
+  */
+  --atlas-list-on-glass-hover-bg: rgba(126, 126, 126, 0.2);
+  --atlas-list-on-glass-click-bg: rgba(255, 255, 255, 0.3);
+  --atlas-list-on-glass-active-bg: rgba(255, 255, 255, 0.45);
+}
+
+/** Основной цвет темы (текст). */
+.atlas-fg-primary {
+  color: var(--atlas-fg-primary);
+}
+
+/** Растровые иконки под тему дашборда (см. селекторы ниже). */
+
+.atlas-fg-primary .portfolio-menu-trigger-icon,
+.asset-picker-close-button .asset-picker-close-icon,
+.macro-events-filters-close .asset-picker-close-icon,
+.macro-events-icon-button:not(.is-active) .macro-events-header-icon {
+  filter: brightness(0) saturate(100%) invert(35%) sepia(0%) saturate(1%) hue-rotate(173deg) brightness(95%) contrast(90%);
+}
+
+html[data-dashboard-theme="dark"] .atlas-fg-primary .portfolio-menu-trigger-icon,
+html[data-dashboard-theme="dark"] .asset-picker-close-button .asset-picker-close-icon,
+html[data-dashboard-theme="dark"] .macro-events-filters-close .asset-picker-close-icon,
+html[data-dashboard-theme="dark"] .macro-events-icon-button:not(.is-active) .macro-events-header-icon {
+  filter: brightness(0) saturate(100%) invert(96%) sepia(5%) saturate(180%) hue-rotate(198deg) brightness(102%) contrast(94%);
+}
+
+.atlas-glass {
+  position: relative;
+  isolation: isolate;
+  background-color: var(--atlas-glass-bg);
+  border: var(--atlas-glass-border);
+  box-shadow: var(--atlas-glass-shadow);
+  backdrop-filter: var(--atlas-glass-backdrop);
+  -webkit-backdrop-filter: var(--atlas-glass-backdrop);
+}
+
+
+
+
+/*
+СТЕКЛЯННЫЕ КНОПКИ - btn-glass
+*/
+.btn-glass {
+  border: var(--atlas-glass-border);
+  background-color: var(--atlas-glass-bg);
+  box-shadow: var(--atlas-glass-shadow);
+  backdrop-filter: var(--atlas-glass-backdrop);
+  -webkit-backdrop-filter: var(--atlas-glass-backdrop);
+  transition: background-color 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.btn-glass:hover {
+  background-color: var(--atlas-btn-glass-hover-bg);
+}
+
+.btn-glass:active {
+  background-color: var(--atlas-btn-glass-active-bg);
+}
+
+
+
+
+/*
+КНОПКИ НА СТЕКЛЕ - btn-on-glass
+*/
+.btn-on-glass {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background: rgba(126, 126, 126, 0.2);
+  font-size: 26px;
+  line-height: 1;
+  font-weight: 400;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.btn-on-glass:hover {
+  background: rgba(81, 81, 81, 0.25);
+}
+
+.btn-on-glass:active {
+  background: rgba(0, 0, 0, 0.2);
+  transform: scale(0.96);
+}
+
+.btn-on-glass.disabled,
+.btn-on-glass:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+
+
+
+
+html[data-dashboard-theme="dark"] .btn-on-glass:not(:disabled):not(.disabled) {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+html[data-dashboard-theme="dark"] .btn-on-glass:hover:not(:disabled):not(.disabled) {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+html[data-dashboard-theme="dark"] .btn-on-glass:active:not(:disabled):not(.disabled) {
+  background: rgba(255, 255, 255, 0.6);
+}
+
+
+
+
+/*
+Список на стекле - ListOnGlass 
+*/
+.list-on-glass {
+  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.list-on-glass:hover {
+  background-color: var(--atlas-list-on-glass-hover-bg);
+}
+
+.list-on-glass:active {
+  background-color: var(--atlas-list-on-glass-click-bg);
+}
+
+.list-on-glass.active,
+.list-on-glass.is-active {
+  background-color: var(--atlas-list-on-glass-active-bg);
+}
+
+/* Recharts theme tokens */
+.recharts-text,
+.recharts-cartesian-axis-tick-value {
+  fill: var(--atlas-fg-primary);
+}
+
+.recharts-cartesian-grid-horizontal line {
+  stroke: var(--atlas-btn-glass-active-bg);
+}
+
+.recharts-tooltip-cursor {
+  fill: var(--atlas-input-bg);
+  stroke: var(--atlas-input-bg);
+}

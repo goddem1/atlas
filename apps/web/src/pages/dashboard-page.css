@@ -1,0 +1,534 @@
+/* Цвет текста: --atlas-fg-primary (atlas-glass.css, тема на html). */
+.dashboard-page-root {
+  color: var(--atlas-fg-primary);
+}
+
+/* Светлая тема: зафиксированный «текущий» фон (полупрозрачный белый + два слоя градиента). */
+.dashboard-page-root[data-dashboard-theme="light"] .dashboard-main-surface {
+  background-color: rgba(255, 255, 255, 0.6);
+  background-image:
+    linear-gradient(rgba(229, 229, 229, 0.5)),
+    linear-gradient(135deg, #daecff 0%, #f6d6ff 100%);
+  background-size: auto, auto;
+}
+
+/* Тёмная тема: градиент #B3423C → #478C58. */
+.dashboard-page-root[data-dashboard-theme="dark"] .dashboard-main-surface {
+  background-color: #0f0f0f;
+  background-image:
+    linear-gradient(rgba(0, 0, 0, 0.8)),
+    linear-gradient(45deg, #b3423c 0%, #478c58 100%);
+  background-size: auto;
+}
+
+.dashboard-main-surface {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.dashboard-quick-tabs {
+  --dashboard-quick-tabs-hitbox-width: 40px;
+  --dashboard-quick-tabs-hitbox-height: calc(100dvh * 2 / 3);
+  position: fixed;
+  left: 0;
+  top: 50%;
+  transform: translate(-5%, -50%);
+  z-index: 290;
+  display: inline-flex;
+  isolation: isolate;
+  align-items: center;
+  pointer-events: none;
+  height: auto;
+}
+
+.dashboard-quick-tabs-dim {
+  position: absolute;
+  left: 0;
+  top: calc(50% - 50dvh);
+  width: 30vw;
+  height: 100dvh;
+  pointer-events: none;
+  z-index: -1;
+  opacity: 0;
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.26) 0%, rgba(0, 0, 0, 0.12) 35%, rgba(0, 0, 0, 0) 100%);
+  transition: opacity 0.28s ease;
+}
+
+.dashboard-quick-tabs-trigger {
+  width: 10px;
+  height: 100px;
+  border-radius: 999px;
+  background: var(--atlas-side-glass-bg);
+  border: var(--atlas-glass-border);
+  box-shadow: var(--atlas-glass-shadow);
+  backdrop-filter: var(--atlas-glass-backdrop);
+  -webkit-backdrop-filter: var(--atlas-glass-backdrop);
+  transition: transform 0.25s ease, background-color 0.25s ease, opacity 0.25s ease;
+  opacity: 0.85;
+  pointer-events: none;
+}
+
+.dashboard-quick-tabs-hitbox {
+  position: absolute;
+  left: -4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: var(--dashboard-quick-tabs-hitbox-width);
+  height: var(--dashboard-quick-tabs-hitbox-height);
+  pointer-events: auto;
+  background: transparent;
+}
+
+.dashboard-quick-tabs-menu {
+  width: 50px;
+  height: min(900px, calc(100dvh - 32px));
+  margin-left: 14px;
+  border-radius: 24px;
+  overflow: hidden;
+  border: var(--atlas-glass-border);
+  box-shadow: var(--atlas-glass-shadow);
+  background-color: var(--atlas-glass-bg);
+  backdrop-filter: var(--atlas-glass-backdrop);
+  -webkit-backdrop-filter: var(--atlas-glass-backdrop);
+  transform-origin: left center;
+  transform: translateX(-10px) scaleX(0.92) scaleY(0.94);
+  opacity: 0;
+  pointer-events: none;
+  filter: blur(4px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 5px;
+  transition:
+    opacity 0.28s ease,
+    transform 0.38s cubic-bezier(0.22, 1, 0.36, 1),
+    filter 0.38s cubic-bezier(0.22, 1, 0.36, 1);
+  pointer-events: none;
+}
+
+.dashboard-quick-tabs:hover .dashboard-quick-tabs-trigger,
+.dashboard-quick-tabs:focus-within .dashboard-quick-tabs-trigger {
+  transform: scaleX(1.02);
+  background: var(--atlas-btn-glass-hover-bg);
+  opacity: 1;
+}
+
+.dashboard-quick-tabs:hover .dashboard-quick-tabs-dim,
+.dashboard-quick-tabs:focus-within .dashboard-quick-tabs-dim {
+  opacity: 1;
+}
+
+.dashboard-quick-tabs:hover .dashboard-quick-tabs-menu,
+.dashboard-quick-tabs:focus-within .dashboard-quick-tabs-menu {
+  opacity: 1;
+  transform: translateX(0) scaleX(1) scaleY(1);
+  filter: blur(0);
+  pointer-events: auto;
+}
+
+.dashboard-quick-tabs-item {
+  width: 36px;
+  min-height: 54px;
+  border: 0;
+  border-radius:50px;
+  background: rgba(255, 255, 255, 0.14);
+  color: var(--atlas-fg-primary);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.1;
+  text-align: center;
+  cursor: pointer;
+  padding: 4px 3px;
+  transition: background-color 0.15s ease, transform 0.12s ease;
+}
+
+.dashboard-quick-tabs-item--calendar {
+  min-height: 36px;
+  height: 54px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.dashboard-quick-tabs-item-icon {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  filter: var(--atlas-search-icon-filter);
+}
+
+.dashboard-quick-tabs-item:hover {
+  background: var(--atlas-btn-glass-hover-bg);
+}
+
+.dashboard-quick-tabs-item:active {
+  background: var(--atlas-btn-glass-active-bg);
+  transform: scale(0.98);
+}
+
+.dashboard-quick-tabs-item.is-active {
+  background: var(--atlas-btn-glass-active-bg);
+}
+
+/* Плавающая панель: настройки, «+», макро (бывший Tailwind: fixed right-4 top-4 z-[300] flex …). */
+.dashboard-floating-actions {
+  pointer-events: auto;
+  position: fixed;
+  right: 1rem;
+  top: 1rem;
+  z-index: 300;
+  display: flex;
+  flex-direction: row-reverse;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+/* Обёртка блока настроек (кнопка + выпадающая панель). */
+.dashboard-floating-actions-settings {
+  pointer-events: auto;
+  position: relative;
+}
+
+.dashboard-floating-actions-settings:hover,
+.dashboard-floating-actions-settings:focus-within {
+  z-index: 6;
+}
+
+/* Невидимый мост до панели настроек, чтобы не терять hover в зазоре. */
+.dashboard-floating-actions-settings-hover-bridge {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  min-width: 50px;
+  height: 0.75rem;
+  pointer-events: auto;
+  z-index: 1;
+}
+
+/* С открытой панелью быстрый список скрыт — одна большая панель. */
+.dashboard-floating-actions-settings--panel-open .dashboard-floating-action-expanded {
+  max-height: 0 !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  padding-bottom: 0 !important;
+}
+
+.dashboard-floating-actions-settings--panel-open:hover .dashboard-floating-actions-settings-stack,
+.dashboard-floating-actions-settings--panel-open:focus-within .dashboard-floating-actions-settings-stack {
+  border-radius: 9999px;
+  background-color: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.dashboard-floating-actions-settings--panel-open:hover .dashboard-floating-action-btn,
+.dashboard-floating-actions-settings--panel-open:focus-within .dashboard-floating-action-btn {
+  background-color: var(--atlas-glass-bg);
+  border: var(--atlas-glass-border);
+  box-shadow: var(--atlas-glass-shadow);
+  backdrop-filter: var(--atlas-glass-backdrop);
+  -webkit-backdrop-filter: var(--atlas-glass-backdrop);
+}
+
+/* Шестерёнка: колонка 50px — при hover растёт только вниз. */
+.dashboard-floating-actions-settings-slot {
+  position: relative;
+  z-index: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: 50px;
+  max-width: 50px;
+  box-sizing: border-box;
+}
+
+.dashboard-floating-actions-settings-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: 50px;
+  max-width: 50px;
+  min-width: 50px;
+  box-sizing: border-box;
+  border-radius: 9999px;
+  overflow: hidden;
+  transition:
+    border-radius 0.22s ease,
+    background-color 0.22s ease,
+    box-shadow 0.22s ease,
+    border-color 0.22s ease,
+    backdrop-filter 0.22s ease;
+}
+
+/* Hover на всю обёртку настроек (включая мост до панели). */
+.dashboard-floating-actions-settings:hover:not(.dashboard-floating-actions-settings--panel-open) .dashboard-floating-actions-settings-stack,
+.dashboard-floating-actions-settings:focus-within:not(.dashboard-floating-actions-settings--panel-open) .dashboard-floating-actions-settings-stack {
+  border-radius: 50px;
+  background-color: var(--atlas-glass-bg);
+  border: var(--atlas-glass-border);
+  box-shadow: var(--atlas-glass-shadow);
+  backdrop-filter: var(--atlas-glass-backdrop);
+  -webkit-backdrop-filter: var(--atlas-glass-backdrop);
+}
+
+.dashboard-floating-actions-settings:hover:not(.dashboard-floating-actions-settings--panel-open) .dashboard-floating-action-btn,
+.dashboard-floating-actions-settings:focus-within:not(.dashboard-floating-actions-settings--panel-open) .dashboard-floating-action-btn {
+  background-color: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.dashboard-floating-actions-settings:hover:not(.dashboard-floating-actions-settings--panel-open) .dashboard-floating-action-btn:hover,
+.dashboard-floating-actions-settings:focus-within:not(.dashboard-floating-actions-settings--panel-open) .dashboard-floating-action-btn:hover {
+  background-color: rgba(255, 255, 255, 0.12);
+}
+
+html[data-dashboard-theme="dark"] .dashboard-floating-actions-settings:hover:not(.dashboard-floating-actions-settings--panel-open) .dashboard-floating-action-btn:hover,
+html[data-dashboard-theme="dark"] .dashboard-floating-actions-settings:focus-within:not(.dashboard-floating-actions-settings--panel-open) .dashboard-floating-action-btn:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+.dashboard-floating-actions-settings .dashboard-floating-action-expanded {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  max-width: 50px;
+  box-sizing: border-box;
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
+  padding: 0 4px;
+  transition:
+    max-height 0.28s ease,
+    opacity 0.2s ease,
+    padding-bottom 0.28s ease;
+}
+
+.dashboard-floating-actions-settings:hover:not(.dashboard-floating-actions-settings--panel-open) .dashboard-floating-action-expanded,
+.dashboard-floating-actions-settings:focus-within:not(.dashboard-floating-actions-settings--panel-open) .dashboard-floating-action-expanded {
+  max-height: 320px;
+  opacity: 1;
+  pointer-events: auto;
+  padding-bottom: 8px;
+}
+
+/* Выпадающее меню */
+.dashboard-floating-actions-settings .dashboard-floating-action-expanded-btn {
+  width: 40px;
+  height: 40px;
+  margin: 0;
+  padding: 6px 3px;
+  border: 0;
+  border-radius: 100px;
+  background: rgba(255, 255, 255, 0.14);
+  color: var(--atlas-fg-primary);
+  font: inherit;
+  font-size: 0.65rem;
+  font-weight: 500;
+  line-height: 1.15;
+  text-align: center;
+  word-break: break-word;
+  hyphens: auto;
+  cursor: pointer;
+  box-sizing: border-box;
+  transition: background-color 0.15s ease;
+}
+
+html[data-dashboard-theme="dark"] .dashboard-floating-actions-settings .dashboard-floating-action-expanded-btn {
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.dashboard-floating-actions-settings .dashboard-floating-action-expanded-btn:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+html[data-dashboard-theme="dark"] .dashboard-floating-actions-settings .dashboard-floating-action-expanded-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.dashboard-floating-actions-settings .dashboard-floating-action-expanded-btn:focus {
+  outline: none;
+}
+
+.dashboard-floating-actions-settings .dashboard-floating-action-expanded-btn:focus-visible {
+  box-shadow: 0 0 0 2px #0ea5e9;
+}
+
+/* Пункт «Настройки» в выпадающем списке: только иконка. */
+.dashboard-floating-action-expanded-btn--settings {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 3px;
+}
+
+.dashboard-floating-action-expanded-gear {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  color: var(--atlas-fg-primary);
+}
+
+/* Круглая кнопка панели (настройки, добавить виджет) — те же токены, что .atlas-glass. */
+.dashboard-floating-action-btn {
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 50px;
+  height: 50px;
+  border-radius: 9999px;
+}
+
+.dashboard-floating-action-btn:hover {
+  background-color: var(--atlas-btn-glass-hover-bg);
+}
+
+.dashboard-floating-action-btn:active {
+  background-color: var(--atlas-btn-glass-active-bg);
+}
+
+.dashboard-floating-action-btn:focus {
+  outline: none;
+}
+
+.dashboard-floating-action-btn:focus-visible {
+  box-shadow:
+    0 0 0 2px #0ea5e9,
+    var(--atlas-glass-shadow);
+}
+
+.dashboard-floating-action-icon {
+  flex-shrink: 0;
+  color: var(--atlas-fg-primary);
+}
+
+.dashboard-floating-action-icon--plus {
+  width: 1.75rem;
+  height: 1.75rem;
+}
+
+.dashboard-floating-action-icon--settings {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+/* Кнопка «+»: при необходимости стилизуйте `.dashboard-floating-actions-add-widget`. */
+
+/* Выпадающая панель настроек (клик по шестерёнке). */
+.dashboard-floating-actions-panel {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 0.75rem;
+  width: min(calc(100vw - 2rem), 18rem);
+  border-radius: 1rem;
+  border: 1px solid rgba(71, 85, 105, 0.8);
+  background: rgba(15, 23, 42, 0.98);
+  padding: 1rem;
+  box-shadow:
+    0 20px 25px -5px rgb(0 0 0 / 0.1),
+    0 8px 10px -6px rgb(0 0 0 / 0.1);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.dashboard-floating-actions-panel-title {
+  margin: 0 0 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.25;
+  color: #f1f5f9;
+}
+
+.dashboard-floating-actions-panel-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  font-size: 0.875rem;
+  line-height: 1.25;
+}
+
+.dashboard-floating-actions-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  color: #cbd5e1;
+}
+
+.dashboard-floating-actions-field > span:first-child {
+  font-size: 0.875rem;
+}
+
+.dashboard-floating-actions-theme-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.dashboard-floating-actions-chip {
+  border-radius: 0.5rem;
+  border-width: 1px;
+  border-style: solid;
+  padding: 0.5rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.25;
+  cursor: pointer;
+  font-family: inherit;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.dashboard-floating-actions-chip--inactive {
+  border-color: #475569;
+  background: #020617;
+  color: #e2e8f0;
+}
+
+.dashboard-floating-actions-chip--active {
+  border-color: #0ea5e9;
+  background: rgba(14, 165, 233, 0.2);
+  color: #bae6fd;
+}
+
+.dashboard-floating-actions-input {
+  border-radius: 0.5rem;
+  border: 1px solid #475569;
+  background: #020617;
+  padding: 0.375rem 0.5rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.875rem;
+  color: #e2e8f0;
+}
+
+.dashboard-floating-actions-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.45);
+}
+
+.dashboard-floating-actions-range {
+  width: 100%;
+  accent-color: #0ea5e9;
+}
+
+.dashboard-floating-actions-hint {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.25;
+  color: #64748b;
+}

@@ -156,7 +156,7 @@ export function PortfolioWidget({ onDeleteWidget }: Props) {
 
   return (
     <>
-      <div className="portfolio-widget-card drag-handle">
+      <div className="portfolio-widget-shell">
         <div
           className={`portfolio-menu-wrap${menuOpen ? " is-open" : ""}`}
           onMouseEnter={() => setMenuOpen(true)}
@@ -164,7 +164,7 @@ export function PortfolioWidget({ onDeleteWidget }: Props) {
         >
           <button
             type="button"
-            className="portfolio-menu-trigger"
+            className="portfolio-menu-trigger atlas-fg-primary"
             onClick={() => setMenuOpen((v) => !v)}
             aria-label="Меню портфеля"
             aria-expanded={menuOpen}
@@ -174,7 +174,7 @@ export function PortfolioWidget({ onDeleteWidget }: Props) {
           <div className="portfolio-menu-rail" aria-hidden={!menuOpen}>
             <button
               type="button"
-              className="portfolio-menu-circle-btn disabled"
+              className="btn-on-glass disabled"
               disabled
               aria-label="Настройки (скоро)"
             >
@@ -182,7 +182,7 @@ export function PortfolioWidget({ onDeleteWidget }: Props) {
             </button>
             <button
               type="button"
-              className="portfolio-menu-circle-btn"
+              className="btn-on-glass"
               onClick={() => triggerMenu("all-assets")}
               aria-label="Открыть список всех монет"
             >
@@ -194,7 +194,7 @@ export function PortfolioWidget({ onDeleteWidget }: Props) {
             </button>
             <button
               type="button"
-              className="portfolio-menu-circle-btn"
+              className="btn-on-glass"
               onClick={() => triggerMenu("add")}
               aria-label="Добавить транзакцию"
             >
@@ -202,7 +202,7 @@ export function PortfolioWidget({ onDeleteWidget }: Props) {
             </button>
             <button
               type="button"
-              className="portfolio-menu-circle-btn"
+              className="btn-on-glass"
               onClick={() => onDeleteWidget?.()}
               aria-label="Удалить виджет"
             >
@@ -211,57 +211,61 @@ export function PortfolioWidget({ onDeleteWidget }: Props) {
           </div>
         </div>
 
-        <div className="portfolio-widget-left">
-          <div className="portfolio-total">{money(summary?.totalValueUsd ?? "0")}</div>
-          <div className={`portfolio-total-pnl ${pnlClass}`}>
-            {totalPnl >= 0 ? "+" : "-"}
-            {money(Math.abs(totalPnl).toString())}
+        <div className="atlas-glass portfolio-widget-card drag-handle">
+          <div className="portfolio-widget-left">
+            <div className="portfolio-total">{money(summary?.totalValueUsd ?? "0")}</div>
+            <div className={`portfolio-total-pnl ${pnlClass}`}>
+              {totalPnl >= 0 ? "+" : "-"}
+              {money(Math.abs(totalPnl).toString())}
+            </div>
+            <PortfolioChart
+              points={chart?.points ?? []}
+              timeframe={timeframe}
+              onTimeframe={setTimeframe}
+            />
           </div>
-          <PortfolioChart
-            points={chart?.points ?? []}
-            timeframe={timeframe}
-            onTimeframe={setTimeframe}
-          />
-        </div>
 
-        <div className="portfolio-widget-right">
-          <ul className="portfolio-asset-list">
-            {visibleAssets.map((asset) => {
-              const pnl = asNum(asset.pnlUsd);
-              const positive = pnl >= 0;
-              return (
-                <li
-                  key={asset.symbol}
-                  className="portfolio-asset-row"
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => void openAssetDetail(asset.symbol)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") void openAssetDetail(asset.symbol);
-                  }}
-                >
-                  <img src={asset.iconUrl} alt="" className="portfolio-asset-icon" />
-                  <div className="portfolio-asset-symbol">{asset.symbol}</div>
-                  <div className="portfolio-asset-values">
-                    <div className={positive ? "portfolio-asset-value-positive" : "portfolio-asset-value-negative"}>
-                      {money(asset.currentValueUsd)}
-                    </div>
-                    <div className={positive ? "portfolio-asset-pnl-positive" : "portfolio-asset-pnl-negative"}>
-                      {positive ? "+" : "-"}
-                      {money(Math.abs(pnl).toString())}
-                    </div>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-          {visibleAssets.length === 0 ? <p>Активов пока нет. Добавьте первую транзакцию.</p> : null}
+          <div className="macro-cal-divider portfolio-widget-divider" aria-hidden />
 
-          {hiddenCount > 0 ? (
-            <button type="button" className="portfolio-more-button" onClick={() => setShowAllAssets(true)}>
-              еще {hiddenCount} актива →
-            </button>
-          ) : null}
+          <div className="portfolio-widget-right">
+            <ul className="portfolio-asset-list">
+              {visibleAssets.map((asset) => {
+                const pnl = asNum(asset.pnlUsd);
+                const positive = pnl >= 0;
+                return (
+                  <li
+                    key={asset.symbol}
+                    className="portfolio-asset-row"
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => void openAssetDetail(asset.symbol)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") void openAssetDetail(asset.symbol);
+                    }}
+                  >
+                    <img src={asset.iconUrl} alt="" className="portfolio-asset-icon" />
+                    <div className="portfolio-asset-symbol">{asset.symbol}</div>
+                    <div className="portfolio-asset-values">
+                      <div className={positive ? "portfolio-asset-value-positive" : "portfolio-asset-value-negative"}>
+                        {money(asset.currentValueUsd)}
+                      </div>
+                      <div className={positive ? "portfolio-asset-pnl-positive" : "portfolio-asset-pnl-negative"}>
+                        {positive ? "+" : "-"}
+                        {money(Math.abs(pnl).toString())}
+                      </div>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+            {visibleAssets.length === 0 ? <p>Активов пока нет. Добавьте первую транзакцию.</p> : null}
+
+            {hiddenCount > 0 ? (
+              <button type="button" className="portfolio-more-button" onClick={() => setShowAllAssets(true)}>
+                еще {hiddenCount} актива →
+              </button>
+            ) : null}
+          </div>
         </div>
       </div>
 
@@ -471,69 +475,76 @@ export function PortfolioWidget({ onDeleteWidget }: Props) {
                 onClick={(e) => e.stopPropagation()}
               >
                 <div className="asset-picker-header">
-                  <label className="asset-picker-search-label">
-                    <span className="asset-picker-sr-only" id="portfolio-all-assets-title">
-                      Поиск по портфельным активам
-                    </span>
-                    <input
-                      type="search"
-                      className="asset-picker-search-input"
-                      value={allAssetsQuery}
-                      onChange={(e) => setAllAssetsQuery(e.target.value)}
-                      placeholder="Поиск по имени или тикеру…"
-                      autoFocus
-                    />
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowAllAssets(false);
-                      setAllAssetsQuery("");
-                    }}
-                    className="asset-picker-close-button"
-                    aria-label="Закрыть"
-                  >
-                    <img src="/assets/portfolio-ui/close.svg" alt="" className="asset-picker-close-icon" />
-                  </button>
+                  <div className="asset-picker-search-panel">
+                    <label className="asset-picker-search-label">
+                      <span className="asset-picker-sr-only" id="portfolio-all-assets-title">
+                        Поиск по портфельным активам
+                      </span>
+                      <span className="asset-picker-search-icon" aria-hidden />
+                      <input
+                        type="search"
+                        className="asset-picker-search-input"
+                        value={allAssetsQuery}
+                        onChange={(e) => setAllAssetsQuery(e.target.value)}
+                        placeholder="Поиск по имени или тикеру…"
+                        autoFocus
+                      />
+                    </label>
+                  </div>
+                  <div className="asset-picker-close-panel">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowAllAssets(false);
+                        setAllAssetsQuery("");
+                      }}
+                      className="asset-picker-close-button btn-glass"
+                      aria-label="Закрыть"
+                    >
+                      <img src="/assets/portfolio-ui/close.svg" alt="" className="asset-picker-close-icon" />
+                    </button>
+                  </div>
                 </div>
-                <ul className="asset-picker-list">
-                  {filteredAllAssets.length === 0 ? (
-                    <li className="asset-picker-message">
-                      Ничего не найдено. Попробуйте другой тикер или название.
-                    </li>
-                  ) : (
-                    filteredAllAssets.map((asset) => (
-                      <li key={asset.symbol}>
-                        <button
-                          type="button"
-                          className="asset-picker-item-button"
-                          onClick={() => {
-                            void openAssetDetail(asset.symbol);
-                          }}
-                        >
-                          <img src={asset.iconUrl} alt="" className="asset-picker-item-icon" />
-                          <div className="asset-picker-item-text">
-                            <p className="asset-picker-item-symbol">{asset.symbol}</p>
-                            <p className="asset-picker-item-name">{asset.name}</p>
-                          </div>
-                          <div className="portfolio-all-assets-item-right">
-                            <p className="portfolio-all-assets-item-value">{money(asset.currentValueUsd)}</p>
-                            <p
-                              className={
-                                asNum(asset.pnlUsd) >= 0
-                                  ? "portfolio-all-assets-item-pnl portfolio-asset-pnl-positive"
-                                  : "portfolio-all-assets-item-pnl portfolio-asset-pnl-negative"
-                              }
-                            >
-                              {asNum(asset.pnlUsd) >= 0 ? "+" : "-"}
-                              {money(Math.abs(asNum(asset.pnlUsd)).toString())}
-                            </p>
-                          </div>
-                        </button>
+                <div className="asset-picker-list-panel">
+                  <ul className="asset-picker-list">
+                    {filteredAllAssets.length === 0 ? (
+                      <li className="asset-picker-message">
+                        Ничего не найдено. Попробуйте другой тикер или название.
                       </li>
-                    ))
-                  )}
-                </ul>
+                    ) : (
+                      filteredAllAssets.map((asset) => (
+                        <li key={asset.symbol}>
+                          <button
+                            type="button"
+                            className="asset-picker-item-button list-on-glass"
+                            onClick={() => {
+                              void openAssetDetail(asset.symbol);
+                            }}
+                          >
+                            <img src={asset.iconUrl} alt="" className="asset-picker-item-icon" />
+                            <div className="asset-picker-item-text">
+                              <p className="asset-picker-item-symbol">{asset.symbol}</p>
+                              <p className="asset-picker-item-name">{asset.name}</p>
+                            </div>
+                            <div className="portfolio-all-assets-item-right">
+                              <p className="portfolio-all-assets-item-value">{money(asset.currentValueUsd)}</p>
+                              <p
+                                className={
+                                  asNum(asset.pnlUsd) >= 0
+                                    ? "portfolio-all-assets-item-pnl portfolio-asset-pnl-positive"
+                                    : "portfolio-all-assets-item-pnl portfolio-asset-pnl-negative"
+                                }
+                              >
+                                {asNum(asset.pnlUsd) >= 0 ? "+" : "-"}
+                                {money(Math.abs(asNum(asset.pnlUsd)).toString())}
+                              </p>
+                            </div>
+                          </button>
+                        </li>
+                      ))
+                    )}
+                  </ul>
+                </div>
               </div>
             </div>,
             document.body,
