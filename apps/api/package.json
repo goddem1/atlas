@@ -13,6 +13,7 @@
     "lint": "tsc -p tsconfig.json --noEmit",
     "postinstall": "prisma generate",
     "load:candles": "tsx src/scripts/loadCryptoCandles.ts",
+    "load:candles:all": "tsx src/scripts/loadAllCandlesHistorical.ts",
     "macro:import-range": "tsx src/scripts/importMacroCalendarRange.ts",
     "macro:prefetch-next-two-months": "tsx src/scripts/prefetchMacroNextTwoMonths.ts",
     "db:push": "prisma db push",

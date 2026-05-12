@@ -147,6 +147,65 @@
   vector-effect: non-scaling-stroke;
 }
 
+.price-widget-live-ring {
+  opacity: 0.22;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: price-widget-live-ring-pulse 1.8s ease-out infinite;
+}
+
+.price-widget-live-dot {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: price-widget-live-dot-blink 1.8s ease-in-out infinite;
+}
+
+.price-widget-live-move-marker {
+  pointer-events: none;
+}
+
+.price-widget-live-move-marker-shape {
+  stroke: none;
+}
+
+.price-widget-live-move-marker-up .price-widget-live-move-marker-shape {
+  fill: rgba(34, 197, 94, 0.92);
+}
+
+.price-widget-live-move-marker-down .price-widget-live-move-marker-shape {
+  fill: rgba(239, 68, 68, 0.92);
+}
+
+@keyframes price-widget-live-ring-pulse {
+  0% {
+    opacity: 0.32;
+    transform: scale(0.72);
+  }
+
+  70% {
+    opacity: 0;
+    transform: scale(1.45);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1.45);
+  }
+}
+
+@keyframes price-widget-live-dot-blink {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.62;
+    transform: scale(0.92);
+  }
+}
+
 .price-widget-axis-svg {
   display: block;
   width: 100%;

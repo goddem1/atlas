@@ -1,5 +1,24 @@
 import type { FastifyInstance } from "fastify";
 import type { PrismaClient } from "@prisma/client";
+import { fetchRestMskDailyCandle, getLiveCandle, toMskDayStartMs } from "../services/binanceCandleStream.js";
+
+function toApiRow(row: {
+  openTime: Date;
+  open: { toString(): string };
+  high: { toString(): string };
+  low: { toString(): string };
+  close: { toString(): string };
+  volume: { toString(): string };
+}) {
+  return {
+    openTime: row.openTime.toISOString(),
+    open: row.open.toString(),
+    high: row.high.toString(),
+    low: row.low.toString(),
+    close: row.close.toString(),
+    volume: row.volume.toString(),
+  };
+}
 
 export function registerMarketRoutes(app: FastifyInstance, prisma: PrismaClient): void {
   app.get("/cryptocurrencies", async (_req, reply) => {
@@ -22,21 +41,45 @@ export function registerMarketRoutes(app: FastifyInstance, prisma: PrismaClient)
 
     reply.header("Cache-Control", "no-store");
 
-    const rows = await prisma.cryptoPriceCandle.findMany({
-      where: { symbol: pair, interval: "1d" },
+    const symbol = pair.toUpperCase();
+    const currentDayStartMs = toMskDayStartMs(Date.now());
+    const memoryLive = getLiveCandle(symbol);
+    const live =
+      memoryLive?.openTimeMs === currentDayStartMs
+        ? memoryLive
+        : await fetchRestMskDailyCandle(symbol, currentDayStartMs);
+
+    if (!live) {
+      const rows = await prisma.cryptoPriceCandle.findMany({
+        where: { symbol, interval: "1d" },
+        orderBy: { openTime: "desc" },
+        take: days,
+      });
+      return [...rows].reverse().map(toApiRow);
+    }
+
+    const historyRows = await prisma.cryptoPriceCandle.findMany({
+      where: {
+        symbol,
+        interval: "1d",
+        openTime: { lt: new Date(currentDayStartMs) },
+      },
       orderBy: { openTime: "desc" },
-      take: days,
+      take: Math.max(days - 1, 0),
     });
 
-    const asc = [...rows].reverse();
+    const response = [
+      ...historyRows.reverse().map(toApiRow),
+      {
+        openTime: new Date(live.openTimeMs).toISOString(),
+        open: live.open,
+        high: live.high,
+        low: live.low,
+        close: live.close,
+        volume: live.volume,
+      },
+    ];
 
-    return asc.map((r) => ({
-      openTime: r.openTime.toISOString(),
-      open: r.open.toString(),
-      high: r.high.toString(),
-      low: r.low.toString(),
-      close: r.close.toString(),
-      volume: r.volume.toString(),
-    }));
+    return response.slice(-days);
   });
 }

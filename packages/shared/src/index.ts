@@ -162,6 +162,7 @@ export interface MacroEventsResponse {
       year: Array<{ label: string; value: number }>;
     }
   >;
+  historyCountsByIndicator?: Record<string, number>;
 }
 
 export interface MacroSeriesIndicatorDto {

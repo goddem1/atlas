@@ -16,6 +16,8 @@ export interface PriceSparklineCardProps {
   symbol: string;
   /** Последняя цена (отформатированная строка) */
   priceDisplay: string;
+  /** Направление последнего live-обновления цены. */
+  liveDirection?: "up" | "down" | null;
   /** % изменения последней цены относительно предпоследней */
   changePercent: number;
   /** Значения серии для графика (обычно 7 close) */
@@ -79,9 +81,24 @@ function linePath(pts: ChartPoint[]) {
     .join(" ");
 }
 
+function trianglePoints(params: {
+  x: number;
+  y: number;
+  direction: "up" | "down";
+}): string {
+  const { x, y, direction } = params;
+  const halfBase = 4.5;
+  const height = 8;
+  if (direction === "up") {
+    return `${x.toFixed(2)},${(y - height / 2).toFixed(2)} ${(x - halfBase).toFixed(2)},${(y + height / 2).toFixed(2)} ${(x + halfBase).toFixed(2)},${(y + height / 2).toFixed(2)}`;
+  }
+  return `${x.toFixed(2)},${(y + height / 2).toFixed(2)} ${(x - halfBase).toFixed(2)},${(y - height / 2).toFixed(2)} ${(x + halfBase).toFixed(2)},${(y - height / 2).toFixed(2)}`;
+}
+
 export function PriceSparklineCard({
   symbol,
   priceDisplay,
+  liveDirection = null,
   changePercent,
   series,
   xLabels,
@@ -132,6 +149,8 @@ export function PriceSparklineCard({
   const activePoint = pts[activePtsIndex] ?? null;
   const activeSeriesIndex = activePoint?.seriesIndex ?? Math.max(0, series.length - 1);
   const gridActiveIndex = Math.min(Math.max(0, activeSeriesIndex), WEEK_DIVISIONS - 1);
+  const isViewingHistory = hoveredIndex !== null && activeSeriesIndex !== Math.max(0, series.length - 1);
+  const showLiveMarker = !!liveDirection && !isViewingHistory && activeSeriesIndex === Math.max(0, series.length - 1);
 
   const displayPrice = useMemo(() => {
     const value = series[activeSeriesIndex];
@@ -260,7 +279,52 @@ export function PriceSparklineCard({
                 />
               ) : null}
               {activePoint && Number.isFinite(activePoint.x) && Number.isFinite(activePoint.y) ? (
-                <circle cx={activePoint.x} cy={activePoint.y} r="4" fill={accent} />
+                <>
+                  <circle
+                    cx={activePoint.x}
+                    cy={activePoint.y}
+                    r="7"
+                    fill={accent}
+                    className="price-widget-live-ring"
+                  />
+                  <circle
+                    cx={activePoint.x}
+                    cy={activePoint.y}
+                    r="4"
+                    fill={accent}
+                    className="price-widget-live-dot"
+                  />
+                  {showLiveMarker
+                    ? (() => {
+                        const direction = liveDirection;
+                        if (!direction) return null;
+                        const markerY =
+                          direction === "up"
+                            ? Math.max(PAD.t + 7, activePoint.y - 18)
+                            : Math.min(bottomY - 7, activePoint.y + 18);
+                        return (
+                          <g
+                            className={cn(
+                              "price-widget-live-move-marker",
+                              direction === "up"
+                                ? "price-widget-live-move-marker-up"
+                                : "price-widget-live-move-marker-down",
+                            )}
+                            aria-label={direction === "up" ? "Цена выросла" : "Цена снизилась"}
+                          >
+                            <polygon
+                              points={trianglePoints({
+                                x: activePoint.x,
+                                y: markerY,
+                                direction,
+                              })}
+                              className="price-widget-live-move-marker-shape"
+                            />
+                          </g>
+                        );
+                      })()
+                    : null}
+                </>
               ) : null}
             </>
           )}

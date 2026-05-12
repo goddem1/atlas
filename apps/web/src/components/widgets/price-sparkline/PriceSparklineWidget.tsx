@@ -6,12 +6,14 @@ import { CryptoPickerModal } from "../shared/CryptoPickerModal";
 import { PriceSparklineCard } from "./PriceSparklineCard";
 import "./price-sparkline-widget.css";
 
+type LivePriceDirection = "up" | "down";
+
 function pairFor(c: CryptocurrencyListItem): string {
   return (c.pairSymbol?.trim() || `${c.symbol}USDT`).toUpperCase();
 }
 
-/** После дневного джоба (23:55 MSK) виджеты подтягивают новые свечи без перезагрузки страницы. */
-const CANDLES_POLL_MS = 5 * 60 * 1000;
+/** Live candle обновляется через WS на сервере, клиент polling каждые 30с. */
+const CANDLES_POLL_MS = 30 * 1000;
 
 type Props = {
   dragHandleClassName?: string;
@@ -33,6 +35,7 @@ export function PriceSparklineWidget({
   const [loadErr, setLoadErr] = useState<string | null>(null);
   const [candlesErr, setCandlesErr] = useState<string | null>(null);
   const [candles, setCandles] = useState<CandleApiRow[]>([]);
+  const [liveDirection, setLiveDirection] = useState<LivePriceDirection | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -65,10 +68,12 @@ export function PriceSparklineWidget({
     if (!selected) {
       setCandles([]);
       setCandlesErr(null);
+      setLiveDirection(null);
       return;
     }
     const pair = pairFor(selected);
     let cancelled = false;
+    let previousLiveClose: number | null = null;
 
     const run = (clearOnPairChange: boolean) => {
       if (cancelled) return;
@@ -78,12 +83,31 @@ export function PriceSparklineWidget({
       fetchCandles(pair, 7)
         .then((rows) => {
           if (cancelled) return;
+          const nextLiveCloseRaw = rows[rows.length - 1]?.close;
+          const nextLiveClose = nextLiveCloseRaw ? Number.parseFloat(nextLiveCloseRaw) : NaN;
+          if (Number.isFinite(nextLiveClose)) {
+            if (previousLiveClose != null) {
+              if (nextLiveClose > previousLiveClose) {
+                setLiveDirection("up");
+              } else if (nextLiveClose < previousLiveClose) {
+                setLiveDirection("down");
+              } else {
+                setLiveDirection(null);
+              }
+            } else {
+              setLiveDirection(null);
+            }
+            previousLiveClose = nextLiveClose;
+          } else {
+            setLiveDirection(null);
+          }
           setCandles(rows);
           setCandlesErr(null);
         })
         .catch((e: unknown) => {
           if (cancelled) return;
           setCandlesErr(e instanceof Error ? e.message : "Ошибка свечей");
+          setLiveDirection(null);
           if (clearOnPairChange) {
             setCandles([]);
           }
@@ -144,6 +168,7 @@ export function PriceSparklineWidget({
         symbol={selected?.symbol ?? "…"}
         priceDisplay={priceDisplay}
         changePercent={changePercent}
+        liveDirection={liveDirection}
         series={series}
         xLabels={xLabels}
         icon={iconNode}

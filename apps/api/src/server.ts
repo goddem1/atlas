@@ -9,6 +9,7 @@ import { runTradingDayJob } from "./jobs/tradingDayJob.js";
 import { registerMarketRoutes } from "./routes/market.js";
 import { registerMacroRoutes } from "./routes/macro.js";
 import { registerPortfolioRoutes } from "./routes/portfolio.js";
+import { startBinanceCandleStream, stopBinanceCandleStream } from "./services/binanceCandleStream.js";
 
 const prisma = new PrismaClient();
 
@@ -38,17 +39,29 @@ const host = process.env.HOST ?? "0.0.0.0";
 
 try {
   await prisma.$connect();
+
+  if (process.env.BINANCE_WS_DISABLED !== "true") {
+    const symbols = await prisma.cryptocurrencyList.findMany({
+      select: { pairSymbol: true, symbol: true },
+      orderBy: { symbol: "asc" },
+    });
+    const pairs = Array.from(
+      new Set(symbols.map((row) => (row.pairSymbol?.trim() || `${row.symbol}USDT`).toUpperCase())),
+    );
+    startBinanceCandleStream(pairs, { log: app.log });
+  }
+
   await app.listen({ port, host });
 
   if (process.env.TRADING_DAY_CRON_DISABLED !== "true") {
     tradingDayCron = cron.schedule(
-      "55 23 * * *",
+      "1 0 * * *",
       () => {
         void runTradingDayJob(app.log, prisma);
       },
       { timezone: "Europe/Moscow" },
     );
-    app.log.info("Cron: tradingDay job at 23:55 Europe/Moscow (MSK)");
+    app.log.info("Cron: tradingDay job at 00:00:01 Europe/Moscow (MSK)");
   }
 
   if (process.env.MACRO_PREFETCH_CRON_DISABLED !== "true") {
@@ -79,6 +92,7 @@ const shutdown = async () => {
   macroReleaseSchedulerStop?.();
   macroReleaseSchedulerStop = null;
   stopMacroReleaseActualsScheduler();
+  stopBinanceCandleStream();
   await app.close();
   await prisma.$disconnect();
 };
