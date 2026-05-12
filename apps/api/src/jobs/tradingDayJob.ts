@@ -1,10 +1,15 @@
 import type { PrismaClient } from "@prisma/client";
+import {
+  MSK_DAY_MS,
+  clearLiveCandle,
+  fetchRestMskDailyCandle,
+  getLiveCandle,
+  toMskDayStartMs,
+} from "../services/binanceCandleStream.js";
 
-const BINANCE_DATA_ORIGIN = "https://data-api.binance.vision";
 /** Совпадает с `load:candles` / klines `1d`, чтобы одна строка на торговый день. */
 const CANDLE_INTERVAL = "1d";
 
-/** Поля [tradingDay](https://data-api.binance.vision/api/v3/ticker/tradingDay) для лога и БД. */
 export interface TradingDaySnapshot {
   symbol: string;
   openTime: number;
@@ -13,7 +18,6 @@ export interface TradingDaySnapshot {
   lowPrice: string;
   lastPrice: string;
   volume: string;
-  closeTime: number;
 }
 
 type JobLog = {
@@ -29,23 +33,23 @@ function parseSymbols(): string[] {
     .filter(Boolean);
 }
 
-export async function fetchTradingDayTicker(symbol: string): Promise<TradingDaySnapshot> {
-  const url = new URL("/api/v3/ticker/tradingDay", BINANCE_DATA_ORIGIN);
-  url.searchParams.set("symbol", symbol);
-  const res = await fetch(url);
-  if (!res.ok) {
-    throw new Error(`${symbol}: HTTP ${res.status} ${await res.text()}`);
+async function resolveYesterdaySnapshot(symbol: string, openTimeMs: number): Promise<TradingDaySnapshot | null> {
+  const live = getLiveCandle(symbol);
+  const liveOrRest =
+    live?.openTimeMs === openTimeMs ? live : await fetchRestMskDailyCandle(symbol, openTimeMs);
+
+  if (!liveOrRest) {
+    return null;
   }
-  const j = (await res.json()) as Record<string, unknown>;
+
   return {
-    symbol: String(j.symbol),
-    openTime: Number(j.openTime),
-    openPrice: String(j.openPrice),
-    highPrice: String(j.highPrice),
-    lowPrice: String(j.lowPrice),
-    lastPrice: String(j.lastPrice),
-    volume: String(j.volume),
-    closeTime: Number(j.closeTime),
+    symbol: liveOrRest.symbol,
+    openTime: liveOrRest.openTimeMs,
+    openPrice: liveOrRest.open,
+    highPrice: liveOrRest.high,
+    lowPrice: liveOrRest.low,
+    lastPrice: liveOrRest.close,
+    volume: liveOrRest.volume,
   };
 }
 
@@ -79,14 +83,39 @@ async function upsertPriceCandle(prisma: PrismaClient, snap: TradingDaySnapshot)
   });
 }
 
-/** Запрос к Binance Vision по символам из `TRADING_DAY_SYMBOLS` и запись в `CryptoPriceCandle`. */
+/** В 00:00:01 MSK пишет вчерашнюю MSK-свечу в `CryptoPriceCandle`. */
 export async function runTradingDayJob(log: JobLog, prisma: PrismaClient): Promise<void> {
   const symbols = parseSymbols();
+  const currentDayStartMs = toMskDayStartMs(Date.now());
+  const yesterdayStartMs = currentDayStartMs - MSK_DAY_MS;
+  const dayLabel = new Date(yesterdayStartMs).toISOString().slice(0, 10);
+
   for (const symbol of symbols) {
     try {
-      const snapshot = await fetchTradingDayTicker(symbol);
+      const snapshot = await resolveYesterdaySnapshot(symbol, yesterdayStartMs);
+      if (!snapshot) {
+        log.warn(
+          {
+            job: "tradingDay",
+            symbol,
+            openTime: new Date(yesterdayStartMs).toISOString(),
+          },
+          "trading_day_snapshot_missing",
+        );
+        continue;
+      }
+
       await upsertPriceCandle(prisma, snapshot);
-      log.info({ job: "tradingDay", ...snapshot }, "trading_day_saved");
+      clearLiveCandle(symbol, yesterdayStartMs);
+      log.info(
+        {
+          job: "tradingDay",
+          symbol,
+          openTime: new Date(snapshot.openTime).toISOString(),
+          close: snapshot.lastPrice,
+        },
+        `[tradingDay] saved ${symbol} ${dayLabel}: close=${snapshot.lastPrice}`,
+      );
     } catch (err) {
       log.warn(
         {

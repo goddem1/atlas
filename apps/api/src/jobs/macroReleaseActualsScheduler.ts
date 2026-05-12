@@ -21,12 +21,22 @@ const DEFAULT_COUNTRY = "United States";
 const DEFAULT_TZ = "Europe/Moscow";
 const DEFAULT_HOST = "economic-calendar-api-tradingeconomics.p.rapidapi.com";
 
-const RELEASE_ATTEMPTS = 6;
-const RELEASE_ATTEMPT_INTERVAL_MS = 10_000;
-const RELEASE_WINDOW_MS = RELEASE_ATTEMPTS * RELEASE_ATTEMPT_INTERVAL_MS;
+const RELEASE_ATTEMPT_OFFSETS_MS = [
+  0,
+  10_000,
+  20_000,
+  30_000,
+  40_000,
+  50_000,
+  5 * 60_000,
+  10 * 60_000,
+] as const;
+const RELEASE_MINUTE_ATTEMPTS = 6;
 
 const inProgressEventIds = new Set<string>();
 const activeGroupsByMinuteKey = new Map<string, ActiveReleaseGroup>();
+const finishedMinuteKeys = new Set<string>();
+const deferredRowsById = new Map<string, DeferredRow>();
 
 type ActiveReleaseGroup = {
   minuteKey: string;
@@ -35,6 +45,14 @@ type ActiveReleaseGroup = {
   releaseStartMs: number;
   rowIds: string[];
   attemptsMade: number;
+};
+
+type DeferredRow = {
+  rowId: string;
+  ymd: string;
+  releaseHm: string;
+  indicatorName: string;
+  sourceMinuteKey: string;
 };
 
 type GroupRow = {
@@ -57,6 +75,7 @@ type ApplyResult = {
 
 let runningInterval: ReturnType<typeof setInterval> | null = null;
 let runInFlight = false;
+let lastMissingKeyLogMs = 0;
 
 function normalizeName(value: string): string {
   return value.trim().toLowerCase().replace(/\s+/g, " ");
@@ -162,6 +181,24 @@ function buildEventsByNameAndHm(events: TeEvent[]): Map<string, TeEvent[]> {
   return byNameAndTime;
 }
 
+function cleanupDailyState(now = new Date()): void {
+  const { ymd } = mskParts(now);
+  for (const minuteKey of finishedMinuteKeys) {
+    if (!minuteKey.startsWith(ymd)) finishedMinuteKeys.delete(minuteKey);
+  }
+  for (const [rowId, deferred] of deferredRowsById) {
+    if (deferred.ymd !== ymd) continue;
+    // keep same-day deferred rows; cleanup happens when row succeeds or next day on new event
+    void rowId;
+  }
+}
+
+function attemptPhase(attemptNo: number): string {
+  if (attemptNo <= RELEASE_MINUTE_ATTEMPTS) return "release-minute";
+  if (attemptNo === RELEASE_MINUTE_ATTEMPTS + 1) return "plus-5m";
+  return "plus-10m";
+}
+
 function toLogValue(raw: string | null | undefined): string | null {
   const value = String(raw ?? "").trim();
   return value || null;
@@ -235,14 +272,16 @@ async function activateCurrentMinuteGroup(
   logger: LoggerLike,
   prisma: PrismaClient,
   now = new Date(),
-): Promise<void> {
+): Promise<boolean> {
+  cleanupDailyState(now);
   const current = await loadCurrentMinuteRows(prisma, now);
-  if (!current) return;
-  if (activeGroupsByMinuteKey.has(current.minuteKey)) return;
+  if (!current) return false;
+  if (activeGroupsByMinuteKey.has(current.minuteKey)) return false;
+  if (finishedMinuteKeys.has(current.minuteKey)) return false;
 
   const releaseStartMs = mskMinuteStartUtc(current.ymd, current.releaseHm).getTime();
   const nowMs = now.getTime();
-  if (nowMs < releaseStartMs || nowMs >= releaseStartMs + RELEASE_WINDOW_MS) return;
+  if (nowMs < releaseStartMs || nowMs >= releaseStartMs + 60_000) return false;
 
   activeGroupsByMinuteKey.set(current.minuteKey, {
     minuteKey: current.minuteKey,
@@ -260,12 +299,14 @@ async function activateCurrentMinuteGroup(
   logger.info(
     `[macro-release] group activated minute=${current.minuteKey} rows=${current.rows.length} indicators=${JSON.stringify(current.rows.map((row) => row.indicator.name))}`,
   );
+  return true;
 }
 
 async function processActiveGroups(logger: LoggerLike, prisma: PrismaClient, now = new Date()): Promise<void> {
   const rapidApiKey = process.env.RAPIDAPI_KEY ?? "";
   if (!rapidApiKey) {
-    if (activeGroupsByMinuteKey.size > 0) {
+    if (activeGroupsByMinuteKey.size > 0 && now.getTime() - lastMissingKeyLogMs > 30_000) {
+      lastMissingKeyLogMs = now.getTime();
       logger.error("[macro-release] RAPIDAPI_KEY is missing");
     }
     return;
@@ -273,18 +314,32 @@ async function processActiveGroups(logger: LoggerLike, prisma: PrismaClient, now
 
   const nowMs = now.getTime();
   for (const [minuteKey, group] of activeGroupsByMinuteKey) {
-    const maxAttemptsReached = group.attemptsMade >= RELEASE_ATTEMPTS;
-    const expired = nowMs >= group.releaseStartMs + RELEASE_WINDOW_MS;
-    if (maxAttemptsReached || expired) {
+    const maxAttemptsReached = group.attemptsMade >= RELEASE_ATTEMPT_OFFSETS_MS.length;
+    if (maxAttemptsReached) {
+      const rows = await prisma.macroDataPoint.findMany({
+        where: { id: { in: group.rowIds } },
+        include: { indicator: { select: { name: true } } },
+      });
+      const pendingRows = rows.filter((row) => row.actual == null);
+      for (const row of pendingRows) {
+        deferredRowsById.set(row.id, {
+          rowId: row.id,
+          ymd: group.ymd,
+          releaseHm: group.releaseHm,
+          indicatorName: row.indicator.name,
+          sourceMinuteKey: minuteKey,
+        });
+      }
       for (const rowId of group.rowIds) inProgressEventIds.delete(rowId);
       activeGroupsByMinuteKey.delete(minuteKey);
+      finishedMinuteKeys.add(minuteKey);
       logger.info(
-        `[macro-release] group finished minute=${minuteKey} attempts=${group.attemptsMade}/${RELEASE_ATTEMPTS} reason=${maxAttemptsReached ? "attempt-limit" : "time-window"}`,
+        `[macro-release] group finished minute=${minuteKey} attempts=${group.attemptsMade}/${RELEASE_ATTEMPT_OFFSETS_MS.length} reason=attempt-limit deferred_rows=${pendingRows.length}`,
       );
       continue;
     }
 
-    const dueAtMs = group.releaseStartMs + group.attemptsMade * RELEASE_ATTEMPT_INTERVAL_MS;
+    const dueAtMs = group.releaseStartMs + RELEASE_ATTEMPT_OFFSETS_MS[group.attemptsMade]!;
     if (nowMs < dueAtMs) continue;
 
     const rows = await prisma.macroDataPoint.findMany({
@@ -295,13 +350,15 @@ async function processActiveGroups(logger: LoggerLike, prisma: PrismaClient, now
     if (pendingRows.length === 0) {
       for (const rowId of group.rowIds) inProgressEventIds.delete(rowId);
       activeGroupsByMinuteKey.delete(minuteKey);
+      finishedMinuteKeys.add(minuteKey);
       logger.info(
-        `[macro-release] group finished minute=${minuteKey} attempts=${group.attemptsMade}/${RELEASE_ATTEMPTS} reason=filled-early`,
+        `[macro-release] group finished minute=${minuteKey} attempts=${group.attemptsMade}/${RELEASE_ATTEMPT_OFFSETS_MS.length} reason=filled-early`,
       );
       continue;
     }
 
     const attemptNo = group.attemptsMade + 1;
+    const phase = attemptPhase(attemptNo);
     for (const row of pendingRows) inProgressEventIds.add(row.id);
 
     try {
@@ -329,27 +386,100 @@ async function processActiveGroups(logger: LoggerLike, prisma: PrismaClient, now
       }
 
       logger.info(
-        `[macro-release] minute=${minuteKey} attempt=${attemptNo}/${RELEASE_ATTEMPTS} status=ok api_events=${events.length} pending_before=${pendingRows.length} updated=${updated} filled_actual=${filledActual} pending_after=${pendingAfter} results=${JSON.stringify(results)}`,
+        `[macro-release] minute=${minuteKey} attempt=${attemptNo}/${RELEASE_ATTEMPT_OFFSETS_MS.length} phase=${phase} status=ok api_events=${events.length} pending_before=${pendingRows.length} updated=${updated} filled_actual=${filledActual} pending_after=${pendingAfter} results=${JSON.stringify(results)}`,
       );
 
       if (pendingAfter === 0) {
         activeGroupsByMinuteKey.delete(minuteKey);
+        finishedMinuteKeys.add(minuteKey);
         logger.info(
-          `[macro-release] group finished minute=${minuteKey} attempts=${group.attemptsMade}/${RELEASE_ATTEMPTS} reason=filled-early`,
+          `[macro-release] group finished minute=${minuteKey} attempts=${group.attemptsMade}/${RELEASE_ATTEMPT_OFFSETS_MS.length} reason=filled-early`,
         );
       }
     } catch (err) {
       group.attemptsMade += 1;
       logger.error(
-        `[macro-release] minute=${minuteKey} attempt=${attemptNo}/${RELEASE_ATTEMPTS} status=error error=${JSON.stringify(err instanceof Error ? { message: err.message, stack: err.stack } : { value: String(err) })}`,
+        `[macro-release] minute=${minuteKey} attempt=${attemptNo}/${RELEASE_ATTEMPT_OFFSETS_MS.length} phase=${phase} status=error error=${JSON.stringify(err instanceof Error ? { message: err.message, stack: err.stack } : { value: String(err) })}`,
       );
     }
   }
 }
 
+async function processDeferredRowsOnNextEvent(
+  logger: LoggerLike,
+  prisma: PrismaClient,
+  shouldRun: boolean,
+): Promise<void> {
+  if (!shouldRun || deferredRowsById.size === 0) return;
+
+  const rapidApiKey = process.env.RAPIDAPI_KEY ?? "";
+  if (!rapidApiKey) {
+    logger.error("[macro-release] RAPIDAPI_KEY is missing");
+    return;
+  }
+
+  const queued = [...deferredRowsById.values()];
+  const byYmd = new Map<string, DeferredRow[]>();
+  for (const row of queued) {
+    const list = byYmd.get(row.ymd) ?? [];
+    list.push(row);
+    byYmd.set(row.ymd, list);
+  }
+
+  logger.info(
+    `[macro-release] deferred retry started groups=${byYmd.size} rows=${queued.length} items=${JSON.stringify(queued.map((row) => ({ rowId: row.rowId, indicatorName: row.indicatorName, sourceMinuteKey: row.sourceMinuteKey })))}`
+  );
+
+  for (const [ymd, deferredRows] of byYmd) {
+    const dbRows = await prisma.macroDataPoint.findMany({
+      where: { id: { in: deferredRows.map((row) => row.rowId) } },
+      include: { indicator: { select: { name: true } } },
+    });
+    const pendingRows = dbRows.filter((row) => row.actual == null);
+    for (const row of dbRows) {
+      if (row.actual != null) deferredRowsById.delete(row.id);
+    }
+    if (pendingRows.length === 0) continue;
+
+    for (const row of pendingRows) inProgressEventIds.add(row.id);
+    try {
+      const events = await fetchTradingEconomicsDayEvents({
+        from: ymd,
+        to: ymd,
+        rapidApiKey,
+        rapidApiHost: process.env.RAPIDAPI_HOST ?? DEFAULT_HOST,
+      });
+      const { updated, filledActual, results } = await applyCalendarToRows(prisma, events, pendingRows);
+      const afterRows = await prisma.macroDataPoint.findMany({
+        where: { id: { in: pendingRows.map((row) => row.id) } },
+        select: { id: true, actual: true },
+      });
+      let pendingAfter = 0;
+      for (const row of afterRows) {
+        if (row.actual == null) {
+          pendingAfter += 1;
+          inProgressEventIds.delete(row.id);
+        } else {
+          deferredRowsById.delete(row.id);
+          inProgressEventIds.delete(row.id);
+        }
+      }
+      logger.info(
+        `[macro-release] deferred ymd=${ymd} status=ok api_events=${events.length} pending_before=${pendingRows.length} updated=${updated} filled_actual=${filledActual} pending_after=${pendingAfter} results=${JSON.stringify(results)}`,
+      );
+    } catch (err) {
+      logger.error(
+        `[macro-release] deferred ymd=${ymd} status=error error=${JSON.stringify(err instanceof Error ? { message: err.message, stack: err.stack } : { value: String(err) })}`,
+      );
+      for (const row of pendingRows) inProgressEventIds.delete(row.id);
+    }
+  }
+}
+
 async function tick(logger: LoggerLike, prisma: PrismaClient): Promise<void> {
-  await activateCurrentMinuteGroup(logger, prisma);
+  const activated = await activateCurrentMinuteGroup(logger, prisma);
   await processActiveGroups(logger, prisma);
+  await processDeferredRowsOnNextEvent(logger, prisma, activated);
 }
 
 export function startMacroReleaseActualsScheduler(
@@ -367,7 +497,7 @@ export function startMacroReleaseActualsScheduler(
   }, 1000);
 
   logger.info(
-    "[macro-release] scheduler started (up to 6 attempts per release minute, every 10 seconds, with per-attempt logs)",
+    "[macro-release] scheduler started (6 attempts in first minute, then +5m and +10m, then deferred retry on next event)",
   );
   return { stop: stopMacroReleaseActualsScheduler };
 }
@@ -380,6 +510,8 @@ export function stopMacroReleaseActualsScheduler(): void {
   runInFlight = false;
   inProgressEventIds.clear();
   activeGroupsByMinuteKey.clear();
+  finishedMinuteKeys.clear();
+  deferredRowsById.clear();
 }
 
 export function getMacroReleaseInProgressIds(): string[] {

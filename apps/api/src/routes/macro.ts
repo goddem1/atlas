@@ -108,6 +108,25 @@ export function registerMacroRoutes(app: FastifyInstance, prisma: PrismaClient):
       },
     });
 
+    const indicatorIds = Array.from(new Set(rows.map((row) => row.indicatorId)));
+    const historyCountsByIndicator: Record<string, number> = {};
+    if (indicatorIds.length > 0) {
+      const counts = await prisma.macroDataPoint.groupBy({
+        by: ["indicatorId"],
+        where: {
+          indicatorId: { in: indicatorIds },
+          actual: { not: null },
+        },
+        _count: {
+          _all: true,
+        },
+      });
+
+      for (const row of counts) {
+        historyCountsByIndicator[row.indicatorId] = row._count._all;
+      }
+    }
+
     return {
       events: rows.map((r) => {
         const t = r.indicator.translations[0] ?? null;
@@ -128,6 +147,7 @@ export function registerMacroRoutes(app: FastifyInstance, prisma: PrismaClient):
           previous: r.previous ? r.previous.toString() : null,
         };
       }),
+      historyCountsByIndicator,
     };
   });
 

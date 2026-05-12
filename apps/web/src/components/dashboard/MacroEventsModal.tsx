@@ -52,6 +52,8 @@ const MACRO_IMPORTANCE_OPTIONS: Array<{ value: string; label: string }> = [
   { value: "medium", label: "Средняя" },
   { value: "low", label: "Низкая" },
 ];
+// По текущему наполнению БД "бедные" индикаторы естественно отделяются на уровне 0-6 actual points.
+const MACRO_MIN_HISTORY_POINTS_FOR_CONFIDENT_CHART = 7;
 
 function ymdMsk(d: Date): string {
   return ymdMskFromDate(d);
@@ -256,6 +258,7 @@ export function MacroEventsModal({ open, onClose }: Props) {
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [events, setEvents] = useState<MacroEventRow[]>([]);
+  const [historyCountsByIndicator, setHistoryCountsByIndicator] = useState<Record<string, number>>({});
   const [activeDay, setActiveDay] = useState<string>(ymdMsk(new Date()));
   const [periodPreset, setPeriodPreset] = useState<MacroPeriodPreset>("currentMonth");
   const [periodMenuOpen, setPeriodMenuOpen] = useState(false);
@@ -439,9 +442,11 @@ export function MacroEventsModal({ open, onClose }: Props) {
     try {
       const r = await fetchMacroEvents({ from, to, locale: "ru" });
       setEvents(r.events ?? []);
+      setHistoryCountsByIndicator(r.historyCountsByIndicator ?? {});
     } catch (e: unknown) {
       setErr(e instanceof Error ? e.message : "Ошибка загрузки");
       setEvents([]);
+      setHistoryCountsByIndicator({});
     } finally {
       setLoading(false);
     }
@@ -969,6 +974,12 @@ export function MacroEventsModal({ open, onClose }: Props) {
                               aria-label={`График: ${e.name}`}
                               onClick={() => setSeriesIndicatorId(e.indicatorId)}
                             >
+                              {(() => {
+                                const historyCount = historyCountsByIndicator[e.indicatorId] ?? 0;
+                                const hasInsufficientHistory =
+                                  historyCount < MACRO_MIN_HISTORY_POINTS_FOR_CONFIDENT_CHART;
+                                return (
+                                  <>
                               {!tinyLoadedByRowId[e.id] && !tinyFailedByRowId[e.id] ? (
                                 <span className="macro-events-chart-slot-loading">…</span>
                               ) : null}
@@ -1004,12 +1015,17 @@ export function MacroEventsModal({ open, onClose }: Props) {
                                       onError={() => setPreviewFailedByRowId((prev) => ({ ...prev, [e.id]: true }))}
                                     />
                                   </div>
-                                  <div className="macro-events-chart-hover-note">
-                                    К сожалению по этому индикатору исторические данные пока недоступны - но мы уже
-                                    работаем над этим!
-                                  </div>
+                                  {hasInsufficientHistory ? (
+                                    <div className="macro-events-chart-hover-note">
+                                      К сожалению по этому индикатору исторических данных пока недостаточно, но мы
+                                      уже работаем над этим!
+                                    </div>
+                                  ) : null}
                                 </div>
                               ) : null}
+                                  </>
+                                );
+                              })()}
                             </button>
                           )}
                         </li>

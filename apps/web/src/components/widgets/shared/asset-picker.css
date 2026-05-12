@@ -24,8 +24,8 @@
   gap: 15px;
   width: min(550px, calc(100vw - 32px));
   max-height: calc(100dvh - 32px);
-  /*
   overflow: hidden;
+  /*
   border-radius: 34px;
   background-color: var(--atlas-glass-bg);
   border: var(--atlas-glass-border);
@@ -179,17 +179,21 @@
 
 .asset-picker-list {
   min-height: 0;
-  flex: 1;
+  flex: 1 1 auto;
+  height: 100%;
   margin: 0;
   padding: 15px;
   list-style: none;
   overflow-y: auto;
   overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 .asset-picker-list-panel {
   min-height: 0;
   flex: 1;
+  display: flex;
+  flex-direction: column;
   border-radius: 35px;
   background-color: var(--atlas-glass-bg);
   border: var(--atlas-glass-border);
