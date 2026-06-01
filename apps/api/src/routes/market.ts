@@ -1,5 +1,15 @@
 import type { FastifyInstance } from "fastify";
 import type { PrismaClient } from "@prisma/client";
+import {
+  BONDS_YIELD_DATES_DEFAULT_LIMIT,
+  BONDS_YIELD_DATES_MAX_LIMIT,
+  getBondsYieldCurve,
+  getBondsYieldCurveAvailableDates,
+  getBondsYieldCurveDateBounds,
+  getBondsYieldCurveDatesForMonth,
+  getBondsYieldCurveNeighborDate,
+  normalizeBondsYieldCompareDays,
+} from "../services/bondsYieldCurve.js";
 import { fetchRestMskDailyCandle, getLiveCandle, toMskDayStartMs } from "../services/binanceCandleStream.js";
 
 function toApiRow(row: {
@@ -81,5 +91,55 @@ export function registerMarketRoutes(app: FastifyInstance, prisma: PrismaClient)
     ];
 
     return response.slice(-days);
+  });
+
+  app.get<{ Querystring: { compareDays?: string; asOfDate?: string } }>("/widgets/bonds-yield-curve", async (req, reply) => {
+    reply.header("Cache-Control", "no-store");
+    const compareDays = normalizeBondsYieldCompareDays(req.query.compareDays);
+    const asOfDate = typeof req.query.asOfDate === "string" ? req.query.asOfDate : null;
+    return getBondsYieldCurve(prisma, compareDays, asOfDate);
+  });
+
+  app.get("/widgets/bonds-yield-curve/dates/bounds", async (_req, reply) => {
+    reply.header("Cache-Control", "no-store");
+    return getBondsYieldCurveDateBounds(prisma);
+  });
+
+  app.get<{ Querystring: { year?: string; month?: string } }>(
+    "/widgets/bonds-yield-curve/dates/month",
+    async (req, reply) => {
+      reply.header("Cache-Control", "no-store");
+      const year = Number.parseInt(req.query.year ?? "", 10);
+      const month = Number.parseInt(req.query.month ?? "", 10);
+      if (!Number.isFinite(year) || !Number.isFinite(month)) {
+        return reply.status(400).send({ error: "query year and month are required (month 1–12)" });
+      }
+      const dates = await getBondsYieldCurveDatesForMonth(prisma, year, month);
+      return { dates };
+    },
+  );
+
+  app.get<{ Querystring: { date?: string; direction?: string } }>(
+    "/widgets/bonds-yield-curve/dates/neighbor",
+    async (req, reply) => {
+      reply.header("Cache-Control", "no-store");
+      const date = typeof req.query.date === "string" ? req.query.date.trim() : "";
+      const direction = req.query.direction === "next" ? "next" : req.query.direction === "prev" ? "prev" : null;
+      if (!date || !direction) {
+        return reply.status(400).send({ error: "query date and direction=prev|next are required" });
+      }
+      const neighbor = await getBondsYieldCurveNeighborDate(prisma, date, direction);
+      return { date: neighbor };
+    },
+  );
+
+  app.get<{ Querystring: { limit?: string } }>("/widgets/bonds-yield-curve/dates", async (req, reply) => {
+    reply.header("Cache-Control", "no-store");
+    const limitRaw = req.query.limit ? Number.parseInt(req.query.limit, 10) : BONDS_YIELD_DATES_DEFAULT_LIMIT;
+    const limit = Number.isFinite(limitRaw)
+      ? Math.min(BONDS_YIELD_DATES_MAX_LIMIT, Math.max(1, limitRaw))
+      : BONDS_YIELD_DATES_DEFAULT_LIMIT;
+    const dates = await getBondsYieldCurveAvailableDates(prisma, limit);
+    return { dates };
   });
 }

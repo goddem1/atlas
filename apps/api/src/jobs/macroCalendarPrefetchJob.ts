@@ -24,6 +24,8 @@ export type MacroImportOptions = {
   tz?: string;
   rapidApiKey?: string;
   rapidApiHost?: string;
+  /** true: не трогать уже существующие MacroDataPoint (только create для отсутствующих пар indicator+date) */
+  onlyMissing?: boolean;
 };
 
 export type MacroImportStats = {
@@ -33,6 +35,7 @@ export type MacroImportStats = {
   created: number;
   updated: number;
   skippedUnknownIndicator: number;
+  skippedExisting: number;
 };
 
 const DEFAULT_COUNTRY = "United States";
@@ -60,7 +63,16 @@ function parseMskDateToUtc(raw: string): Date | null {
   return Number.isFinite(d.getTime()) ? d : null;
 }
 
-async function fetchTradingEconomicsEvents(opts: Required<MacroImportOptions>): Promise<TeEvent[]> {
+type MacroCalendarFetchOpts = {
+  from: string;
+  to: string;
+  country: string;
+  tz: string;
+  rapidApiKey: string;
+  rapidApiHost: string;
+};
+
+async function fetchTradingEconomicsEvents(opts: MacroCalendarFetchOpts): Promise<TeEvent[]> {
   const dispatcher = getRapidApiDispatcher();
   const url = new URL(`https://${opts.rapidApiHost}/calendar`);
   url.searchParams.set("country", opts.country);
@@ -96,7 +108,8 @@ export async function importMacroCalendarRange(
     throw new Error("RAPIDAPI_KEY is missing");
   }
 
-  const opts: Required<MacroImportOptions> = {
+  const onlyMissing = options.onlyMissing ?? false;
+  const opts: MacroCalendarFetchOpts = {
     from: options.from,
     to: options.to,
     country: options.country ?? DEFAULT_COUNTRY,
@@ -118,6 +131,7 @@ export async function importMacroCalendarRange(
   let created = 0;
   let updated = 0;
   let skippedUnknownIndicator = 0;
+  let skippedExisting = 0;
 
   for (const event of events) {
     const eventName = String(event.eventName ?? "").trim();
@@ -142,6 +156,10 @@ export async function importMacroCalendarRange(
     });
 
     if (existing) {
+      if (onlyMissing) {
+        skippedExisting += 1;
+        continue;
+      }
       await prisma.macroDataPoint.update({
         where: { id: existing.id },
         data: {
@@ -176,9 +194,10 @@ export async function importMacroCalendarRange(
     created,
     updated,
     skippedUnknownIndicator,
+    skippedExisting,
   };
   logger.info(
-    `[macro-prefetch] ${opts.from}..${opts.to} received=${stats.receivedEvents} created=${stats.created} updated=${stats.updated} skipped_unknown=${stats.skippedUnknownIndicator}`,
+    `[macro-prefetch] ${opts.from}..${opts.to} received=${stats.receivedEvents} created=${stats.created} updated=${stats.updated} skipped_unknown=${stats.skippedUnknownIndicator} skipped_existing=${stats.skippedExisting}`,
   );
   return stats;
 }

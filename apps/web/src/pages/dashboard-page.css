@@ -374,10 +374,136 @@ html[data-dashboard-theme="dark"] .dashboard-floating-actions-settings .dashboar
 }
 
 .dashboard-floating-action-expanded-gear {
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
   flex-shrink: 0;
   color: var(--atlas-fg-primary);
+}
+
+.dashboard-floating-action-expanded-btn--logout {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 3px;
+}
+
+.dashboard-floating-action-expanded-logout-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  object-fit: contain;
+  filter: var(--atlas-search-icon-filter);
+}
+
+.dashboard-theme-toggle {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.dashboard-theme-toggle--menu {
+  width: 40px;
+  margin: 0;
+  padding: 3px;
+  border-radius: 50px;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+html[data-dashboard-theme="dark"] .dashboard-theme-toggle--menu {
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.dashboard-theme-toggle--panel {
+  width: fit-content;
+  padding: 4px;
+  border-radius: 50px;
+  background: rgba(255, 255, 255, 0.14);
+  border: var(--atlas-glass-border, 1px solid rgba(255, 255, 255, 0.2));
+  gap: 4px;
+}
+
+html[data-dashboard-theme="dark"] .dashboard-theme-toggle--panel {
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.dashboard-theme-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 100px;
+  background: transparent;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    opacity 0.15s ease;
+}
+
+.dashboard-theme-toggle--menu .dashboard-theme-toggle-btn {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+}
+
+.dashboard-theme-toggle--panel .dashboard-theme-toggle-btn {
+  width: 44px;
+  height: 44px;
+}
+
+.dashboard-theme-toggle-btn:hover:not(.is-active) {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+html[data-dashboard-theme="dark"] .dashboard-theme-toggle-btn:hover:not(.is-active) {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.dashboard-theme-toggle-btn:not(.is-active) {
+  opacity: 0.55;
+}
+
+.dashboard-theme-toggle-btn.is-active {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.32);
+}
+
+html[data-dashboard-theme="dark"] .dashboard-theme-toggle-btn.is-active {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.dashboard-theme-toggle--panel .dashboard-theme-toggle-btn.is-active {
+  background: rgba(14, 165, 233, 0.28);
+  box-shadow: 0 0 0 1px rgba(14, 165, 233, 0.45);
+}
+
+html[data-dashboard-theme="dark"] .dashboard-theme-toggle--panel .dashboard-theme-toggle-btn.is-active {
+  background: rgba(14, 165, 233, 0.22);
+}
+
+.dashboard-theme-toggle-btn:focus {
+  outline: none;
+}
+
+.dashboard-theme-toggle-btn:focus-visible {
+  box-shadow: 0 0 0 2px #0ea5e9;
+}
+
+.dashboard-theme-toggle-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  object-fit: contain;
+  filter: var(--atlas-search-icon-filter);
+}
+
+.dashboard-theme-toggle--panel .dashboard-theme-toggle-icon {
+  width: 20px;
+  height: 20px;
 }
 
 /* Круглая кнопка панели (настройки, добавить виджет) — те же токены, что .atlas-glass. */
@@ -423,6 +549,29 @@ html[data-dashboard-theme="dark"] .dashboard-floating-actions-settings .dashboar
 .dashboard-floating-action-icon--settings {
   width: 1.5rem;
   height: 1.5rem;
+}
+
+.dashboard-floating-action-icon--user {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+  filter: var(--atlas-search-icon-filter);
+}
+
+.dashboard-floating-action-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 9999px;
+  border: var(--atlas-glass-border);
+  box-sizing: border-box;
+  font-size: 20px;
+  font-weight: 400;
+  line-height: 1;
+  color: var(--atlas-fg-primary);
+  user-select: none;
 }
 
 /* Кнопка «+»: при необходимости стилизуйте `.dashboard-floating-actions-add-widget`. */

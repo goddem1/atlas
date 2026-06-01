@@ -1,4 +1,5 @@
 import type {
+  BondsYieldCurveResponse,
   CandleApiRow,
   CryptocurrencyListItem,
   MacroEventsResponse,
@@ -8,6 +9,7 @@ import type {
   PortfolioSummaryResponse,
   PortfolioTimeframe,
   PortfolioTransactionUpsertInput,
+  UserDashboardState,
 } from "@atlas-v1/shared";
 
 function apiBase(): string {
@@ -17,6 +19,12 @@ function apiBase(): string {
   // Dev: см. vite.config proxy /api → 127.0.0.1:3001 (иначе cross-origin часто даёт «Failed to fetch»).
   if (import.meta.env.DEV) return "/api";
   return "";
+}
+
+const authFetchInit: RequestInit = { credentials: "include" };
+
+function portfolioFetch(url: string, init?: RequestInit): Promise<Response> {
+  return fetch(url, { ...authFetchInit, ...init, credentials: "include" });
 }
 
 async function parseJson<T>(res: Response): Promise<T> {
@@ -43,6 +51,41 @@ export async function fetchCandles(pair: string, days = 7): Promise<CandleApiRow
   const q = new URLSearchParams({ pair, days: String(days) });
   const res = await fetch(`${apiBase()}/widgets/candles?${q}`, { cache: "no-store" });
   return parseJson<CandleApiRow[]>(res);
+}
+
+export async function fetchBondsYieldCurve(
+  compareDays: number,
+  asOfDate?: string | null,
+): Promise<BondsYieldCurveResponse> {
+  const q = new URLSearchParams({ compareDays: String(compareDays) });
+  if (asOfDate) q.set("asOfDate", asOfDate);
+  const res = await fetch(`${apiBase()}/widgets/bonds-yield-curve?${q}`, { cache: "no-store" });
+  return parseJson<BondsYieldCurveResponse>(res);
+}
+
+export type BondsYieldDateBounds = { min: string | null; max: string | null };
+
+export async function fetchBondsYieldCurveDateBounds(): Promise<BondsYieldDateBounds> {
+  const res = await fetch(`${apiBase()}/widgets/bonds-yield-curve/dates/bounds`, { cache: "no-store" });
+  return parseJson<BondsYieldDateBounds>(res);
+}
+
+/** month: 1–12 */
+export async function fetchBondsYieldCurveDatesForMonth(year: number, month: number): Promise<string[]> {
+  const q = new URLSearchParams({ year: String(year), month: String(month) });
+  const res = await fetch(`${apiBase()}/widgets/bonds-yield-curve/dates/month?${q}`, { cache: "no-store" });
+  const body = await parseJson<{ dates: string[] }>(res);
+  return body.dates ?? [];
+}
+
+export async function fetchBondsYieldCurveNeighborDate(
+  date: string,
+  direction: "prev" | "next",
+): Promise<string | null> {
+  const q = new URLSearchParams({ date, direction });
+  const res = await fetch(`${apiBase()}/widgets/bonds-yield-curve/dates/neighbor?${q}`, { cache: "no-store" });
+  const body = await parseJson<{ date: string | null }>(res);
+  return body.date ?? null;
 }
 
 export async function fetchMacroEvents(params?: {
@@ -126,20 +169,20 @@ export function buildMacroSlotImageUrl(params: {
 }
 
 export async function fetchPortfolioSummary(): Promise<PortfolioSummaryResponse> {
-  const res = await fetch(`${apiBase()}/portfolio`, { cache: "no-store" });
+  const res = await portfolioFetch(`${apiBase()}/portfolio`, { cache: "no-store" });
   return parseJson<PortfolioSummaryResponse>(res);
 }
 
 export async function fetchPortfolioChart(timeframe: PortfolioTimeframe): Promise<PortfolioChartResponse> {
   const q = new URLSearchParams({ timeframe });
-  const res = await fetch(`${apiBase()}/portfolio/chart?${q}`, { cache: "no-store" });
+  const res = await portfolioFetch(`${apiBase()}/portfolio/chart?${q}`, { cache: "no-store" });
   return parseJson<PortfolioChartResponse>(res);
 }
 
 export async function createPortfolioTransaction(
   payload: PortfolioTransactionUpsertInput,
 ): Promise<{ id: string }> {
-  const res = await fetch(`${apiBase()}/portfolio/transaction`, {
+  const res = await portfolioFetch(`${apiBase()}/portfolio/transaction`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
@@ -148,7 +191,9 @@ export async function createPortfolioTransaction(
 }
 
 export async function fetchPortfolioAssetDetail(symbol: string): Promise<PortfolioAssetDetailResponse> {
-  const res = await fetch(`${apiBase()}/portfolio/${encodeURIComponent(symbol)}`, { cache: "no-store" });
+  const res = await portfolioFetch(`${apiBase()}/portfolio/${encodeURIComponent(symbol)}`, {
+    cache: "no-store",
+  });
   return parseJson<PortfolioAssetDetailResponse>(res);
 }
 
@@ -156,7 +201,7 @@ export async function updatePortfolioTransaction(
   id: string,
   payload: Omit<PortfolioTransactionUpsertInput, "symbol">,
 ): Promise<void> {
-  const res = await fetch(`${apiBase()}/portfolio/transaction/${id}`, {
+  const res = await portfolioFetch(`${apiBase()}/portfolio/transaction/${id}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
@@ -168,7 +213,7 @@ export async function updatePortfolioTransaction(
 }
 
 export async function deletePortfolioTransaction(id: string): Promise<void> {
-  const res = await fetch(`${apiBase()}/portfolio/transaction/${id}`, { method: "DELETE" });
+  const res = await portfolioFetch(`${apiBase()}/portfolio/transaction/${id}`, { method: "DELETE" });
   if (!res.ok) {
     const t = await res.text();
     throw new Error(t || `HTTP ${res.status}`);
@@ -179,7 +224,7 @@ export async function createPortfolioGoal(
   symbol: string,
   targetPriceUsd: string,
 ): Promise<{ id: string }> {
-  const res = await fetch(`${apiBase()}/portfolio/goal`, {
+  const res = await portfolioFetch(`${apiBase()}/portfolio/goal`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ symbol, targetPriceUsd }),
@@ -188,9 +233,23 @@ export async function createPortfolioGoal(
 }
 
 export async function deletePortfolioGoal(id: string): Promise<void> {
-  const res = await fetch(`${apiBase()}/portfolio/goal/${id}`, { method: "DELETE" });
+  const res = await portfolioFetch(`${apiBase()}/portfolio/goal/${id}`, { method: "DELETE" });
   if (!res.ok) {
     const t = await res.text();
     throw new Error(t || `HTTP ${res.status}`);
   }
+}
+
+export async function fetchUserDashboardState(): Promise<UserDashboardState> {
+  const res = await portfolioFetch(`${apiBase()}/dashboard/state`, { cache: "no-store" });
+  return parseJson<UserDashboardState>(res);
+}
+
+export async function saveUserDashboardState(state: UserDashboardState): Promise<UserDashboardState> {
+  const res = await portfolioFetch(`${apiBase()}/dashboard/state`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(state),
+  });
+  return parseJson<UserDashboardState>(res);
 }

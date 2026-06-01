@@ -7,11 +7,13 @@ import "../widgets/shared/widget-gallery.css";
 
 type Props = {
   open: boolean;
+  isLoggedIn: boolean;
   onClose: () => void;
   onPick: (type: DashboardWidgetType) => void;
 };
 
-export function WidgetGalleryModal({ open, onClose, onPick }: Props) {
+export function WidgetGalleryModal({ open, isLoggedIn, onClose, onPick }: Props) {
+  const catalog = isLoggedIn ? WIDGET_CATALOG : WIDGET_CATALOG.filter((item) => item.type !== "portfolio");
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -46,7 +48,7 @@ export function WidgetGalleryModal({ open, onClose, onPick }: Props) {
 
         <div className="widget-gallery-body">
           <ul className="widget-gallery-grid">
-            {WIDGET_CATALOG.map((item) => (
+            {catalog.map((item) => (
               <li key={item.type}>
                 <button
                   type="button"

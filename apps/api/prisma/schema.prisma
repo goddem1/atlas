@@ -8,19 +8,71 @@ datasource db {
 }
 
 model User {
-  id           String      @id @default(cuid())
-  email        String      @unique
-  passwordHash String
-  createdAt    DateTime    @default(now())
-  dashboards   Dashboard[]
+  id            String   @id
+  name          String
+  email         String   @unique
+  emailVerified Boolean  @default(false)
+  image         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  dashboards      Dashboard[]
+  portfolioAssets PortfolioAsset[]
+  sessions        Session[]
+  accounts        Account[]
+}
+
+model Session {
+  id        String   @id
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Account {
+  id                String    @id
+  userId            String
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accountId         String
+  providerId        String
+  accessToken       String?
+  refreshToken      String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope             String?
+  idToken           String?
+  password          String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@unique([providerId, accountId])
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
 
 model Dashboard {
   id        String   @id @default(cuid())
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String   @default("My Dashboard")
+  isDefault Boolean  @default(false)
   layout    Json
+  createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([userId])
 }
 
 model DashboardTemplate {
@@ -40,12 +92,10 @@ model NewsItem {
 
 /// Справочник криптовалют проекта (иконки и прочие ресурсы).
 model CryptocurrencyList {
-  id      String @id @default(cuid())
-  symbol  String @unique
-  name    String
-  /// Публичный URL или путь к иконке (напр. `/assets/crypto/BTC.svg` для Vite `public`).
-  iconUrl String
-  /// Пара в `CryptoPriceCandle.symbol` (напр. BTCUSDT). Если null — используется `{symbol}USDT`.
+  id         String  @id @default(cuid())
+  symbol     String  @unique
+  name       String
+  iconUrl    String
   pairSymbol String?
 
   createdAt DateTime @default(now())
@@ -56,28 +106,52 @@ model CryptocurrencyList {
 
 /// Дневные свечи с Binance klines (data-api.binance.vision). Дубликаты по одной свече исключены.
 model CryptoPriceCandle {
-  id        String   @id @default(cuid())
-  symbol    String
-  /// В БД колонка `interval` (зарезервированное слово в PostgreSQL).
-  interval  String   @default("1d") @map("interval")
-  openTime  DateTime
-  open      Decimal  @db.Decimal(28, 12)
-  high      Decimal  @db.Decimal(28, 12)
-  low       Decimal  @db.Decimal(28, 12)
-  close     Decimal  @db.Decimal(28, 12)
-  volume    Decimal  @db.Decimal(38, 12)
+  id       String   @id @default(cuid())
+  symbol   String
+  interval String   @default("1d") @map("interval")
+  openTime DateTime
+  open     Decimal  @db.Decimal(28, 12)
+  high     Decimal  @db.Decimal(28, 12)
+  low      Decimal  @db.Decimal(28, 12)
+  close    Decimal  @db.Decimal(28, 12)
+  volume   Decimal  @db.Decimal(38, 12)
 
   @@unique([symbol, interval, openTime])
   @@map("CryptoPriceCandle")
 }
 
+/// Цены закрытия облигаций по интервалам.
+model BondsPrices {
+  id        String   @id @default(cuid())
+  symbol    String
+  interval  String   @default("1d") @map("interval")
+  closeTime DateTime
+  close     Decimal  @db.Decimal(28, 12)
+
+  @@unique([symbol, interval, closeTime])
+  @@map("BondsPrices")
+}
+
+/// Счётчик запросов RapidAPI (TradingView bonds) по месяцам для ротации ключей.
+model RapidApiBondsUsage {
+  id           String   @id @default(cuid())
+  provider     String
+  monthKey     String
+  requestCount Int      @default(0)
+  updatedAt    DateTime @updatedAt
+
+  @@unique([provider, monthKey])
+  @@map("RapidApiBondsUsage")
+}
+
 model PortfolioAsset {
   id           String        @id @default(cuid())
-  userId       Int
+  userId       String
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   symbol       String
   createdAt    DateTime      @default(now())
   transactions Transaction[]
-  goals        Goal[]
+  goals        PortfolioGoal[]
 
   @@unique([userId, symbol])
 }
@@ -95,7 +169,7 @@ model Transaction {
   updatedAt      DateTime        @updatedAt
 }
 
-model Goal {
+model PortfolioGoal {
   id             String         @id @default(cuid())
   portfolioAsset PortfolioAsset @relation(fields: [assetId], references: [id], onDelete: Cascade)
   assetId        String

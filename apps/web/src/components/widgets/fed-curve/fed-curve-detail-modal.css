@@ -1,0 +1,398 @@
+.fed-curve-detail-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 12000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  backdrop-filter: blur(8px) saturate(130%);
+  -webkit-backdrop-filter: blur(8px) saturate(130%);
+}
+
+.fed-curve-detail-dialog {
+  width: min(920px, 100%);
+  max-height: min(90dvh, 720px);
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  overflow-y: auto;
+  border-radius: 32px;
+}
+
+.fed-curve-detail-head {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 18px 56px 14px 22px;
+  background-color: var(--atlas-glass-bg);
+  border: var(--atlas-glass-border);
+  box-shadow: var(--atlas-glass-shadow);
+  backdrop-filter: var(--atlas-glass-backdrop);
+  -webkit-backdrop-filter: var(--atlas-glass-backdrop);
+  border-bottom: var(--atlas-glass-border);
+  border-radius:30px
+}
+
+.fed-curve-detail-title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 400;
+  line-height: 1.25;
+  color: var(--atlas-fg-primary);
+}
+
+.fed-curve-detail-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 999px;
+}
+
+.fed-curve-detail-toolbar {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 20px 18px 0px;
+  flex-wrap: wrap;
+  overflow: visible;
+}
+
+.fed-curve-detail-date-nav {
+  position: relative;
+  z-index: 20;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fed-curve-detail-date-strip {
+  display: inline-flex;
+  align-items: stretch;
+  gap: 0;
+  padding: 0;
+  border-radius: 15px;
+  overflow: hidden;
+  background-color: var(--atlas-glass-bg);
+  border: var(--atlas-glass-border);
+  box-shadow: var(--atlas-glass-shadow);
+  backdrop-filter: var(--atlas-glass-backdrop);
+  -webkit-backdrop-filter: var(--atlas-glass-backdrop);
+}
+
+.fed-curve-detail-nav-btn {
+  flex-shrink: 0;
+  width: 45px;
+  height: 45px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  font-size: 20px;
+  line-height: 1;
+  color: var(--atlas-fg-primary);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fed-curve-detail-date-strip > .fed-curve-detail-nav-btn:first-of-type {
+  border-radius: 15px;
+}
+
+.fed-curve-detail-date-strip > .fed-curve-detail-nav-btn:last-of-type {
+  border-radius: 15px;
+}
+
+.fed-curve-detail-nav-btn:hover:not(:disabled) {
+  background: var(--atlas-btn-glass-hover-bg);
+}
+
+.fed-curve-detail-nav-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.fed-curve-detail-date {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 88px;
+  padding: 10px 15px;
+  line-height: 1;
+  text-align: center;
+  font-size: 20px;
+  font-variant-numeric: tabular-nums;
+  color: var(--atlas-fg-primary);
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.fed-curve-detail-date:hover {
+  background: var(--atlas-btn-glass-hover-bg);
+  border-radius: 15px;
+}
+
+.fed-curve-detail-pin.btn-on-glass {
+  width: 50px;
+  height: 50px;
+  padding: 0;
+  border-radius: 15px;
+  background-color: var(--atlas-glass-bg);
+  border: var(--atlas-glass-border);
+  box-shadow: var(--atlas-glass-shadow);
+  backdrop-filter: var(--atlas-glass-backdrop);
+  -webkit-backdrop-filter: var(--atlas-glass-backdrop);
+}
+
+html[data-dashboard-theme="dark"] .fed-curve-detail-pin.btn-on-glass:not(:disabled):not(.disabled) {
+  background-color: var(--atlas-glass-bg);
+}
+
+html[data-dashboard-theme="dark"] .fed-curve-detail-pin.btn-on-glass:hover:not(:disabled):not(.disabled) {
+  background-color: var(--atlas-btn-glass-hover-bg);
+}
+
+html[data-dashboard-theme="dark"] .fed-curve-detail-pin.btn-on-glass:active:not(:disabled):not(.disabled) {
+  background-color: var(--atlas-btn-glass-active-bg);
+}
+
+.fed-curve-detail-pin-icon {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  filter: var(--atlas-search-icon-filter);
+}
+
+.fed-curve-detail-tags {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.fed-curve-detail-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 13px 10px 13px 10px;
+  border-radius: 15px;
+  border: var(--atlas-glass-border);
+  background: rgba(255, 255, 255, 0.06);
+  font-size: 20px;
+  line-height: 1;
+  color: var(--atlas-fg-primary);
+}
+
+.fed-curve-detail-tag-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.fed-curve-detail-tag-dot--current {
+  background: #3b82f6;
+}
+
+.fed-curve-detail-tag-dot--compare {
+  background: #9ca3af;
+}
+
+.fed-curve-detail-tag-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+}
+
+.fed-curve-detail-tag-remove-icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  opacity: 0.85;
+}
+
+.fed-curve-detail-tag-remove:hover .fed-curve-detail-tag-remove-icon {
+  opacity: 1;
+}
+
+.fed-curve-detail-chart-wrap {
+  position: relative;
+  flex: 1;
+  min-height: 280px;
+  padding: 0 18px 18px;
+  overflow: visible;
+}
+
+.fed-curve-detail-chart-interactive {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 280px;
+  cursor: crosshair;
+}
+
+.fed-curve-detail-tip {
+  position: fixed;
+  z-index: 12002;
+  box-sizing: border-box;
+  min-width: 130px;
+  padding: 10px;
+  border-radius: 10px;
+  pointer-events: none;
+  border: var(--atlas-glass-border);
+  background-color: rgba(183, 183, 183, 0.35);
+  box-shadow: inset -2px -2px 8px 0 rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+}
+
+html[data-dashboard-theme="dark"] .fed-curve-detail-tip {
+  background-color: rgba(255, 255, 255, 0.12);
+}
+
+.fed-curve-detail-tip__tenor {
+  margin: 0 0 5px;
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 1.2;
+  color: var(--atlas-fg-primary);
+  letter-spacing: -0.01em;
+}
+
+.fed-curve-detail-tip__row {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 16px;
+  line-height: 1.3;
+  color: var(--atlas-fg-primary);
+  font-variant-numeric: tabular-nums;
+  opacity: 0.85;
+  white-space: nowrap;
+}
+
+.fed-curve-detail-tip__row + .fed-curve-detail-tip__row {
+  margin-top: 2px;
+}
+
+.fed-curve-detail-tip__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.fed-curve-detail-tip__row--current .fed-curve-detail-tip__dot {
+  background: #3b82f6;
+}
+
+.fed-curve-detail-tip__row--compare .fed-curve-detail-tip__dot {
+  background: #9ca3af;
+}
+
+.fed-curve-detail-chart-err {
+  position: absolute;
+  left: 50%;
+  bottom: 12px;
+  z-index: 2;
+  margin: 0;
+  transform: translateX(-50%);
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  color: #f87171;
+  background: rgba(0, 0, 0, 0.55);
+  pointer-events: none;
+}
+
+.fed-curve-detail-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 280px;
+}
+
+.fed-curve-detail-grid-h,
+.fed-curve-detail-grid-v {
+  stroke: rgba(255, 255, 255, 0.12);
+  stroke-width: 1;
+  stroke-dasharray: 2 4;
+  vector-effect: non-scaling-stroke;
+}
+
+html[data-dashboard-theme="light"] .fed-curve-detail-grid-h,
+html[data-dashboard-theme="light"] .fed-curve-detail-grid-v {
+  stroke: rgba(23, 23, 23, 0.12);
+}
+
+.fed-curve-detail-y-label,
+.fed-curve-detail-x-label {
+  fill: var(--atlas-third-color, #a3a3a3);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.fed-curve-detail-line {
+  fill: none;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.fed-curve-detail-line--current {
+  stroke: #3b82f6;
+}
+
+.fed-curve-detail-line--compare {
+  stroke: #9ca3af;
+}
+
+.fed-curve-detail-hover-line {
+  stroke: rgba(255, 255, 255, 0.35);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+  vector-effect: non-scaling-stroke;
+}
+
+.fed-curve-detail-dot {
+  fill: none;
+  stroke-width: 2.5;
+  vector-effect: non-scaling-stroke;
+}
+
+.fed-curve-detail-dot--current {
+  stroke: #3b82f6;
+}
+
+.fed-curve-detail-dot--compare {
+  stroke: #9ca3af;
+}
+
+.fed-curve-detail-msg {
+  margin: 24px 0 0;
+  text-align: center;
+  font-size: 13px;
+  color: var(--atlas-third-color, #a3a3a3);
+}
+
+.fed-curve-detail-msg-error {
+  color: #f87171;
+}

@@ -14,6 +14,37 @@ export interface DashboardLayoutItem {
 
 export type DashboardLayout = DashboardLayoutItem[];
 
+/** Виджет на канвасе дашборда (web). */
+export type DashboardCanvasWidgetType =
+  | "price-sparkline"
+  | "portfolio"
+  | "macro-calendar"
+  | "fed-curve";
+
+export interface DashboardCanvasWidget {
+  id: string;
+  type: DashboardCanvasWidgetType;
+  x: number;
+  y: number;
+  symbol?: string;
+  /** Смещение серой линии кривой ФРС (дней), только для `fed-curve`. */
+  compareDays?: number;
+}
+
+export type DashboardTheme = "light" | "dark";
+
+export interface DashboardUserPrefs {
+  theme: DashboardTheme;
+  gridOpacity: number;
+}
+
+/** Сохранённое состояние дашборда пользователя (layout в Prisma Dashboard). */
+export interface UserDashboardState {
+  version: 1;
+  widgets: DashboardCanvasWidget[];
+  prefs: DashboardUserPrefs;
+}
+
 /** Widget kinds supported by Atlas_v1 (MVP). */
 export type WidgetType =
   | "priceTicker"
@@ -47,6 +78,21 @@ export interface CryptocurrencyListItem {
   pairSymbol: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface BondsYieldCurvePoint {
+  symbol: string;
+  close: string | null;
+}
+
+/** Кривая доходности Treasury (GET /widgets/bonds-yield-curve). */
+export interface BondsYieldCurveResponse {
+  tenors: string[];
+  asOfDate: string | null;
+  monthAgoDate: string | null;
+  compareDays: number;
+  current: BondsYieldCurvePoint[];
+  monthAgo: BondsYieldCurvePoint[];
 }
 
 /** Одна дневная свеча (ответ GET /widgets/candles). */

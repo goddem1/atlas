@@ -1,10 +1,15 @@
-import { useEffect, useRef, useState } from "react";
-import type { DashboardPrefs } from "../../lib/dashboardPrefs";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { dashboardUserAvatarBackground, dashboardUserAvatarLetter } from "../auth/auth-utils";
+import type { DashboardPrefs, DashboardTheme } from "../../lib/dashboardPrefs";
 import { clampGridOpacity } from "../../lib/dashboardPrefs";
 
 type Props = {
   prefs: DashboardPrefs;
   onChange: (next: DashboardPrefs) => void;
+  onOpenAuth: () => void;
+  isLoggedIn: boolean;
+  user?: { id: string; name: string; email: string } | null;
+  onSignOut?: () => void;
 };
 
 function GearIcon({ className }: { className?: string }) {
@@ -15,7 +20,73 @@ function GearIcon({ className }: { className?: string }) {
   );
 }
 
-export function DashboardSettings({ prefs, onChange }: Props) {
+function ThemeToggle({
+  theme,
+  onSelect,
+  variant,
+}: {
+  theme: DashboardTheme;
+  onSelect: (theme: DashboardTheme) => void;
+  variant: "menu" | "panel";
+}) {
+  const btnRole = variant === "menu" ? "menuitemradio" : "radio";
+
+  const btnClass = (active: boolean) =>
+    ["dashboard-theme-toggle-btn", active ? "is-active" : ""].join(" ");
+
+  return (
+    <div
+      className={`dashboard-theme-toggle dashboard-theme-toggle--${variant}`}
+      role={variant === "menu" ? "group" : "radiogroup"}
+      aria-label="Тема"
+    >
+      <button
+        type="button"
+        role={btnRole}
+        aria-checked={theme === "light"}
+        className={btnClass(theme === "light")}
+        aria-label="Светлая тема"
+        onClick={() => onSelect("light")}
+      >
+        <img
+          src="/assets/portfolio-ui/light.svg"
+          alt=""
+          aria-hidden
+          className="dashboard-theme-toggle-icon"
+        />
+      </button>
+      <button
+        type="button"
+        role={btnRole}
+        aria-checked={theme === "dark"}
+        className={btnClass(theme === "dark")}
+        aria-label="Тёмная тема"
+        onClick={() => onSelect("dark")}
+      >
+        <img
+          src="/assets/portfolio-ui/dark.svg"
+          alt=""
+          aria-hidden
+          className="dashboard-theme-toggle-icon"
+        />
+      </button>
+    </div>
+  );
+}
+
+export function DashboardSettings({
+  prefs,
+  onChange,
+  onOpenAuth,
+  isLoggedIn,
+  user,
+  onSignOut,
+}: Props) {
+  const avatarLetter = isLoggedIn ? dashboardUserAvatarLetter(user?.name, user?.email) : null;
+  const avatarBackground = useMemo(
+    () => (isLoggedIn ? dashboardUserAvatarBackground(user?.id, user?.email) : undefined),
+    [isLoggedIn, user?.id, user?.email],
+  );
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
 
@@ -56,28 +127,29 @@ export function DashboardSettings({ prefs, onChange }: Props) {
           <button
             type="button"
             className="dashboard-floating-action-btn btn-glass"
-            aria-expanded={open}
-            aria-haspopup="dialog"
-            aria-label="Меню дашборда"
-            onClick={() => setOpen((v) => !v)}
-          />
+            aria-label={isLoggedIn ? "Аккаунт" : "Войти"}
+            onClick={() => {
+              if (!isLoggedIn) onOpenAuth();
+            }}
+          >
+            {isLoggedIn && avatarLetter ? (
+              <span
+                className="dashboard-floating-action-avatar"
+                style={{ backgroundColor: avatarBackground }}
+                aria-hidden
+              >
+                {avatarLetter}
+              </span>
+            ) : (
+              <img
+                src="/assets/portfolio-ui/user-circle.svg"
+                alt=""
+                aria-hidden
+                className="dashboard-floating-action-icon dashboard-floating-action-icon--user"
+              />
+            )}
+          </button>
           <div className="dashboard-floating-action-expanded" role="menu" aria-label="Быстрые настройки">
-            <button
-              type="button"
-              role="menuitem"
-              className="dashboard-floating-action-expanded-btn"
-              onClick={() => patch({ theme: "light" })}
-            >
-              Светлая тема
-            </button>
-            <button
-              type="button"
-              role="menuitem"
-              className="dashboard-floating-action-expanded-btn"
-              onClick={() => patch({ theme: "dark" })}
-            >
-              Тёмная тема
-            </button>
             <button
               type="button"
               role="menuitem"
@@ -87,6 +159,23 @@ export function DashboardSettings({ prefs, onChange }: Props) {
             >
               <GearIcon className="dashboard-floating-action-expanded-gear" />
             </button>
+            <ThemeToggle theme={prefs.theme} onSelect={(theme) => patch({ theme })} variant="menu" />
+            {isLoggedIn ? (
+              <button
+                type="button"
+                role="menuitem"
+                className="dashboard-floating-action-expanded-btn dashboard-floating-action-expanded-btn--logout"
+                aria-label="Выйти"
+                onClick={() => onSignOut?.()}
+              >
+                <img
+                  src="/assets/portfolio-ui/log_out.svg"
+                  alt=""
+                  aria-hidden
+                  className="dashboard-floating-action-expanded-logout-icon"
+                />
+              </button>
+            ) : null}
           </div>
         </div>
       </div>
@@ -99,30 +188,7 @@ export function DashboardSettings({ prefs, onChange }: Props) {
           <div className="dashboard-floating-actions-panel-body">
             <label className="dashboard-floating-actions-field">
               <span>Тема</span>
-              <div className="dashboard-floating-actions-theme-grid">
-                <button
-                  type="button"
-                  onClick={() => patch({ theme: "light" })}
-                  className={
-                    prefs.theme === "light"
-                      ? "dashboard-floating-actions-chip dashboard-floating-actions-chip--active"
-                      : "dashboard-floating-actions-chip dashboard-floating-actions-chip--inactive"
-                  }
-                >
-                  Светлая
-                </button>
-                <button
-                  type="button"
-                  onClick={() => patch({ theme: "dark" })}
-                  className={
-                    prefs.theme === "dark"
-                      ? "dashboard-floating-actions-chip dashboard-floating-actions-chip--active"
-                      : "dashboard-floating-actions-chip dashboard-floating-actions-chip--inactive"
-                  }
-                >
-                  Темная
-                </button>
-              </div>
+              <ThemeToggle theme={prefs.theme} onSelect={(theme) => patch({ theme })} variant="panel" />
             </label>
 
             <label className="dashboard-floating-actions-field">

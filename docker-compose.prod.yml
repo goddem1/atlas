@@ -33,14 +33,24 @@ services:
         condition: service_healthy
     environment:
       DATABASE_URL: postgresql://atlas:${POSTGRES_PASSWORD}@db:5432/atlas_v1?schema=public
-      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?Set JWT secrets in env file}
-      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?Set JWT secrets in env file}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?Set BETTER_AUTH_SECRET in env file}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:8080/api/auth}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      RESEND_FROM: ${RESEND_FROM:-Atlas <onboarding@resend.dev>}
       HOST: 0.0.0.0
       PORT: 3001
       # Один origin с фронтом (браузер бьёт в /api на том же хосте) — можно оставить true
       CORS_ORIGIN: ${CORS_ORIGIN:-true}
       TRADING_DAY_SYMBOLS: ${TRADING_DAY_SYMBOLS:-BTCUSDT,ETHUSDT}
       TRADING_DAY_CRON_DISABLED: ${TRADING_DAY_CRON_DISABLED:-false}
+      # Макрокалендарь (RapidAPI TradingEconomics) — для cron и ручного импорта
+      RAPIDAPI_KEY: ${RAPIDAPI_KEY:-}
+      RAPIDAPI_KEY_SECONDARY: ${RAPIDAPI_KEY_SECONDARY:-}
+      RAPIDAPI_HOST: ${RAPIDAPI_HOST:-economic-calendar-api-tradingeconomics.p.rapidapi.com}
+      FRED_API_KEY: ${FRED_API_KEY:-}
+      BONDS_YIELD_CRON_DISABLED: ${BONDS_YIELD_CRON_DISABLED:-false}
 
   web:
     build:
