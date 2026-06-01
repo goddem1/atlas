@@ -12,6 +12,9 @@
     "start": "node dist/server.js",
     "lint": "tsc -p tsconfig.json --noEmit",
     "postinstall": "prisma generate",
+    "load:bonds-fred": "tsx src/scripts/loadBondsPricesFred.ts",
+    "bonds:refresh-tv": "tsx src/scripts/refreshBondsYieldTv.ts",
+    "bonds:refresh-fred": "tsx src/scripts/refreshBondsYieldFred.ts",
     "load:candles": "tsx src/scripts/loadCryptoCandles.ts",
     "load:candles:all": "tsx src/scripts/loadAllCandlesHistorical.ts",
     "macro:import-range": "tsx src/scripts/importMacroCalendarRange.ts",
@@ -20,11 +23,15 @@
     "db:seed": "prisma db seed"
   },
   "dependencies": {
+    "@atlas-v1/shared": "workspace:*",
+    "@fastify/cookie": "^11.0.2",
     "@fastify/cors": "^10.0.2",
     "@prisma/client": "^6.1.0",
+    "better-auth": "^1.2.8",
     "dotenv": "^16.4.7",
     "fastify": "^5.2.1",
     "node-cron": "^4.2.1",
+    "resend": "^4.5.1",
     "sharp": "^0.34.5",
     "undici": "^8.2.0"
   },

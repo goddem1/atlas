@@ -59,7 +59,6 @@ export type PortfolioAssetDetailResponse = {
 };
 
 const BINANCE_TICKER_URL = "https://data-api.binance.vision/api/v3/ticker/price";
-const USER_ID = 1;
 
 type AssetSnapshot = {
   symbol: string;
@@ -164,9 +163,12 @@ export function pickResampled(points: PortfolioChartPoint[], timeframe: Portfoli
   return sampled;
 }
 
-export async function getPortfolioSummary(prisma: PrismaClient): Promise<PortfolioSummaryResponse> {
+export async function getPortfolioSummary(
+  prisma: PrismaClient,
+  userId: string,
+): Promise<PortfolioSummaryResponse> {
   const assetsRaw = await prisma.portfolioAsset.findMany({
-    where: { userId: USER_ID },
+    where: { userId },
     include: { transactions: true },
     orderBy: { symbol: "asc" },
   });
@@ -231,6 +233,7 @@ export async function getPortfolioSummary(prisma: PrismaClient): Promise<Portfol
 
 export async function validateAndCreateTransaction(
   prisma: PrismaClient,
+  userId: string,
   input: PortfolioTransactionUpsertInput,
 ): Promise<{ id: string }> {
   const symbol = input.symbol.trim().toUpperCase();
@@ -249,11 +252,11 @@ export async function validateAndCreateTransaction(
   }
 
   let asset = await prisma.portfolioAsset.findUnique({
-    where: { userId_symbol: { userId: USER_ID, symbol } },
+    where: { userId_symbol: { userId, symbol } },
   });
   if (!asset) {
     asset = await prisma.portfolioAsset.create({
-      data: { userId: USER_ID, symbol },
+      data: { userId, symbol },
     });
   }
 
@@ -296,7 +299,7 @@ export async function validateAndCreateTransaction(
         sellCoins: x.sellCoins.toString(),
       }));
     if (rows.length > 0) {
-      await prisma.goal.createMany({ data: rows });
+      await prisma.portfolioGoal.createMany({ data: rows });
     }
   }
   return created;
@@ -304,10 +307,11 @@ export async function validateAndCreateTransaction(
 
 export async function getPortfolioChart(
   prisma: PrismaClient,
+  userId: string,
   timeframe: PortfolioTimeframe,
 ): Promise<PortfolioChartResponse> {
   const assets = await prisma.portfolioAsset.findMany({
-    where: { userId: USER_ID },
+    where: { userId },
     include: { transactions: { orderBy: [{ date: "asc" }, { createdAt: "asc" }] } },
     orderBy: { symbol: "asc" },
   });
@@ -388,11 +392,12 @@ export async function getPortfolioChart(
 
 export async function getPortfolioAssetDetail(
   prisma: PrismaClient,
+  userId: string,
   symbolRaw: string,
 ): Promise<PortfolioAssetDetailResponse> {
   const symbol = symbolRaw.trim().toUpperCase();
   const asset = await prisma.portfolioAsset.findUnique({
-    where: { userId_symbol: { userId: USER_ID, symbol } },
+    where: { userId_symbol: { userId, symbol } },
     include: {
       transactions: { orderBy: [{ date: "desc" }, { createdAt: "desc" }] },
       goals: { orderBy: { createdAt: "desc" } },
@@ -462,6 +467,7 @@ export async function getPortfolioAssetDetail(
 
 export async function updatePortfolioTransaction(
   prisma: PrismaClient,
+  userId: string,
   id: string,
   input: Omit<PortfolioTransactionUpsertInput, "symbol">,
 ): Promise<void> {
@@ -469,7 +475,7 @@ export async function updatePortfolioTransaction(
     where: { id },
     include: { portfolioAsset: true },
   });
-  if (!existing || existing.portfolioAsset.userId !== USER_ID) {
+  if (!existing || existing.portfolioAsset.userId !== userId) {
     throw new Error("Transaction not found");
   }
 
@@ -509,12 +515,16 @@ export async function updatePortfolioTransaction(
   });
 }
 
-export async function deletePortfolioTransaction(prisma: PrismaClient, id: string): Promise<void> {
+export async function deletePortfolioTransaction(
+  prisma: PrismaClient,
+  userId: string,
+  id: string,
+): Promise<void> {
   const existing = await prisma.transaction.findUnique({
     where: { id },
     include: { portfolioAsset: true },
   });
-  if (!existing || existing.portfolioAsset.userId !== USER_ID) {
+  if (!existing || existing.portfolioAsset.userId !== userId) {
     throw new Error("Transaction not found");
   }
   await prisma.$transaction(async (tx) => {
@@ -530,6 +540,7 @@ export async function deletePortfolioTransaction(prisma: PrismaClient, id: strin
 
 export async function addPortfolioGoal(
   prisma: PrismaClient,
+  userId: string,
   symbolRaw: string,
   targetPriceUsdRaw: string,
 ): Promise<{ id: string }> {
@@ -538,18 +549,25 @@ export async function addPortfolioGoal(
   if (!Number.isFinite(target)) throw new Error("targetPriceUsd must be positive");
 
   const asset = await prisma.portfolioAsset.findUnique({
-    where: { userId_symbol: { userId: USER_ID, symbol } },
+    where: { userId_symbol: { userId, symbol } },
     select: { id: true },
   });
   if (!asset) throw new Error("Asset not found in portfolio");
 
-  const created = await prisma.goal.create({
+  const created = await prisma.portfolioGoal.create({
     data: { assetId: asset.id, targetPriceUsd: target.toString() },
     select: { id: true },
   });
   return created;
 }
 
-export async function deletePortfolioGoal(prisma: PrismaClient, id: string): Promise<void> {
-  await prisma.goal.delete({ where: { id } });
+export async function deletePortfolioGoal(prisma: PrismaClient, userId: string, id: string): Promise<void> {
+  const goal = await prisma.portfolioGoal.findUnique({
+    where: { id },
+    include: { portfolioAsset: { select: { userId: true } } },
+  });
+  if (!goal || goal.portfolioAsset.userId !== userId) {
+    throw new Error("Goal not found");
+  }
+  await prisma.portfolioGoal.delete({ where: { id } });
 }

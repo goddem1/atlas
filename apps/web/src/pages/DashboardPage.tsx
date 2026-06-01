@@ -1,26 +1,34 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import Draggable from "react-draggable";
+import { AuthModal } from "../components/auth/AuthModal";
 import { DashboardSettings } from "../components/dashboard/DashboardSettings";
+import { authClient } from "../lib/auth-client";
 import { MacroEventsModal } from "../components/dashboard/MacroEventsModal";
 import { WidgetGalleryModal } from "../components/dashboard/WidgetGalleryModal";
 import { MacroCalendarWidget } from "../components/widgets/macro-calendar/MacroCalendarWidget";
 import { PortfolioWidget } from "../components/widgets/portfolio/PortfolioWidget";
+import { FedCurveWidget } from "../components/widgets/fed-curve/FedCurveWidget";
 import { PriceSparklineWidget } from "../components/widgets/price-sparkline/PriceSparklineWidget";
+import { fetchUserDashboardState, saveUserDashboardState } from "../services/api";
 import "./dashboard-page.css";
-import { getThemeColors, hexToRgba, loadDashboardPrefs, saveDashboardPrefs, type DashboardPrefs } from "../lib/dashboardPrefs";
+import { applyGuestDashboard } from "../lib/guestDashboard";
+import { getThemeColors, hexToRgba, type DashboardPrefs } from "../lib/dashboardPrefs";
 import {
   createWidgetId,
   DASHBOARD_GRID_SIZE,
   DASHBOARD_WIDGET_GAP,
   dashboardWidgetOuterSize,
   layoutAllWidgetsSequential,
-  loadDashboardWidgets,
+  layoutDashboardWidgetsForBoard,
   resolveCollisions,
-  saveDashboardWidgets,
   snapAndClampDashboardPosition,
   type DashboardWidget,
   type DashboardWidgetType,
 } from "../lib/dashboardWidgets";
+import type { FedCurveCompareDays } from "../lib/fedCurveComparePeriod";
+import { toUserDashboardState } from "../lib/userDashboardStorage";
+
+const SAVE_DEBOUNCE_MS = 600;
 
 type DraggableWidgetProps = {
   widget: DashboardWidget;
@@ -29,9 +37,18 @@ type DraggableWidgetProps = {
   onPriceSymbol: (id: string, symbol: string) => void;
   onRemove: (id: string) => void;
   onOpenMacroCalendar?: () => void;
+  onFedCurveCompareDays?: (id: string, days: FedCurveCompareDays) => void;
 };
 
-function DraggableWidget({ widget, gridSize, onMove, onPriceSymbol, onRemove, onOpenMacroCalendar }: DraggableWidgetProps) {
+function DraggableWidget({
+  widget,
+  gridSize,
+  onMove,
+  onPriceSymbol,
+  onRemove,
+  onOpenMacroCalendar,
+  onFedCurveCompareDays,
+}: DraggableWidgetProps) {
   const nodeRef = useRef<HTMLDivElement>(null);
   const widthClass =
     widget.type === "portfolio"
@@ -44,7 +61,7 @@ function DraggableWidget({ widget, gridSize, onMove, onPriceSymbol, onRemove, on
     <Draggable
       nodeRef={nodeRef}
       handle=".drag-handle"
-      cancel=".price-widget-icon-button,.portfolio-menu-trigger,.btn-on-glass,.macro-cal-expand"
+      cancel=".price-widget-icon-button,.portfolio-menu-trigger,.btn-on-glass,.macro-cal-expand,.fed-curve-settings-popover,.fed-curve-settings-period-btn"
       bounds="parent"
       grid={[gridSize, gridSize]}
       position={{ x: widget.x, y: widget.y }}
@@ -67,6 +84,13 @@ function DraggableWidget({ widget, gridSize, onMove, onPriceSymbol, onRemove, on
             dragHandleClassName="drag-handle"
             onDeleteWidget={() => onRemove(widget.id)}
             onOpenFullCalendar={onOpenMacroCalendar}
+          />
+        ) : widget.type === "fed-curve" ? (
+          <FedCurveWidget
+            dragHandleClassName="drag-handle"
+            compareDays={widget.compareDays}
+            onCompareDaysChange={(days) => onFedCurveCompareDays?.(widget.id, days)}
+            onDeleteWidget={() => onRemove(widget.id)}
           />
         ) : (
           <PortfolioWidget onDeleteWidget={() => onRemove(widget.id)} />
@@ -91,16 +115,27 @@ function PlusIcon() {
 }
 
 export function DashboardPage() {
-  const [prefs, setPrefs] = useState<DashboardPrefs>(() => loadDashboardPrefs());
-  const [widgets, setWidgets] = useState<DashboardWidget[]>(() => loadDashboardWidgets());
+  const { data: session, isPending: sessionPending, refetch: refetchSession } = authClient.useSession();
+  const isLoggedIn = Boolean(session?.user);
+  const userId = session?.user?.id ?? null;
+
+  const guestSnapshot = useMemo(() => applyGuestDashboard(), []);
+  const [prefs, setPrefs] = useState<DashboardPrefs>(() => guestSnapshot.prefs);
+  const [widgets, setWidgets] = useState<DashboardWidget[]>(() => guestSnapshot.widgets);
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [macroOpen, setMacroOpen] = useState(false);
+  const [authOpen, setAuthOpen] = useState(false);
   const boardRef = useRef<HTMLDivElement | null>(null);
   const [boundsVersion, setBoundsVersion] = useState(0);
+  const skipPersistRef = useRef(true);
 
-  useEffect(() => {
-    saveDashboardPrefs(prefs);
-  }, [prefs]);
+  const resetToGuestDashboard = useCallback(() => {
+    const guest = applyGuestDashboard();
+    setWidgets(guest.widgets);
+    setPrefs(guest.prefs);
+    skipPersistRef.current = true;
+    setBoundsVersion((v) => v + 1);
+  }, []);
 
   useEffect(() => {
     document.documentElement.dataset.dashboardTheme = prefs.theme;
@@ -110,8 +145,58 @@ export function DashboardPage() {
   }, [prefs.theme]);
 
   useEffect(() => {
-    saveDashboardWidgets(widgets);
-  }, [widgets]);
+    if (sessionPending) return;
+
+    if (!isLoggedIn) {
+      resetToGuestDashboard();
+      return;
+    }
+
+    let cancelled = false;
+    skipPersistRef.current = true;
+
+    void (async () => {
+      try {
+        const state = await fetchUserDashboardState();
+        if (cancelled) return;
+        const rect = boardRef.current?.getBoundingClientRect();
+        setWidgets(
+          layoutDashboardWidgetsForBoard(
+            state.widgets,
+            rect?.width,
+            rect?.height,
+            window.innerWidth,
+          ),
+        );
+        setPrefs(state.prefs);
+        setBoundsVersion((v) => v + 1);
+      } catch {
+        if (!cancelled) resetToGuestDashboard();
+      } finally {
+        if (!cancelled) {
+          queueMicrotask(() => {
+            skipPersistRef.current = false;
+          });
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isLoggedIn, userId, sessionPending, resetToGuestDashboard]);
+
+  useEffect(() => {
+    if (!isLoggedIn || sessionPending || skipPersistRef.current) return;
+
+    const timer = window.setTimeout(() => {
+      void saveUserDashboardState(toUserDashboardState(widgets, prefs)).catch(() => {
+        /* сеть / 401 — не блокируем UI */
+      });
+    }, SAVE_DEBOUNCE_MS);
+
+    return () => window.clearTimeout(timer);
+  }, [widgets, prefs, isLoggedIn, sessionPending]);
 
   const relayoutFromBoard = useCallback(() => {
     const el = boardRef.current;
@@ -119,7 +204,7 @@ export function DashboardPage() {
     const { width, height } = el.getBoundingClientRect();
     if (width < 1 || height < 1) return;
     const vw = window.innerWidth;
-    setWidgets((ws) => layoutAllWidgetsSequential(ws, width, height, vw));
+    setWidgets((ws) => layoutDashboardWidgetsForBoard(ws, width, height, vw));
   }, []);
 
   useLayoutEffect(() => {
@@ -159,11 +244,20 @@ export function DashboardPage() {
     );
   }, []);
 
+  const setFedCurveCompareDays = useCallback((id: string, days: FedCurveCompareDays) => {
+    setWidgets((ws) =>
+      ws.map((w) => (w.id === id && w.type === "fed-curve" ? { ...w, compareDays: days } : w)),
+    );
+  }, []);
+
   const removeWidget = useCallback((id: string) => {
     setWidgets((ws) => ws.filter((w) => w.id !== id));
   }, []);
 
-  const addWidget = useCallback((type: DashboardWidgetType) => {
+  const addWidget = useCallback(
+    (type: DashboardWidgetType) => {
+    if (type === "portfolio" && !isLoggedIn) return;
+
     const el = boardRef.current;
     const vw = window.innerWidth;
     const rect = el?.getBoundingClientRect();
@@ -178,7 +272,9 @@ export function DashboardPage() {
       const next = [...ws, { id: createWidgetId(), type, x: snapped.x, y: snapped.y }];
       return layoutAllWidgetsSequential(next, bw, bh, vw);
     });
-  }, []);
+  },
+    [isLoggedIn],
+  );
 
   const mainStyle = useMemo((): CSSProperties => {
     const colors = getThemeColors(prefs.theme);
@@ -212,7 +308,10 @@ export function DashboardPage() {
         {/* Область виджетов: inset 20px — вне этой зоны нельзя ставить (bounds родителя для Draggable). */}
         <div ref={boardRef} className="pointer-events-none absolute inset-5">
           {widgets.map((w) =>
-            w.type === "price-sparkline" || w.type === "portfolio" || w.type === "macro-calendar" ? (
+            w.type === "price-sparkline" ||
+            w.type === "portfolio" ||
+            w.type === "macro-calendar" ||
+            w.type === "fed-curve" ? (
               <DraggableWidget
                 key={w.id}
                 widget={w}
@@ -221,6 +320,7 @@ export function DashboardPage() {
                 onPriceSymbol={setPriceWidgetSymbol}
                 onRemove={removeWidget}
                 onOpenMacroCalendar={() => setMacroOpen(true)}
+                onFedCurveCompareDays={setFedCurveCompareDays}
               />
             ) : null,
           )}
@@ -228,7 +328,23 @@ export function DashboardPage() {
       </main>
 
       <div className="dashboard-floating-actions">
-        <DashboardSettings prefs={prefs} onChange={setPrefs} />
+        <DashboardSettings
+          prefs={prefs}
+          onChange={setPrefs}
+          isLoggedIn={isLoggedIn}
+          user={
+            session?.user
+              ? { id: session.user.id, name: session.user.name, email: session.user.email }
+              : null
+          }
+          onOpenAuth={() => setAuthOpen(true)}
+          onSignOut={() =>
+            void authClient.signOut().then(() => {
+              resetToGuestDashboard();
+              void refetchSession();
+            })
+          }
+        />
         <button
           type="button"
           className="dashboard-floating-action-btn btn-glass"
@@ -241,8 +357,21 @@ export function DashboardPage() {
         </button>
       </div>
 
-      <WidgetGalleryModal open={galleryOpen} onClose={() => setGalleryOpen(false)} onPick={addWidget} />
+      <WidgetGalleryModal
+        open={galleryOpen}
+        isLoggedIn={isLoggedIn}
+        onClose={() => setGalleryOpen(false)}
+        onPick={addWidget}
+      />
       <MacroEventsModal open={macroOpen} onClose={() => setMacroOpen(false)} />
+      <AuthModal
+        open={authOpen}
+        onClose={() => setAuthOpen(false)}
+        onAuthenticated={() => {
+          skipPersistRef.current = true;
+          void refetchSession();
+        }}
+      />
     </div>
   );
 }

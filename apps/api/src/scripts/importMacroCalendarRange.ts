@@ -13,13 +13,16 @@ async function main(): Promise<void> {
   const to = argValue("--to");
 
   if (!from || !to) {
-    console.error("Usage: tsx src/scripts/importMacroCalendarRange.ts --from=YYYY-MM-DD --to=YYYY-MM-DD");
+    console.error(
+      "Usage: tsx src/scripts/importMacroCalendarRange.ts --from=YYYY-MM-DD --to=YYYY-MM-DD [--only-missing]",
+    );
     process.exit(1);
   }
 
   const prisma = new PrismaClient();
   try {
-    const stats = await importMacroCalendarRange(prisma, console, { from, to });
+    const onlyMissing = process.argv.includes("--only-missing");
+    const stats = await importMacroCalendarRange(prisma, console, { from, to, onlyMissing });
     console.log(JSON.stringify(stats, null, 2));
   } finally {
     await prisma.$disconnect();

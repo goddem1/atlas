@@ -1,3 +1,5 @@
+import { normalizeFedCurveCompareDays } from "./fedCurveComparePeriod";
+
 const STORAGE_KEY = "atlas-v1-dashboard-widgets";
 
 /** Шаг сетки (px). */
@@ -7,7 +9,7 @@ export const DASHBOARD_EDGE_INSET = 20;
 /** Минимальный зазор между прямоугольниками виджетов (px). */
 export const DASHBOARD_WIDGET_GAP = 20;
 
-export type DashboardWidgetType = "price-sparkline" | "portfolio" | "macro-calendar";
+export type DashboardWidgetType = "price-sparkline" | "portfolio" | "macro-calendar" | "fed-curve";
 
 export type DashboardWidget = {
   id: string;
@@ -16,6 +18,8 @@ export type DashboardWidget = {
   y: number;
   /** Тикер из справочника (BTC, ETH) — только для `price-sparkline`. */
   symbol?: string;
+  /** Период серой линии (дней) — только для `fed-curve`. */
+  compareDays?: number;
 };
 
 export const WIDGET_CATALOG: {
@@ -37,6 +41,11 @@ export const WIDGET_CATALOG: {
     type: "macro-calendar",
     title: "Календарь",
     description: "Ключевые макро-события на сегодня",
+  },
+  {
+    type: "fed-curve",
+    title: "Кривая ФРС",
+    description: "Доходность Treasury: сегодня и месяц назад",
   },
 ];
 
@@ -69,19 +78,13 @@ export function dashboardWidgetOuterSize(
   return { w, h };
 }
 
-function defaultWidgets(): DashboardWidget[] {
-  return [
-    {
-      id: "initial",
-      type: "price-sparkline",
-      x: 0,
-      y: 0,
-    },
-  ];
-}
-
 function isWidgetType(v: unknown): v is DashboardWidgetType {
-  return v === "price-sparkline" || v === "portfolio" || v === "macro-calendar";
+  return (
+    v === "price-sparkline" ||
+    v === "portfolio" ||
+    v === "macro-calendar" ||
+    v === "fed-curve"
+  );
 }
 
 export function snapToGrid(x: number, y: number, gridSize: number = DASHBOARD_GRID_SIZE): { x: number; y: number } {
@@ -204,6 +207,59 @@ export function layoutAllWidgetsSequential(
   return out;
 }
 
+/** Дефолтный набор виджетов для гостей (координаты пересчитываются layout-ом). */
+export const GUEST_DASHBOARD_WIDGETS: DashboardWidget[] = [
+  { id: "guest-btc", type: "price-sparkline", symbol: "BTC", x: 0, y: 0 },
+  { id: "guest-eth", type: "price-sparkline", symbol: "ETH", x: 0, y: 0 },
+  { id: "guest-macro", type: "macro-calendar", x: 0, y: 0 },
+];
+
+function estimateBoardSize(viewportWidth: number): { width: number; height: number } {
+  return {
+    width: Math.max(400, viewportWidth - 40),
+    height: Math.max(600, (typeof window !== "undefined" ? window.innerHeight : 900) - 40),
+  };
+}
+
+export function layoutGuestDashboardWidgets(
+  raw: DashboardWidget[] = GUEST_DASHBOARD_WIDGETS,
+  viewportWidth = typeof window !== "undefined" ? window.innerWidth : 1200,
+): DashboardWidget[] {
+  const { width, height } = estimateBoardSize(viewportWidth);
+  return layoutAllWidgetsSequential(
+    raw.map((w) => ({ ...w })),
+    width,
+    height,
+    viewportWidth,
+  );
+}
+
+/** Укладка виджетов на холст; при неизвестных размерах — оценка по viewport. */
+export function layoutDashboardWidgetsForBoard(
+  widgets: DashboardWidget[],
+  boardWidth: number | null | undefined,
+  boardHeight: number | null | undefined,
+  viewportWidth: number = typeof window !== "undefined" ? window.innerWidth : 1200,
+): DashboardWidget[] {
+  let width = boardWidth ?? 0;
+  let height = boardHeight ?? 0;
+  if (width < 1 || height < 1) {
+    const est = estimateBoardSize(viewportWidth);
+    width = est.width;
+    height = est.height;
+  }
+  return layoutAllWidgetsSequential(
+    widgets.map((w) => ({ ...w })),
+    width,
+    height,
+    viewportWidth,
+  );
+}
+
+function defaultWidgets(): DashboardWidget[] {
+  return layoutGuestDashboardWidgets();
+}
+
 function normalizeWidgets(raw: unknown): DashboardWidget[] {
   if (!Array.isArray(raw)) return defaultWidgets();
   const out: DashboardWidget[] = [];
@@ -218,7 +274,19 @@ function normalizeWidgets(raw: unknown): DashboardWidget[] {
     const symRaw = o.symbol;
     const symbol =
       typeof symRaw === "string" && symRaw.trim().length > 0 ? symRaw.trim().toUpperCase() : undefined;
-    out.push({ id, type: o.type, x, y, ...(symbol ? { symbol } : {}) });
+    const compareDaysRaw = o.compareDays;
+    const compareDays =
+      typeof compareDaysRaw === "number" && Number.isFinite(compareDaysRaw)
+        ? normalizeFedCurveCompareDays(compareDaysRaw)
+        : undefined;
+    out.push({
+      id,
+      type: o.type,
+      x,
+      y,
+      ...(symbol ? { symbol } : {}),
+      ...(compareDays !== undefined ? { compareDays } : {}),
+    });
   }
   return out.length > 0 ? out : defaultWidgets();
 }

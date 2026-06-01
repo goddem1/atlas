@@ -71,6 +71,18 @@ model CryptoPriceCandle {
   @@map("CryptoPriceCandle")
 }
 
+/// Цены закрытия облигаций по интервалам.
+model BondsPrices {
+  id        String   @id @default(cuid())
+  symbol    String
+  interval  String   @default("1d") @map("interval")
+  closeTime DateTime
+  close     Decimal  @db.Decimal(28, 12)
+
+  @@unique([symbol, interval, closeTime])
+  @@map("BondsPrices")
+}
+
 model PortfolioAsset {
   id           String        @id @default(cuid())
   userId       Int

@@ -1,0 +1,123 @@
+.fed-curve-date-calendar-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 12050;
+  pointer-events: none;
+}
+
+.fed-curve-date-calendar-anchor {
+  position: fixed;
+  z-index: 12051;
+  pointer-events: auto;
+}
+
+.fed-curve-date-calendar {
+  width: 100%;
+  max-height: min(420px, calc(100dvh - 120px));
+  overflow: auto;
+  padding: 12px 14px 14px;
+  border-radius: 18px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45);
+}
+
+.fed-curve-date-calendar-head {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  margin-bottom: 10px;
+}
+
+.fed-curve-date-calendar-month {
+  min-width: 0;
+  flex: 1;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--atlas-fg-primary);
+  text-transform: capitalize;
+  padding: 0 4px;
+}
+
+.fed-curve-date-calendar-nav {
+  width: 28px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  font-size: 18px;
+  line-height: 1;
+  color: var(--atlas-fg-primary);
+  cursor: pointer;
+}
+
+.fed-curve-date-calendar-nav--year {
+  width: 24px;
+  font-size: 16px;
+}
+
+.fed-curve-date-calendar-nav:hover:not(:disabled) {
+  background: var(--atlas-btn-glass-hover-bg);
+}
+
+.fed-curve-date-calendar-nav:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.fed-curve-date-calendar.is-loading .fed-curve-date-calendar-grid {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.fed-curve-date-calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  margin-bottom: 4px;
+}
+
+.fed-curve-date-calendar-weekday {
+  text-align: center;
+  font-size: 11px;
+  color: var(--atlas-third-color, #a3a3a3);
+}
+
+.fed-curve-date-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.fed-curve-date-calendar-day {
+  aspect-ratio: 1;
+  min-height: 34px;
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  color: var(--atlas-fg-primary);
+  cursor: pointer;
+}
+
+.fed-curve-date-calendar-day:hover:not(:disabled):not(.is-empty) {
+  background: var(--atlas-btn-glass-hover-bg);
+}
+
+.fed-curve-date-calendar-day.is-disabled {
+  opacity: 0.28;
+  cursor: default;
+}
+
+.fed-curve-date-calendar-day.is-empty {
+  pointer-events: none;
+}
+
+.fed-curve-date-calendar-day.is-selected {
+  background: rgba(59, 130, 246, 0.35);
+  color: var(--atlas-fg-primary);
+  font-weight: 600;
+}
