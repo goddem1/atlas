@@ -33,7 +33,7 @@
     "node-cron": "^4.2.1",
     "resend": "^4.5.1",
     "sharp": "^0.34.5",
-    "undici": "^8.2.0"
+    "undici": "^6.21.3"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
