@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { authClient } from "../../lib/auth-client";
 import { AuthGhostField } from "./AuthGhostField";
-import { authErrorMessage, isValidEmail, socialSignInError, validatePasswordMatch } from "./auth-utils";
+import { isValidEmail, socialSignInError, validatePasswordMatch } from "./auth-utils";
 
 type Props = {
   onSuccess: () => void;

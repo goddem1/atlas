@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { authClient } from "../../lib/auth-client";
 import { AuthGhostField } from "./AuthGhostField";
-import { authErrorMessage, isValidEmail, socialSignInError, validatePassword } from "./auth-utils";
+import { isValidEmail, socialSignInError, validatePassword } from "./auth-utils";
 
 type Tab = "password" | "otp";
 
