@@ -74,8 +74,8 @@ async function latestCloseForSymbol(
 
 const bondsCurveDateWhere = {
   interval: INTERVAL,
-  symbol: { in: [...BONDS_YIELD_TENORS] },
-} as const;
+  symbol: { in: [...BONDS_YIELD_TENORS] as string[] },
+};
 
 export async function getBondsYieldCurveAvailableDates(
   prisma: PrismaClient,

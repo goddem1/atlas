@@ -28,10 +28,8 @@ export async function sendAuthEmail(params: {
   if (error) {
     console.error("[resend] send failed:", error);
     const msg = error.message ?? "Не удалось отправить письмо";
-    if (
-      error.statusCode === 403 &&
-      /only send testing emails to your own email/i.test(msg)
-    ) {
+    const statusCode = "statusCode" in error ? (error as { statusCode?: number }).statusCode : undefined;
+    if (statusCode === 403 && /only send testing emails to your own email/i.test(msg)) {
       throw new Error(
         "Resend в тестовом режиме (onboarding@resend.dev): код можно отправить только на email владельца аккаунта Resend. Для любых адресов добавьте домен на resend.com/domains и укажите RESEND_FROM с этого домена.",
       );
