@@ -7,11 +7,23 @@ import { otpEmailHtml, sendAuthEmail } from "./lib/resendMail.js";
 const prisma = new PrismaClient();
 
 function trustedOrigins(): string[] {
-  const raw = process.env.CORS_ORIGIN ?? process.env.BETTER_AUTH_TRUSTED_ORIGINS ?? "";
-  if (!raw || raw === "true") {
-    return ["http://localhost:5173", "http://127.0.0.1:5173"];
+  const origins = new Set<string>(["http://localhost:5173", "http://127.0.0.1:5173"]);
+  const raw = process.env.BETTER_AUTH_TRUSTED_ORIGINS ?? process.env.CORS_ORIGIN ?? "";
+  if (raw && raw !== "true") {
+    for (const part of raw.split(",")) {
+      const o = part.trim();
+      if (o) origins.add(o);
+    }
   }
-  return raw.split(",").map((s) => s.trim()).filter(Boolean);
+  const authUrl = process.env.BETTER_AUTH_URL?.trim();
+  if (authUrl) {
+    try {
+      origins.add(new URL(authUrl).origin);
+    } catch {
+      /* ignore invalid BETTER_AUTH_URL */
+    }
+  }
+  return [...origins];
 }
 
 const baseURL =
