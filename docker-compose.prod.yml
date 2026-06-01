@@ -45,6 +45,8 @@ services:
       CORS_ORIGIN: ${CORS_ORIGIN:-true}
       TRADING_DAY_SYMBOLS: ${TRADING_DAY_SYMBOLS:-BTCUSDT,ETHUSDT}
       TRADING_DAY_CRON_DISABLED: ${TRADING_DAY_CRON_DISABLED:-false}
+      # Node 20: global WebSocket нет; стрим Binance через пакет ws (или true = только REST/cron)
+      BINANCE_WS_DISABLED: ${BINANCE_WS_DISABLED:-false}
       # Макрокалендарь (RapidAPI TradingEconomics) — для cron и ручного импорта
       RAPIDAPI_KEY: ${RAPIDAPI_KEY:-}
       RAPIDAPI_KEY_SECONDARY: ${RAPIDAPI_KEY_SECONDARY:-}
