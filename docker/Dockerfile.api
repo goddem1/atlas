@@ -14,7 +14,9 @@ COPY apps/mobile/package.json apps/mobile/
 
 RUN pnpm install --frozen-lockfile
 
+COPY packages/shared packages/shared
 COPY apps/api apps/api
+RUN pnpm --filter @atlas-v1/shared build
 WORKDIR /app/apps/api
 RUN pnpm exec prisma generate
 RUN pnpm run build
