@@ -1,4 +1,11 @@
 import { Prisma } from "@prisma/client";
+import WS from "ws";
+
+/** Node 20 в Docker не имеет global WebSocket (появился в Node 21+). */
+const BinanceWebSocket: typeof WebSocket =
+  typeof globalThis.WebSocket !== "undefined"
+    ? globalThis.WebSocket
+    : (WS as unknown as typeof WebSocket);
 
 const BINANCE_REST_KLINES_URL = "https://data-api.binance.vision/api/v3/klines";
 const BINANCE_WS_ORIGIN = "wss://stream.binance.com:9443";
@@ -85,7 +92,7 @@ const liveCandles = new Map<string, LiveCandleState>();
 const primePromises = new Map<string, Promise<void>>();
 
 let streamLog: StreamLog = defaultLog;
-let socket: WebSocket | null = null;
+let socket: InstanceType<typeof BinanceWebSocket> | null = null;
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 let subscribedSymbols: string[] = [];
 let reconnectAttempt = 0;
@@ -364,7 +371,7 @@ function connectSocket(): void {
   }
 
   const url = buildCombinedStreamUrl(subscribedSymbols);
-  const ws = new WebSocket(url);
+  const ws = new BinanceWebSocket(url);
   socket = ws;
 
   ws.addEventListener("open", () => {
