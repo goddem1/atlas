@@ -7,6 +7,7 @@ import { PrismaClient } from "@prisma/client";
 import { runMacroMonthEndPrefetch } from "./jobs/macroCalendarPrefetchJob.js";
 import { startMacroReleaseActualsScheduler, stopMacroReleaseActualsScheduler } from "./jobs/macroReleaseActualsScheduler.js";
 import { runBondsYieldFredJob, runBondsYieldTradingViewJob } from "./jobs/bondsYieldDailyJob.js";
+import { logBondsYieldCronStatus } from "./services/bondsYieldCronStatus.js";
 import { runTradingDayJob } from "./jobs/tradingDayJob.js";
 import { registerAuthRoutes } from "./routes/authHandler.js";
 import { registerMarketRoutes } from "./routes/market.js";
@@ -91,6 +92,7 @@ try {
     macroReleaseSchedulerStop = startMacroReleaseActualsScheduler(app.log, prisma).stop;
   }
 
+  logBondsYieldCronStatus(app.log);
   if (process.env.BONDS_YIELD_CRON_DISABLED !== "true") {
     bondsYieldTvCron = cron.schedule(
       "0 15 * * *",
@@ -106,7 +108,6 @@ try {
       },
       { timezone: "Europe/Moscow" },
     );
-    app.log.info("Cron: bonds yield TradingView at 15:00 MSK, FRED at 15:15 MSK");
   }
 } catch (err) {
   app.log.error(err);

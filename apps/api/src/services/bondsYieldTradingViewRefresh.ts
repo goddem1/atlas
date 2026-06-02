@@ -115,7 +115,10 @@ export async function refreshBondsYieldFromTradingView(
     try {
       const apiKey = await pickBondsRapidApiKey(prisma, now);
       const rawClose = await fetchTvClose(tvTicker, apiKey);
-      await recordBondsRapidApiRequest(prisma, now);
+      const quotaCount = await recordBondsRapidApiRequest(prisma, now);
+      if (quotaCount === null && i === 0) {
+        logger.warn("[bonds-tv] RapidApiBondsUsage table missing or unavailable — quota not tracked");
+      }
 
       if (rawClose === null) {
         skipped += 1;
