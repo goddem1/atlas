@@ -1,5 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 import { fetch as undiciFetch } from "undici";
+import { getRapidApiDispatcher } from "../lib/httpProxy.js";
 import {
   BONDS_TV_RAPIDAPI_HOST,
   BONDS_TV_REQUEST_DELAY_MS_DEFAULT,
@@ -33,15 +34,23 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+function bondsTvUsesProxy(): boolean {
+  if (process.env.BONDS_TV_DIRECT === "true") return false;
+  if (process.env.BONDS_TV_USE_PROXY === "false") return false;
+  return Boolean(getRapidApiDispatcher());
+}
+
 async function fetchTvClose(ticker: string, apiKey: string): Promise<number | null> {
   const url = new URL(`https://${BONDS_TV_RAPIDAPI_HOST}/api/price/${ticker}`);
   url.searchParams.set("timeframe", "D");
   url.searchParams.set("range", "1");
 
-  const timeoutMs = 30_000;
+  const timeoutMs = 60_000;
+  const dispatcher = bondsTvUsesProxy() ? getRapidApiDispatcher() : undefined;
   const res = await undiciFetch(url.toString(), {
     method: "GET",
     signal: AbortSignal.timeout(timeoutMs),
+    ...(dispatcher ? { dispatcher } : {}),
     headers: {
       "x-rapidapi-key": apiKey,
       "x-rapidapi-host": BONDS_TV_RAPIDAPI_HOST,
@@ -105,7 +114,7 @@ export async function refreshBondsYieldFromTradingView(
   const errors: string[] = [];
 
   logger.info(
-    `[bonds-tv] refresh for ${closeTime.toISOString().slice(0, 10)} (${BONDS_YIELD_TENOR_SOURCES.length} tenors)`,
+    `[bonds-tv] refresh for ${closeTime.toISOString().slice(0, 10)} (${BONDS_YIELD_TENOR_SOURCES.length} tenors, proxy=${bondsTvUsesProxy()})`,
   );
 
   for (let i = 0; i < BONDS_YIELD_TENOR_SOURCES.length; i++) {
