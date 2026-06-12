@@ -26,7 +26,8 @@ function isWidgetType(v: unknown): v is DashboardCanvasWidget["type"] {
     v === "price-sparkline" ||
     v === "portfolio" ||
     v === "macro-calendar" ||
-    v === "fed-curve"
+    v === "fed-curve" ||
+    v === "watchlist"
   );
 }
 
@@ -46,6 +47,17 @@ function normalizeWidgets(raw: unknown): DashboardCanvasWidget[] {
     const compareDaysRaw = o.compareDays;
     const compareDays =
       typeof compareDaysRaw === "number" && Number.isFinite(compareDaysRaw) ? compareDaysRaw : undefined;
+    const symbolsRaw = o.symbols;
+    const symbols = Array.isArray(symbolsRaw)
+      ? [
+          ...new Set(
+            symbolsRaw
+              .filter((s): s is string => typeof s === "string")
+              .map((s) => s.trim().toUpperCase())
+              .filter(Boolean),
+          ),
+        ]
+      : undefined;
     out.push({
       id,
       type: o.type,
@@ -53,6 +65,7 @@ function normalizeWidgets(raw: unknown): DashboardCanvasWidget[] {
       y,
       ...(symbol ? { symbol } : {}),
       ...(compareDays !== undefined ? { compareDays } : {}),
+      ...(symbols !== undefined ? { symbols } : {}),
     });
   }
   return out;

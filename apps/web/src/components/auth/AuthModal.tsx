@@ -40,7 +40,7 @@ export function AuthModal({ open, onClose, onAuthenticated }: Props) {
 
   const titles: Record<AuthScreen, { title: string; subtitle: string }> = {
     signin: { title: "Добро пожаловать", subtitle: "Авторизуйтесь через" },
-    signup: { title: "Регистрация", subtitle: "Создайте аккаунт Atlas" },
+    signup: { title: "Регистрация", subtitle: "Создайте аккаунт Panorama" },
     reset: { title: "Восстановление пароля", subtitle: "Мы отправим код на ваш email" },
   };
 

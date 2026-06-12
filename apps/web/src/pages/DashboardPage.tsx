@@ -9,6 +9,7 @@ import { MacroCalendarWidget } from "../components/widgets/macro-calendar/MacroC
 import { PortfolioWidget } from "../components/widgets/portfolio/PortfolioWidget";
 import { FedCurveWidget } from "../components/widgets/fed-curve/FedCurveWidget";
 import { PriceSparklineWidget } from "../components/widgets/price-sparkline/PriceSparklineWidget";
+import { WatchlistWidget } from "../components/widgets/watchlist/WatchlistWidget";
 import { fetchUserDashboardState, saveUserDashboardState } from "../services/api";
 import "./dashboard-page.css";
 import { applyGuestDashboard } from "../lib/guestDashboard";
@@ -38,6 +39,7 @@ type DraggableWidgetProps = {
   onRemove: (id: string) => void;
   onOpenMacroCalendar?: () => void;
   onFedCurveCompareDays?: (id: string, days: FedCurveCompareDays) => void;
+  onWatchlistSymbols?: (id: string, symbols: string[]) => void;
 };
 
 function DraggableWidget({
@@ -48,6 +50,7 @@ function DraggableWidget({
   onRemove,
   onOpenMacroCalendar,
   onFedCurveCompareDays,
+  onWatchlistSymbols,
 }: DraggableWidgetProps) {
   const nodeRef = useRef<HTMLDivElement>(null);
   const widthClass =
@@ -55,13 +58,15 @@ function DraggableWidget({
       ? "w-[min(500px,calc(100vw-40px))]"
       : widget.type === "macro-calendar"
         ? "h-[300px] w-[min(550px,calc(100vw-40px))]"
-        : "w-[min(350px,calc(100vw-40px))]";
+        : widget.type === "watchlist"
+          ? "h-[530px] w-[min(350px,calc(100vw-40px))]"
+          : "w-[min(350px,calc(100vw-40px))]";
 
   return (
     <Draggable
       nodeRef={nodeRef}
       handle=".drag-handle"
-      cancel=".price-widget-icon-button,.portfolio-menu-trigger,.btn-on-glass,.macro-cal-expand,.fed-curve-settings-popover,.fed-curve-settings-period-btn"
+      cancel=".price-widget-icon-button,.portfolio-menu-trigger,.btn-on-glass,.macro-cal-expand,.fed-curve-settings-popover,.fed-curve-settings-period-btn,.watchlist-list-header-select"
       bounds="parent"
       grid={[gridSize, gridSize]}
       position={{ x: widget.x, y: widget.y }}
@@ -90,6 +95,13 @@ function DraggableWidget({
             dragHandleClassName="drag-handle"
             compareDays={widget.compareDays}
             onCompareDaysChange={(days) => onFedCurveCompareDays?.(widget.id, days)}
+            onDeleteWidget={() => onRemove(widget.id)}
+          />
+        ) : widget.type === "watchlist" ? (
+          <WatchlistWidget
+            dragHandleClassName="drag-handle"
+            symbols={widget.symbols ?? []}
+            onSymbolsChange={(symbols) => onWatchlistSymbols?.(widget.id, symbols)}
             onDeleteWidget={() => onRemove(widget.id)}
           />
         ) : (
@@ -250,6 +262,15 @@ export function DashboardPage() {
     );
   }, []);
 
+  const setWatchlistSymbols = useCallback((id: string, symbols: string[]) => {
+    const normalized = [
+      ...new Set(symbols.map((s) => s.trim().toUpperCase()).filter(Boolean)),
+    ];
+    setWidgets((ws) =>
+      ws.map((w) => (w.id === id && w.type === "watchlist" ? { ...w, symbols: normalized } : w)),
+    );
+  }, []);
+
   const removeWidget = useCallback((id: string) => {
     setWidgets((ws) => ws.filter((w) => w.id !== id));
   }, []);
@@ -311,7 +332,8 @@ export function DashboardPage() {
             w.type === "price-sparkline" ||
             w.type === "portfolio" ||
             w.type === "macro-calendar" ||
-            w.type === "fed-curve" ? (
+            w.type === "fed-curve" ||
+            w.type === "watchlist" ? (
               <DraggableWidget
                 key={w.id}
                 widget={w}
@@ -321,6 +343,7 @@ export function DashboardPage() {
                 onRemove={removeWidget}
                 onOpenMacroCalendar={() => setMacroOpen(true)}
                 onFedCurveCompareDays={setFedCurveCompareDays}
+                onWatchlistSymbols={setWatchlistSymbols}
               />
             ) : null,
           )}

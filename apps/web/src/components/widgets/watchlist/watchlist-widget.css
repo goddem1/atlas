@@ -1,0 +1,162 @@
+@import url("../shared/portfolio-menu.css");
+
+.watchlist-shell {
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 350px;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.watchlist-card {
+  position: relative;
+  isolation: isolate;
+  box-sizing: border-box;
+  width: 100%;
+  height: 530px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 20px 10px 20px 20px;
+  color: var(--atlas-fg-primary);
+}
+
+.watchlist-head {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px 30px 10px;
+  cursor: grab;
+}
+
+.watchlist-head:active {
+  cursor: grabbing;
+}
+
+.watchlist-list-select {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  color: var(--atlas-fg-primary);
+  cursor: pointer;
+}
+
+.watchlist-list-select-icon {
+  width: 14px;
+  height: 14px;
+  object-fit: contain;
+  opacity: 0.7;
+}
+
+.watchlist-divider {
+  height: 1px;
+  margin: 0 20px;
+  background: linear-gradient(90deg, transparent, rgba(148, 163, 184, 0.35), transparent);
+}
+
+.watchlist-list {
+  list-style: none;
+  margin: 0;
+  padding: 0px 20px 20px 20px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.watchlist-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 10px 0 0;
+}
+
+.watchlist-asset {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+.watchlist-asset-icon {
+  width: 35px;
+  height: 35px;
+  border-radius: 999px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.watchlist-asset-icon--fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #171717;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.watchlist-symbol {
+  font-size: 20px;
+  font-weight: 400;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.watchlist-price {
+  font-size: 20px;
+  font-weight: 400;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.watchlist-change {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  min-width: 72px;
+  font-size: 14px;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.watchlist-change--up {
+  color: #22c55e;
+}
+
+.watchlist-change--down {
+  color: #ef4444;
+}
+
+.watchlist-change--flat {
+  color: var(--atlas-second-primary);
+}
+
+.watchlist-msg {
+  margin: 0;
+  padding: 16px 20px;
+  font-size: 16px;
+  color: var(--atlas-second-primary);
+}
+
+.watchlist-msg--err {
+  color: #ef4444;
+}

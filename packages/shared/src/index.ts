@@ -19,7 +19,8 @@ export type DashboardCanvasWidgetType =
   | "price-sparkline"
   | "portfolio"
   | "macro-calendar"
-  | "fed-curve";
+  | "fed-curve"
+  | "watchlist";
 
 export interface DashboardCanvasWidget {
   id: string;
@@ -29,6 +30,8 @@ export interface DashboardCanvasWidget {
   symbol?: string;
   /** Смещение серой линии кривой ФРС (дней), только для `fed-curve`. */
   compareDays?: number;
+  /** Тикеры в списке, только для `watchlist`. */
+  symbols?: string[];
 }
 
 export type DashboardTheme = "light" | "dark";
