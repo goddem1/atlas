@@ -130,8 +130,7 @@ export const PortfolioWidget = memo(function PortfolioWidget({
   }, [timeframe, galleryPreview]);
 
   const assets = summary?.assets ?? [];
-  const maxVisible = assets.length <= 6 ? assets.length : 4;
-  const visibleAssets = assets.slice(0, maxVisible);
+  const visibleAssets = assets.slice(0, 4);
   const hiddenCount = Math.max(0, assets.length - visibleAssets.length);
   const totalPnl = useMemo(() => sumPortfolioPnlUsd(assets), [assets]);
   const filteredAllAssets = useMemo(() => {
@@ -289,7 +288,7 @@ export const PortfolioWidget = memo(function PortfolioWidget({
 
             {hiddenCount > 0 ? (
               <button type="button" className="portfolio-more-button" onClick={() => setShowAllAssets(true)}>
-                еще {hiddenCount} актива →
+                Показать еще →
               </button>
             ) : null}
           </div>
