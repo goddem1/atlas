@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, memo, lazy, Suspense } from "react";
 import { createPortal } from "react-dom";
 import type { CryptocurrencyListItem, PortfolioTimeframe } from "@atlas-v1/shared";
 import {
@@ -12,11 +12,22 @@ import {
   fetchPortfolioSummary,
   updatePortfolioTransaction,
 } from "../../../services/api";
+import { useBackdropBlurPause } from "../../../lib/useBackdropBlurPause";
+import {
+  GALLERY_PORTFOLIO_CHART,
+  GALLERY_PORTFOLIO_SUMMARY,
+} from "../../dashboard/widgetGalleryPreviewData";
 import "../shared/asset-picker.css";
+import "../watchlist/asset-picker-watchlist.css";
 import "./portfolio-widget.css";
-import { AddTransactionModal } from "./AddTransactionModal";
-import { AssetDetailPopup } from "./AssetDetailPopup";
 import { PortfolioChart } from "./PortfolioChart";
+
+const AddTransactionModal = lazy(() =>
+  import("./AddTransactionModal").then((m) => ({ default: m.AddTransactionModal })),
+);
+const AssetDetailPopup = lazy(() =>
+  import("./AssetDetailPopup").then((m) => ({ default: m.AssetDetailPopup })),
+);
 
 const POLL_MS = 5 * 60 * 1000;
 
@@ -33,12 +44,21 @@ function money(s: string): string {
 
 type Props = {
   onDeleteWidget?: () => void;
+  /** Статичное превью для галереи виджетов — без API. */
+  galleryPreview?: boolean;
 };
 
-export function PortfolioWidget({ onDeleteWidget }: Props) {
+export const PortfolioWidget = memo(function PortfolioWidget({
+  onDeleteWidget,
+  galleryPreview = false,
+}: Props) {
   const [assetsRef, setAssetsRef] = useState<CryptocurrencyListItem[]>([]);
-  const [summary, setSummary] = useState<Awaited<ReturnType<typeof fetchPortfolioSummary>> | null>(null);
-  const [chart, setChart] = useState<Awaited<ReturnType<typeof fetchPortfolioChart>> | null>(null);
+  const [summary, setSummary] = useState<Awaited<ReturnType<typeof fetchPortfolioSummary>> | null>(() =>
+    galleryPreview ? GALLERY_PORTFOLIO_SUMMARY : null,
+  );
+  const [chart, setChart] = useState<Awaited<ReturnType<typeof fetchPortfolioChart>> | null>(() =>
+    galleryPreview ? GALLERY_PORTFOLIO_CHART : null,
+  );
   const [timeframe, setTimeframe] = useState<PortfolioTimeframe>("d");
   const [menuOpen, setMenuOpen] = useState(false);
   const [showAllAssets, setShowAllAssets] = useState(false);
@@ -53,6 +73,8 @@ export function PortfolioWidget({ onDeleteWidget }: Props) {
   const [detailError, setDetailError] = useState<string | null>(null);
   const [confirmMessage, setConfirmMessage] = useState<string | null>(null);
   const confirmResolveRef = useRef<((ok: boolean) => void) | null>(null);
+
+  useBackdropBlurPause(Boolean(confirmMessage) || showAllAssets);
 
   const requestConfirm = (message: string): Promise<boolean> =>
     new Promise((resolve) => {
@@ -77,17 +99,20 @@ export function PortfolioWidget({ onDeleteWidget }: Props) {
   };
 
   useEffect(() => {
+    if (galleryPreview) return;
     void fetchCryptocurrencies().then(setAssetsRef).catch(() => setAssetsRef([]));
-  }, []);
+  }, [galleryPreview]);
 
   useEffect(() => {
+    if (galleryPreview) return;
     void loadData(timeframe).catch(() => {
       setSummary({ totalValueUsd: "0.00", totalPnlUsd: "0.00", assets: [] });
       setChart({ timeframe, points: [] });
     });
-  }, [timeframe]);
+  }, [timeframe, galleryPreview]);
 
   useEffect(() => {
+    if (galleryPreview) return;
     const timer = window.setInterval(() => {
       void loadData(timeframe).catch(() => null);
     }, POLL_MS);
@@ -101,12 +126,15 @@ export function PortfolioWidget({ onDeleteWidget }: Props) {
       window.clearInterval(timer);
       document.removeEventListener("visibilitychange", onVisible);
     };
-  }, [timeframe]);
+  }, [timeframe, galleryPreview]);
 
   const assets = summary?.assets ?? [];
   const visibleAssets = assets.slice(0, 4);
   const hiddenCount = Math.max(0, assets.length - visibleAssets.length);
-  const totalPnl = asNum(summary?.totalPnlUsd ?? "0");
+  const totalPnl = useMemo(
+    () => assets.reduce((sum, asset) => sum + asNum(asset.pnlUsd), 0),
+    [assets],
+  );
   const filteredAllAssets = useMemo(() => {
     const q = allAssetsQuery.trim().toLowerCase();
     if (!q) return assets;
@@ -269,8 +297,12 @@ export function PortfolioWidget({ onDeleteWidget }: Props) {
         </div>
       </div>
 
+      {!galleryPreview ? (
+        <>
+      {(showAddModal || editTxId) ? (
+        <Suspense fallback={null}>
       <AddTransactionModal
-        open={showAddModal || Boolean(editTxId)}
+        open
         mode={editTxId ? "edit" : "create"}
         initialDrafts={
           editTxId && detail
@@ -384,9 +416,13 @@ export function PortfolioWidget({ onDeleteWidget }: Props) {
           }
         }}
       />
+        </Suspense>
+      ) : null}
 
+      {selectedSymbol ? (
+        <Suspense fallback={null}>
       <AssetDetailPopup
-        open={Boolean(selectedSymbol)}
+        open
         detail={detail}
         loading={detailLoading}
         errorText={detailError}
@@ -430,6 +466,8 @@ export function PortfolioWidget({ onDeleteWidget }: Props) {
           await refreshAll();
         }}
       />
+        </Suspense>
+      ) : null}
 
       {confirmMessage
         ? createPortal(
@@ -458,10 +496,11 @@ export function PortfolioWidget({ onDeleteWidget }: Props) {
 
       {showAllAssets && typeof document !== "undefined"
         ? createPortal(
-            <div className="asset-picker-overlay portfolio-all-assets-overlay" role="presentation">
+            <div className="asset-picker-overlay-watchlist portfolio-all-assets-overlay" role="presentation">
               <button
                 type="button"
-                className="asset-picker-backdrop"
+                className="asset-picker-watchlist-backdrop"
+                aria-label="Закрыть"
                 onClick={() => {
                   setShowAllAssets(false);
                   setAllAssetsQuery("");
@@ -471,19 +510,19 @@ export function PortfolioWidget({ onDeleteWidget }: Props) {
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="portfolio-all-assets-title"
-                className="asset-picker-dialog"
+                className="asset-picker-watchlist-dialog portfolio-all-assets-dialog"
                 onClick={(e) => e.stopPropagation()}
               >
-                <div className="asset-picker-header">
-                  <div className="asset-picker-search-panel">
-                    <label className="asset-picker-search-label">
-                      <span className="asset-picker-sr-only" id="portfolio-all-assets-title">
+                <div className="asset-picker-watchlist-header">
+                  <div className="asset-picker-watchlist-search-panel">
+                    <label className="asset-picker-watchlist-search-label">
+                      <span className="asset-picker-watchlist-sr-only" id="portfolio-all-assets-title">
                         Поиск по портфельным активам
                       </span>
-                      <span className="asset-picker-search-icon" aria-hidden />
+                      <span className="asset-picker-watchlist-search-icon" aria-hidden />
                       <input
                         type="search"
-                        className="asset-picker-search-input"
+                        className="asset-picker-watchlist-search-input"
                         value={allAssetsQuery}
                         onChange={(e) => setAllAssetsQuery(e.target.value)}
                         placeholder="Поиск по имени или тикеру…"
@@ -491,17 +530,17 @@ export function PortfolioWidget({ onDeleteWidget }: Props) {
                       />
                     </label>
                   </div>
-                  <div className="asset-picker-close-panel">
+                  <div className="asset-picker-watchlist-close-panel">
                     <button
                       type="button"
                       onClick={() => {
                         setShowAllAssets(false);
                         setAllAssetsQuery("");
                       }}
-                      className="asset-picker-close-button btn-glass"
+                      className="asset-picker-watchlist-close-button btn-glass"
                       aria-label="Закрыть"
                     >
-                      <img src="/assets/portfolio-ui/close.svg" alt="" className="asset-picker-close-icon" />
+                      <img src="/assets/portfolio-ui/close.svg" alt="" className="asset-picker-watchlist-close-icon" />
                     </button>
                   </div>
                 </div>
@@ -550,6 +589,8 @@ export function PortfolioWidget({ onDeleteWidget }: Props) {
             document.body,
           )
         : null}
+        </>
+      ) : null}
     </>
   );
-}
+});

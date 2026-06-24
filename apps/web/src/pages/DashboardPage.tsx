@@ -1,15 +1,13 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, memo, lazy, Suspense, type CSSProperties } from "react";
 import Draggable from "react-draggable";
-import { AuthModal } from "../components/auth/AuthModal";
 import { DashboardSettings } from "../components/dashboard/DashboardSettings";
 import { authClient } from "../lib/auth-client";
-import { MacroEventsModal } from "../components/dashboard/MacroEventsModal";
-import { WidgetGalleryModal } from "../components/dashboard/WidgetGalleryModal";
 import { MacroCalendarWidget } from "../components/widgets/macro-calendar/MacroCalendarWidget";
 import { PortfolioWidget } from "../components/widgets/portfolio/PortfolioWidget";
 import { FedCurveWidget } from "../components/widgets/fed-curve/FedCurveWidget";
 import { PriceSparklineWidget } from "../components/widgets/price-sparkline/PriceSparklineWidget";
-import { fetchUserDashboardState, saveUserDashboardState } from "../services/api";
+import { WatchlistWidget, type WatchlistWidgetState } from "../components/widgets/watchlist/WatchlistWidget";
+import { fetchProfile, fetchUserDashboardState, saveUserDashboardState, type ProfileUserResponse } from "../services/api";
 import "./dashboard-page.css";
 import { applyGuestDashboard } from "../lib/guestDashboard";
 import { getThemeColors, hexToRgba, type DashboardPrefs } from "../lib/dashboardPrefs";
@@ -28,6 +26,14 @@ import {
 import type { FedCurveCompareDays } from "../lib/fedCurveComparePeriod";
 import { toUserDashboardState } from "../lib/userDashboardStorage";
 
+const WidgetGalleryModal = lazy(() =>
+  import("../components/dashboard/WidgetGalleryModal").then((m) => ({ default: m.WidgetGalleryModal })),
+);
+const MacroEventsModal = lazy(() =>
+  import("../components/dashboard/MacroEventsModal").then((m) => ({ default: m.MacroEventsModal })),
+);
+const AuthModal = lazy(() => import("../components/auth/AuthModal").then((m) => ({ default: m.AuthModal })));
+
 const SAVE_DEBOUNCE_MS = 600;
 
 type DraggableWidgetProps = {
@@ -38,9 +44,18 @@ type DraggableWidgetProps = {
   onRemove: (id: string) => void;
   onOpenMacroCalendar?: () => void;
   onFedCurveCompareDays?: (id: string, days: FedCurveCompareDays) => void;
+  onWatchlistChange?: (id: string, state: WatchlistWidgetState) => void;
 };
 
-function DraggableWidget({
+function cn(...parts: Array<string | undefined | false>): string {
+  return parts.filter(Boolean).join(" ");
+}
+
+function draggableWidgetPropsEqual(prev: DraggableWidgetProps, next: DraggableWidgetProps): boolean {
+  return prev.widget === next.widget && prev.gridSize === next.gridSize;
+}
+
+const DraggableWidget = memo(function DraggableWidget({
   widget,
   gridSize,
   onMove,
@@ -48,57 +63,100 @@ function DraggableWidget({
   onRemove,
   onOpenMacroCalendar,
   onFedCurveCompareDays,
+  onWatchlistChange,
 }: DraggableWidgetProps) {
   const nodeRef = useRef<HTMLDivElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [watchlistSettingsOpen, setWatchlistSettingsOpen] = useState(false);
+  const handleDelete = useCallback(() => onRemove(widget.id), [onRemove, widget.id]);
+  const handlePriceSymbol = useCallback(
+    (symbol: string) => onPriceSymbol(widget.id, symbol),
+    [onPriceSymbol, widget.id],
+  );
+  const handleFedCurveCompareDays = useCallback(
+    (days: FedCurveCompareDays) => onFedCurveCompareDays?.(widget.id, days),
+    [onFedCurveCompareDays, widget.id],
+  );
+  const handleWatchlistChange = useCallback(
+    (state: WatchlistWidgetState) => onWatchlistChange?.(widget.id, state),
+    [onWatchlistChange, widget.id],
+  );
+  const handleWatchlistSettingsOpenChange = useCallback((open: boolean) => {
+    setWatchlistSettingsOpen(open);
+  }, []);
   const widthClass =
     widget.type === "portfolio"
       ? "w-[min(500px,calc(100vw-40px))]"
       : widget.type === "macro-calendar"
         ? "h-[300px] w-[min(550px,calc(100vw-40px))]"
-        : "w-[min(350px,calc(100vw-40px))]";
+        : widget.type === "watchlist"
+          ? "h-[530px] w-[min(350px,calc(100vw-40px))]"
+          : "w-[min(350px,calc(100vw-40px))]";
 
   return (
     <Draggable
       nodeRef={nodeRef}
       handle=".drag-handle"
-      cancel=".price-widget-icon-button,.portfolio-menu-trigger,.btn-on-glass,.macro-cal-expand,.fed-curve-settings-popover,.fed-curve-settings-period-btn"
+      disabled={widget.type === "watchlist" && watchlistSettingsOpen}
+      cancel=".price-widget-icon-button,.portfolio-menu-trigger,.btn-on-glass,.macro-cal-expand,.fed-curve-settings-popover,.fed-curve-settings-period-btn,.watchlist-list-header-select"
       bounds="parent"
       grid={[gridSize, gridSize]}
-      position={{ x: widget.x, y: widget.y }}
-      onDrag={(_, data) => onMove(widget.id, data.x, data.y)}
-      onStop={(_, data) => onMove(widget.id, data.x, data.y)}
+      position={isDragging ? undefined : { x: widget.x, y: widget.y }}
+      onStart={() => setIsDragging(true)}
+      onStop={(_, data) => {
+        onMove(widget.id, data.x, data.y);
+        setIsDragging(false);
+      }}
     >
       <div
         ref={nodeRef}
-        className={`pointer-events-auto absolute left-0 top-0 inline-block ${widthClass} cursor-default touch-none`}
+        className={cn(
+          "dashboard-widget-slot",
+          `dashboard-widget-slot--${widget.type}`,
+          "pointer-events-auto absolute left-0 top-0 inline-block",
+          widthClass,
+          "cursor-default touch-none",
+        )}
       >
         {widget.type === "price-sparkline" ? (
           <PriceSparklineWidget
             dragHandleClassName="drag-handle"
             preferredSymbol={widget.symbol ?? null}
-            onPreferredSymbolChange={(symbol) => onPriceSymbol(widget.id, symbol)}
-            onDeleteWidget={() => onRemove(widget.id)}
+            onPreferredSymbolChange={handlePriceSymbol}
+            onDeleteWidget={handleDelete}
           />
         ) : widget.type === "macro-calendar" ? (
           <MacroCalendarWidget
             dragHandleClassName="drag-handle"
-            onDeleteWidget={() => onRemove(widget.id)}
+            onDeleteWidget={handleDelete}
             onOpenFullCalendar={onOpenMacroCalendar}
           />
         ) : widget.type === "fed-curve" ? (
           <FedCurveWidget
             dragHandleClassName="drag-handle"
             compareDays={widget.compareDays}
-            onCompareDaysChange={(days) => onFedCurveCompareDays?.(widget.id, days)}
-            onDeleteWidget={() => onRemove(widget.id)}
+            onCompareDaysChange={handleFedCurveCompareDays}
+            onDeleteWidget={handleDelete}
+          />
+        ) : widget.type === "watchlist" ? (
+          <WatchlistWidget
+            dragHandleClassName="drag-handle"
+            watchlistLists={widget.watchlistLists}
+            activeWatchlistListId={widget.activeWatchlistListId}
+            watchlistChangeDisplay={widget.watchlistChangeDisplay}
+            watchlistChangePeriod={widget.watchlistChangePeriod}
+            symbols={widget.symbols}
+            onWatchlistChange={handleWatchlistChange}
+            onDeleteWidget={handleDelete}
+            onSettingsOpenChange={handleWatchlistSettingsOpenChange}
           />
         ) : (
-          <PortfolioWidget onDeleteWidget={() => onRemove(widget.id)} />
+          <PortfolioWidget onDeleteWidget={handleDelete} />
         )}
       </div>
     </Draggable>
   );
-}
+}, draggableWidgetPropsEqual);
 
 function PlusIcon() {
   return (
@@ -125,17 +183,61 @@ export function DashboardPage() {
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [macroOpen, setMacroOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
+  const [profileUser, setProfileUser] = useState<ProfileUserResponse | null>(null);
+
   const boardRef = useRef<HTMLDivElement | null>(null);
   const [boundsVersion, setBoundsVersion] = useState(0);
   const skipPersistRef = useRef(true);
+  /** Сброс гостевого дашборда только после выхода из аккаунта, не при каждой проверке сессии. */
+  const wasLoggedInRef = useRef(false);
 
   const resetToGuestDashboard = useCallback(() => {
     const guest = applyGuestDashboard();
     setWidgets(guest.widgets);
     setPrefs(guest.prefs);
+    setProfileUser(null);
     skipPersistRef.current = true;
     setBoundsVersion((v) => v + 1);
   }, []);
+
+  const handleUserUpdated = useCallback(
+    (updated: ProfileUserResponse) => {
+      setProfileUser(updated);
+      void refetchSession();
+    },
+    [refetchSession],
+  );
+
+  const dashboardUser = useMemo(() => {
+    if (!session?.user) return null;
+    const base = session.user;
+    return {
+      id: base.id,
+      name: profileUser?.name ?? base.name,
+      email: base.email,
+      image: profileUser?.image ?? base.image ?? null,
+      profileVersion: profileUser?.updatedAt ?? null,
+    };
+  }, [session?.user, profileUser]);
+
+  useEffect(() => {
+    setProfileUser(null);
+  }, [userId]);
+
+  useEffect(() => {
+    if (!userId) return;
+    let cancelled = false;
+    void fetchProfile()
+      .then((profile) => {
+        if (!cancelled) setProfileUser(profile);
+      })
+      .catch(() => {
+        /* профиль из сессии */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
 
   useEffect(() => {
     document.documentElement.dataset.dashboardTheme = prefs.theme;
@@ -148,9 +250,14 @@ export function DashboardPage() {
     if (sessionPending) return;
 
     if (!isLoggedIn) {
-      resetToGuestDashboard();
+      if (wasLoggedInRef.current) {
+        resetToGuestDashboard();
+        wasLoggedInRef.current = false;
+      }
       return;
     }
+
+    wasLoggedInRef.current = true;
 
     let cancelled = false;
     skipPersistRef.current = true;
@@ -250,6 +357,23 @@ export function DashboardPage() {
     );
   }, []);
 
+  const setWatchlistState = useCallback((id: string, state: WatchlistWidgetState) => {
+    setWidgets((ws) =>
+      ws.map((w) =>
+        w.id === id && w.type === "watchlist"
+          ? {
+              ...w,
+              watchlistLists: state.watchlistLists,
+              activeWatchlistListId: state.activeWatchlistListId,
+              watchlistChangeDisplay: state.watchlistChangeDisplay,
+              watchlistChangePeriod: state.watchlistChangePeriod,
+              symbols: undefined,
+            }
+          : w,
+      ),
+    );
+  }, []);
+
   const removeWidget = useCallback((id: string) => {
     setWidgets((ws) => ws.filter((w) => w.id !== id));
   }, []);
@@ -275,6 +399,8 @@ export function DashboardPage() {
   },
     [isLoggedIn],
   );
+
+  const openMacroCalendar = useCallback(() => setMacroOpen(true), []);
 
   const mainStyle = useMemo((): CSSProperties => {
     const colors = getThemeColors(prefs.theme);
@@ -311,7 +437,8 @@ export function DashboardPage() {
             w.type === "price-sparkline" ||
             w.type === "portfolio" ||
             w.type === "macro-calendar" ||
-            w.type === "fed-curve" ? (
+            w.type === "fed-curve" ||
+            w.type === "watchlist" ? (
               <DraggableWidget
                 key={w.id}
                 widget={w}
@@ -319,8 +446,9 @@ export function DashboardPage() {
                 onMove={moveWidget}
                 onPriceSymbol={setPriceWidgetSymbol}
                 onRemove={removeWidget}
-                onOpenMacroCalendar={() => setMacroOpen(true)}
+                onOpenMacroCalendar={openMacroCalendar}
                 onFedCurveCompareDays={setFedCurveCompareDays}
+                onWatchlistChange={setWatchlistState}
               />
             ) : null,
           )}
@@ -332,12 +460,9 @@ export function DashboardPage() {
           prefs={prefs}
           onChange={setPrefs}
           isLoggedIn={isLoggedIn}
-          user={
-            session?.user
-              ? { id: session.user.id, name: session.user.name, email: session.user.email }
-              : null
-          }
+          user={dashboardUser}
           onOpenAuth={() => setAuthOpen(true)}
+          onUserUpdated={handleUserUpdated}
           onSignOut={() =>
             void authClient.signOut().then(() => {
               resetToGuestDashboard();
@@ -357,21 +482,33 @@ export function DashboardPage() {
         </button>
       </div>
 
-      <WidgetGalleryModal
-        open={galleryOpen}
-        isLoggedIn={isLoggedIn}
-        onClose={() => setGalleryOpen(false)}
-        onPick={addWidget}
-      />
-      <MacroEventsModal open={macroOpen} onClose={() => setMacroOpen(false)} />
-      <AuthModal
-        open={authOpen}
-        onClose={() => setAuthOpen(false)}
-        onAuthenticated={() => {
-          skipPersistRef.current = true;
-          void refetchSession();
-        }}
-      />
+      {galleryOpen ? (
+        <Suspense fallback={null}>
+          <WidgetGalleryModal
+            open
+            isLoggedIn={isLoggedIn}
+            onClose={() => setGalleryOpen(false)}
+            onPick={addWidget}
+          />
+        </Suspense>
+      ) : null}
+      {macroOpen ? (
+        <Suspense fallback={null}>
+          <MacroEventsModal open onClose={() => setMacroOpen(false)} />
+        </Suspense>
+      ) : null}
+      {authOpen ? (
+        <Suspense fallback={null}>
+          <AuthModal
+            open
+            onClose={() => setAuthOpen(false)}
+            onAuthenticated={() => {
+              skipPersistRef.current = true;
+              void refetchSession();
+            }}
+          />
+        </Suspense>
+      ) : null}
     </div>
   );
 }

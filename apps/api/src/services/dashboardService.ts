@@ -1,5 +1,12 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
 import type { DashboardCanvasWidget, DashboardUserPrefs, UserDashboardState } from "@atlas-v1/shared";
+import {
+  normalizeSymbolList,
+  normalizeWatchlistLists,
+  normalizeWatchlistChangeDisplay,
+  normalizeWatchlistChangePeriod,
+  resolveWatchlistWidgetState,
+} from "@atlas-v1/shared";
 
 const LAYOUT_VERSION = 1 as const;
 
@@ -12,6 +19,9 @@ const GUEST_WIDGETS: DashboardCanvasWidget[] = [
 const DEFAULT_PREFS: DashboardUserPrefs = {
   theme: "light",
   gridOpacity: 20,
+  language: "ru",
+  displayCurrency: "rub",
+  notificationsDisabled: false,
 };
 
 function newWidgetId(): string {
@@ -26,7 +36,8 @@ function isWidgetType(v: unknown): v is DashboardCanvasWidget["type"] {
     v === "price-sparkline" ||
     v === "portfolio" ||
     v === "macro-calendar" ||
-    v === "fed-curve"
+    v === "fed-curve" ||
+    v === "watchlist"
   );
 }
 
@@ -46,6 +57,24 @@ function normalizeWidgets(raw: unknown): DashboardCanvasWidget[] {
     const compareDaysRaw = o.compareDays;
     const compareDays =
       typeof compareDaysRaw === "number" && Number.isFinite(compareDaysRaw) ? compareDaysRaw : undefined;
+    const symbolsRaw = o.symbols;
+    const legacySymbols =
+      o.type === "watchlist" && symbolsRaw !== undefined ? normalizeSymbolList(symbolsRaw) : undefined;
+    const symbols =
+      legacySymbols && legacySymbols.length > 0 ? legacySymbols : undefined;
+    const watchlistListsRaw = o.type === "watchlist" ? normalizeWatchlistLists(o.watchlistLists) : undefined;
+    const activeWatchlistListIdRaw =
+      o.type === "watchlist" && typeof o.activeWatchlistListId === "string"
+        ? o.activeWatchlistListId
+        : undefined;
+    const watchlistState =
+      o.type === "watchlist"
+        ? resolveWatchlistWidgetState(
+            watchlistListsRaw,
+            activeWatchlistListIdRaw,
+            watchlistListsRaw ? undefined : legacySymbols,
+          )
+        : null;
     out.push({
       id,
       type: o.type,
@@ -53,6 +82,16 @@ function normalizeWidgets(raw: unknown): DashboardCanvasWidget[] {
       y,
       ...(symbol ? { symbol } : {}),
       ...(compareDays !== undefined ? { compareDays } : {}),
+      ...(o.type === "watchlist" && watchlistState
+        ? {
+            watchlistLists: watchlistState.watchlistLists,
+            activeWatchlistListId: watchlistState.activeWatchlistListId,
+            watchlistChangeDisplay: normalizeWatchlistChangeDisplay(o.watchlistChangeDisplay),
+            watchlistChangePeriod: normalizeWatchlistChangePeriod(o.watchlistChangePeriod),
+          }
+        : symbols !== undefined
+          ? { symbols }
+          : {}),
     });
   }
   return out;
@@ -70,7 +109,13 @@ function normalizePrefs(raw: unknown): DashboardUserPrefs {
     typeof o.gridOpacity === "number" && Number.isFinite(o.gridOpacity)
       ? clampGridOpacity(o.gridOpacity)
       : DEFAULT_PREFS.gridOpacity;
-  return { theme, gridOpacity };
+  const language = o.language === "en" ? "en" : DEFAULT_PREFS.language!;
+  const displayCurrency =
+    o.displayCurrency === "eur" || o.displayCurrency === "usd"
+      ? o.displayCurrency
+      : DEFAULT_PREFS.displayCurrency!;
+  const notificationsDisabled = Boolean(o.notificationsDisabled);
+  return { theme, gridOpacity, language, displayCurrency, notificationsDisabled };
 }
 
 export function defaultUserDashboardState(): UserDashboardState {
@@ -104,6 +149,9 @@ export function layoutToJson(state: UserDashboardState): Prisma.InputJsonValue {
       prefs: {
         theme: state.prefs.theme,
         gridOpacity: clampGridOpacity(state.prefs.gridOpacity),
+        language: state.prefs.language ?? DEFAULT_PREFS.language,
+        displayCurrency: state.prefs.displayCurrency ?? DEFAULT_PREFS.displayCurrency,
+        notificationsDisabled: Boolean(state.prefs.notificationsDisabled),
       },
     }),
   ) as Prisma.InputJsonValue;

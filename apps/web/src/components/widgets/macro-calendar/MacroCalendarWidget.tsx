@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState, memo } from "react";
 import type { MacroEventRow } from "@atlas-v1/shared";
 import {
   eventYmdMsk,
@@ -8,73 +8,23 @@ import {
   isNoValuesIndicator,
   withMacroUnit,
 } from "../../../lib/macroEventUi";
+import {
+  mskMinuteKey,
+  mskSecond,
+  pickMacroReleaseStatusPollDelay,
+} from "../../../lib/macroEventMskTime";
+import { useIsBackdropBlurPaused } from "../../../lib/useIsBackdropBlurPaused";
 import { fetchMacroEvents, fetchMacroReleaseStatus } from "../../../services/api";
-import { MacroSeriesDetailModal } from "../../dashboard/MacroSeriesDetailModal";
+import { GALLERY_MACRO_EVENTS } from "../../dashboard/widgetGalleryPreviewData";
 import "../price-sparkline/price-sparkline-widget.css";
 import "./macro-calendar-widget.css";
 
+const MacroSeriesDetailModal = lazy(() =>
+  import("../../dashboard/MacroSeriesDetailModal").then((m) => ({ default: m.MacroSeriesDetailModal })),
+);
+
 const POLL_MS = 5 * 60 * 1000;
 const VISIBLE_ROWS = 5;
-const RELEASE_STATUS_HOT_POLL_MS = 1000;
-const RELEASE_STATUS_NEAR_POLL_MS = 5000;
-const RELEASE_STATUS_IDLE_POLL_MS = 30000;
-
-function mskMinuteKey(value: Date): string {
-  const parts = new Intl.DateTimeFormat("sv-SE", {
-    timeZone: "Europe/Moscow",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).formatToParts(value);
-  const get = (type: Intl.DateTimeFormatPartTypes) => parts.find((p) => p.type === type)?.value ?? "";
-  return `${get("year")}-${get("month")}-${get("day")} ${get("hour")}:${get("minute")}`;
-}
-
-function mskEpochParts(value: Date): { epochMinute: number; second: number } {
-  const parts = new Intl.DateTimeFormat("sv-SE", {
-    timeZone: "Europe/Moscow",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: false,
-  }).formatToParts(value);
-  const get = (type: Intl.DateTimeFormatPartTypes) => parts.find((p) => p.type === type)?.value ?? "";
-  const y = Number.parseInt(get("year"), 10) || 1970;
-  const m = Number.parseInt(get("month"), 10) || 1;
-  const d = Number.parseInt(get("day"), 10) || 1;
-  const hh = Number.parseInt(get("hour"), 10) || 0;
-  const mm = Number.parseInt(get("minute"), 10) || 0;
-  const ss = Number.parseInt(get("second"), 10) || 0;
-  const epochMinute = Date.UTC(y, m - 1, d, hh, mm, 0) / 60000;
-  return { epochMinute, second: ss };
-}
-
-function pickReleaseStatusPollDelay(rows: MacroEventRow[], inProgressSize: number, now = new Date()): number {
-  if (typeof document !== "undefined" && document.visibilityState === "hidden") {
-    return Math.max(RELEASE_STATUS_IDLE_POLL_MS, 60000);
-  }
-  if (inProgressSize > 0) return RELEASE_STATUS_HOT_POLL_MS;
-
-  const nowParts = mskEpochParts(now);
-  const nowMinute = nowParts.epochMinute;
-  const hotSecondWindow = nowParts.second < 8;
-  let hasNearRelease = false;
-  for (const e of rows) {
-    const eventMinute = mskEpochParts(new Date(e.date)).epochMinute;
-    const delta = eventMinute - nowMinute;
-    if (delta < 0 || delta > 15) continue;
-    hasNearRelease = true;
-    if (delta === 0 && hotSecondWindow) return RELEASE_STATUS_HOT_POLL_MS;
-  }
-  return hasNearRelease ? RELEASE_STATUS_NEAR_POLL_MS : RELEASE_STATUS_IDLE_POLL_MS;
-}
-
 function pluralEventsRu(n: number): string {
   const m10 = n % 10;
   const m100 = n % 100;
@@ -100,18 +50,29 @@ type Props = {
   onDeleteWidget?: () => void;
   /** Открыть полный календарь (модалка на дашборде). */
   onOpenFullCalendar?: () => void;
+  /** Статичное превью для галереи виджетов — без API. */
+  galleryPreview?: boolean;
 };
 
-export function MacroCalendarWidget({ dragHandleClassName, onDeleteWidget, onOpenFullCalendar }: Props) {
+export const MacroCalendarWidget = memo(function MacroCalendarWidget({
+  dragHandleClassName,
+  onDeleteWidget,
+  onOpenFullCalendar,
+  galleryPreview = false,
+}: Props) {
+  const overlayOpen = useIsBackdropBlurPaused();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => !galleryPreview);
   const [err, setErr] = useState<string | null>(null);
-  const [rows, setRows] = useState<MacroEventRow[]>([]);
+  const [rows, setRows] = useState<MacroEventRow[]>(() =>
+    galleryPreview ? GALLERY_MACRO_EVENTS : [],
+  );
   const [seriesIndicatorId, setSeriesIndicatorId] = useState<string | null>(null);
   const [releaseLoadingIds, setReleaseLoadingIds] = useState<Set<string>>(() => new Set());
   const [nowTick, setNowTick] = useState(() => Date.now());
 
   const load = useCallback(() => {
+    if (galleryPreview) return;
     const { from, to } = todayBoundsMoscow();
     const todayYmd = from.toLocaleDateString("sv-SE", { timeZone: "Europe/Moscow" });
     setLoading(true);
@@ -128,20 +89,29 @@ export function MacroCalendarWidget({ dragHandleClassName, onDeleteWidget, onOpe
         setRows([]);
       })
       .finally(() => setLoading(false));
-  }, []);
+  }, [galleryPreview]);
 
   useEffect(() => {
+    if (galleryPreview || overlayOpen) return;
     load();
     const id = window.setInterval(load, POLL_MS);
     return () => window.clearInterval(id);
-  }, [load]);
+  }, [load, galleryPreview, overlayOpen]);
+
+  const needsLiveClock = useMemo(() => {
+    if (galleryPreview || overlayOpen) return false;
+    if (releaseLoadingIds.size > 0) return true;
+    return rows.some((e) => !e.actual);
+  }, [galleryPreview, overlayOpen, releaseLoadingIds, rows]);
 
   useEffect(() => {
+    if (!needsLiveClock) return;
     const tick = window.setInterval(() => setNowTick(Date.now()), 1000);
     return () => window.clearInterval(tick);
-  }, []);
+  }, [needsLiveClock]);
 
   useEffect(() => {
+    if (galleryPreview || overlayOpen) return;
     let cancelled = false;
     let previousActiveCount = 0;
     let timer: number | null = null;
@@ -160,7 +130,7 @@ export function MacroCalendarWidget({ dragHandleClassName, onDeleteWidget, onOpe
         if (!cancelled) setReleaseLoadingIds(new Set());
       } finally {
         if (!cancelled) {
-          const delay = pickReleaseStatusPollDelay(rows, previousActiveCount, new Date());
+          const delay = pickMacroReleaseStatusPollDelay(rows, previousActiveCount, new Date());
           timer = window.setTimeout(() => void poll(), delay);
         }
       }
@@ -170,19 +140,17 @@ export function MacroCalendarWidget({ dragHandleClassName, onDeleteWidget, onOpe
       cancelled = true;
       if (timer != null) window.clearTimeout(timer);
     };
-  }, [load, rows]);
+  }, [load, rows, galleryPreview, overlayOpen]);
 
   const visible = rows.slice(0, VISIBLE_ROWS);
   const moreCount = Math.max(0, rows.length - VISIBLE_ROWS);
   const dragCn = cn("macro-cal-head", dragHandleClassName);
-  const now = new Date(nowTick);
-  const nowMinute = mskMinuteKey(now);
-  const nowSecond = Number(
-    new Intl.DateTimeFormat("sv-SE", {
-      timeZone: "Europe/Moscow",
-      second: "2-digit",
-      hour12: false,
-    }).format(now),
+  const now = useMemo(() => new Date(nowTick), [nowTick]);
+  const nowMinute = useMemo(() => mskMinuteKey(now), [now]);
+  const nowSecond = useMemo(() => mskSecond(now), [now]);
+  const eventMinuteById = useMemo(
+    () => new Map(visible.map((e) => [e.id, mskMinuteKey(new Date(e.date))])),
+    [visible],
   );
 
   return (
@@ -256,7 +224,7 @@ export function MacroCalendarWidget({ dragHandleClassName, onDeleteWidget, onOpe
           {visible.map((e) => (
             (() => {
               const inServerProgress = releaseLoadingIds.has(e.id);
-              const inPreFetchWindow = !e.actual && nowSecond < 5 && mskMinuteKey(new Date(e.date)) === nowMinute;
+              const inPreFetchWindow = !e.actual && nowSecond < 5 && eventMinuteById.get(e.id) === nowMinute;
               const isActualLoading = inServerProgress || inPreFetchWindow;
               return (
                 <li
@@ -325,11 +293,15 @@ export function MacroCalendarWidget({ dragHandleClassName, onDeleteWidget, onOpe
         </div>
       ) : null}
       </div>
-      <MacroSeriesDetailModal
-        open={seriesIndicatorId != null}
-        indicatorId={seriesIndicatorId}
-        onClose={() => setSeriesIndicatorId(null)}
-      />
+      {!galleryPreview && seriesIndicatorId != null ? (
+        <Suspense fallback={null}>
+          <MacroSeriesDetailModal
+            open
+            indicatorId={seriesIndicatorId}
+            onClose={() => setSeriesIndicatorId(null)}
+          />
+        </Suspense>
+      ) : null}
     </div>
   );
-}
+});

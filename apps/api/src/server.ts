@@ -14,6 +14,7 @@ import { registerMarketRoutes } from "./routes/market.js";
 import { registerMacroRoutes } from "./routes/macro.js";
 import { registerDashboardRoutes } from "./routes/dashboard.js";
 import { registerPortfolioRoutes } from "./routes/portfolio.js";
+import { registerProfileRoutes } from "./routes/profile.js";
 import { startBinanceCandleStream, stopBinanceCandleStream } from "./services/binanceCandleStream.js";
 
 const prisma = new PrismaClient();
@@ -45,6 +46,7 @@ registerAuthRoutes(app);
 registerMarketRoutes(app, prisma);
 registerMacroRoutes(app, prisma);
 registerPortfolioRoutes(app, prisma);
+registerProfileRoutes(app, prisma);
 registerDashboardRoutes(app, prisma);
 
 const port = Number(process.env.PORT ?? 3001);

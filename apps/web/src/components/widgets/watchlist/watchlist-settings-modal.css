@@ -1,0 +1,281 @@
+.watchlist-settings-backdrop-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 460;
+  pointer-events: none;
+}
+
+.watchlist-settings-backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  pointer-events: auto;
+  animation: watchlist-settings-backdrop-in 0.28s ease;
+}
+
+.watchlist-settings-dialog {
+  --watchlist-settings-inset: 16px;
+  position: fixed;
+  top: var(--watchlist-settings-inset);
+  right: var(--watchlist-settings-inset);
+  bottom: var(--watchlist-settings-inset);
+  z-index: 470;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  width: min(300px, calc(100vw - var(--watchlist-settings-inset) * 2));
+  height: auto;
+  padding: 0 20px 20px;
+  border-radius: 25px;
+  overflow: hidden;
+  pointer-events: auto;
+  animation: watchlist-settings-drawer-in 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* .atlas-glass задаёт position: relative — без этого drawer уезжает в левый верх */
+.watchlist-settings-dialog.atlas-glass {
+  position: fixed;
+}
+
+@keyframes watchlist-settings-backdrop-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes watchlist-settings-drawer-in {
+  from {
+    transform: translateX(100%);
+  }
+
+  to {
+    transform: translateX(0);
+  }
+}
+
+.watchlist-settings-header {
+  position: relative;
+  z-index: 1;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  height: 50px;
+  margin: 0 -20px 10px;
+  padding: 0 5px 0px 20px;
+  flex-shrink: 0;
+}
+
+.watchlist-settings-header-backdrop.atlas-glass {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  border-bottom: var(--atlas-glass-border);
+  border-radius: 30px;
+  box-shadow: none;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.watchlist-settings-title {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: var(--atlas-fg-primary);
+}
+
+.watchlist-settings-close {
+  position: relative;
+  z-index: 1;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.watchlist-settings-close.btn-glass:not(:hover):not(:active) {
+  border-color: transparent;
+  background-color: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.watchlist-settings-close-icon {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  filter: var(--atlas-search-icon-filter);
+}
+
+.watchlist-settings-body {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.watchlist-settings-field {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.watchlist-settings-field-label {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.25;
+  color: var(--atlas-second-color);
+}
+
+.watchlist-settings-lists {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.watchlist-settings-list-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.watchlist-settings-list-item--dragging {
+  opacity: 0.45;
+}
+
+.watchlist-settings-list-item--drop-before::before,
+.watchlist-settings-list-item--drop-after::after {
+  content: "";
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  height: 2px;
+  border-radius: 999px;
+  background: var(--atlas-primary-btn-bg);
+  pointer-events: none;
+}
+
+.watchlist-settings-list-item--drop-before::before {
+  top: -1px;
+}
+
+.watchlist-settings-list-item--drop-after::after {
+  bottom: -1px;
+}
+
+.watchlist-settings-list-drag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.35);
+  cursor: grab;
+  touch-action: none;
+}
+
+.watchlist-settings-list-drag-icon {
+  width: 14px;
+  height: 14px;
+  display: block;
+  filter: var(--atlas-search-icon-filter);
+  pointer-events: none;
+}
+
+.watchlist-settings-list-drag:active {
+  cursor: grabbing;
+}
+
+html[data-dashboard-theme="dark"] .watchlist-settings-list-drag {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(148, 163, 184, 0.35);
+}
+
+.watchlist-settings-list-field {
+  flex: 1;
+  min-width: 0;
+}
+
+.watchlist-settings-list-field .portfolio-input-ghost {
+  height: 44px;
+  border-radius: 12px;
+  font-size: 18px;
+  padding-left: 14px;
+  padding-right: 14px;
+}
+
+.watchlist-settings-list-field.is-floated .portfolio-input-ghost,
+.watchlist-settings-list-field:focus-within .portfolio-input-ghost {
+  padding-top: 13px;
+  padding-left: 14px;
+  padding-right: 14px;
+}
+
+.watchlist-settings-list-field .portfolio-ghost-label {
+  left: 14px;
+  font-size: 18px;
+}
+
+.watchlist-settings-list-input {
+  width: 100%;
+}
+
+.watchlist-settings-combobox-field {
+  width: 100%;
+}
+
+.watchlist-settings-combobox-field .portfolio-input-ghost {
+  height: 50px;
+  border-radius: 15px;
+  cursor: pointer;
+}
+
+.watchlist-settings-combobox-field.is-floated .portfolio-input-ghost,
+.watchlist-settings-combobox-field:focus-within .portfolio-input-ghost {
+  padding-top: 13px;
+}
+
+.watchlist-settings-combobox-input {
+  width: 100%;
+}
+
+.watchlist-settings-combobox-menu .portfolio-asset-option.active,
+.watchlist-settings-combobox-menu .portfolio-asset-option.list-on-glass.active {
+  background: var(--atlas-primary-btn-bg);
+  background-color: var(--atlas-primary-btn-bg);
+}
+
+.watchlist-settings-combobox-menu .portfolio-asset-option--active {
+  color: #f2f2f7;
+}

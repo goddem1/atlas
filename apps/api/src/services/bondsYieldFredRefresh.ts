@@ -107,7 +107,7 @@ export async function refreshBondsYieldFromFred(
           continue;
         }
         const closeTime = parseCloseTime(row.date);
-        await prisma.bondsPrices.upsert({
+        const existing = await prisma.bondsPrices.findUnique({
           where: {
             symbol_interval_closeTime: {
               symbol,
@@ -115,13 +115,20 @@ export async function refreshBondsYieldFromFred(
               closeTime,
             },
           },
-          create: {
+          select: { id: true },
+        });
+        if (existing) {
+          skipped += 1;
+          continue;
+        }
+
+        await prisma.bondsPrices.create({
+          data: {
             symbol,
             interval: BONDS_YIELD_INTERVAL,
             closeTime,
             close: v,
           },
-          update: { close: v },
         });
         upserted += 1;
       }

@@ -12,6 +12,7 @@ import {
   YAxis,
 } from "recharts";
 import { fetchMacroSeries } from "../../services/api";
+import { useBackdropBlurPause } from "../../lib/useBackdropBlurPause";
 import { hasTempAlertMark } from "../../lib/macroEventUi";
 import "./macro-series-detail-modal.css";
 
@@ -141,6 +142,7 @@ function isWeeklyFrequency(frequency: string): boolean {
 }
 
 export function MacroSeriesDetailModal({ open, onClose, indicatorId }: Props) {
+  useBackdropBlurPause(open);
   const [range, setRange] = useState<SeriesRange>("1y");
   const [showAllTableRows, setShowAllTableRows] = useState(false);
   const [loading, setLoading] = useState(false);

@@ -2,6 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import type { TransactionType } from "@prisma/client";
 import {
+  calcAssetPnlState,
+  calcAssetPnlUsd,
   calcHoldingsFromTransactions,
   pickResampled,
   validateSellTimeline,
@@ -41,4 +43,24 @@ test("pickResampled keeps tail point and respects timeframe limits", () => {
   const m = pickResampled(points, "m");
   assert.ok(m.length <= 91);
   assert.equal(m[m.length - 1]?.date, points[points.length - 1]?.date);
+});
+
+test("calcAssetPnlState uses average cost on partial sell", () => {
+  const state = calcAssetPnlState([
+    { type: "BUY", amountCoins: 10, amountUsd: 100, date: new Date("2024-01-01") },
+    { type: "SELL", amountCoins: 5, amountUsd: 75, date: new Date("2024-01-02") },
+  ]);
+  assert.equal(state.coinsHeld, 5);
+  assert.equal(state.costBasisUsd, 50);
+  assert.equal(state.realizedPnlUsd, 25);
+  assert.equal(calcAssetPnlUsd(state, 100), 75);
+});
+
+test("calcAssetPnlUsd keeps realized P/L after full exit", () => {
+  const state = calcAssetPnlState([
+    { type: "BUY", amountCoins: 2, amountUsd: 200, date: new Date("2024-01-01") },
+    { type: "SELL", amountCoins: 2, amountUsd: 150, date: new Date("2024-01-02") },
+  ]);
+  assert.equal(state.coinsHeld, 0);
+  assert.equal(calcAssetPnlUsd(state, 0), -50);
 });

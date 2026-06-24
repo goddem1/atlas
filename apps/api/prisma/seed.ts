@@ -1,10 +1,8 @@
-import { access } from "node:fs/promises";
-import { constants as fsConstants } from "node:fs";
 import { PrismaClient } from "@prisma/client";
+import { ensureIconAndResolveUrl } from "../src/lib/cryptoIcons.js";
 
 const prisma = new PrismaClient();
 const BINANCE_EXCHANGE_INFO_URL = "https://api.binance.com/api/v3/exchangeInfo";
-const DEFAULT_ICON_URL = "/assets/crypto/generic.svg";
 
 type BinanceExchangeInfo = {
   symbols?: Array<{
@@ -33,16 +31,6 @@ const DISPLAY_NAME_BY_SYMBOL: Record<string, string> = {
   TON: "Toncoin",
   SHIB: "Shiba Inu",
 };
-
-async function hasLocalIcon(symbol: string): Promise<boolean> {
-  const iconPath = new URL(`../../web/public/assets/crypto/${symbol}.svg`, import.meta.url);
-  try {
-    await access(iconPath, fsConstants.F_OK);
-    return true;
-  } catch {
-    return false;
-  }
-}
 
 async function fetchSpotUsdtPairs(): Promise<Array<{ symbol: string; pairSymbol: string }>> {
   const response = await fetch(BINANCE_EXCHANGE_INFO_URL);
@@ -78,8 +66,8 @@ async function main() {
   const pairs = await fetchSpotUsdtPairs();
 
   for (const coin of pairs) {
-    const iconUrl = (await hasLocalIcon(coin.symbol)) ? `/assets/crypto/${coin.symbol}.svg` : DEFAULT_ICON_URL;
     const name = existingNameBySymbol.get(coin.symbol) ?? DISPLAY_NAME_BY_SYMBOL[coin.symbol] ?? coin.symbol;
+    const iconUrl = await ensureIconAndResolveUrl(coin.symbol, { name });
     await prisma.cryptocurrencyList.upsert({
       where: { symbol: coin.symbol },
       create: {

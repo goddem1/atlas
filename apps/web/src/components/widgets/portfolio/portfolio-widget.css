@@ -313,8 +313,9 @@ html[data-dashboard-theme="dark"] .portfolio-timeframe-switcher > .btn-on-glass.
   font-size: 12px;
 }
 
-/* Портал «Все активы»: тот же каркас, что у .asset-picker-dialog; z-index выше виджета */
-.asset-picker-overlay.portfolio-all-assets-overlay {
+/* Портал «Все активы»: тот же каркас, что у watchlist crypto picker; z-index выше виджета */
+.asset-picker-overlay.portfolio-all-assets-overlay,
+.asset-picker-overlay-watchlist.portfolio-all-assets-overlay {
   z-index: 1100;
 }
 

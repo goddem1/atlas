@@ -253,3 +253,54 @@ export async function saveUserDashboardState(state: UserDashboardState): Promise
   });
   return parseJson<UserDashboardState>(res);
 }
+
+export type ProfileUserResponse = {
+  id: string;
+  name: string;
+  email: string;
+  image: string | null;
+  updatedAt: string;
+};
+
+export function resolveApiAssetUrl(path: string | null | undefined): string | null {
+  if (!path) return null;
+  if (path.startsWith("http://") || path.startsWith("https://") || path.startsWith("data:")) {
+    return path;
+  }
+  const base = apiBase();
+  const normalized = path.startsWith("/") ? path : `/${path}`;
+  return `${base}${normalized}`;
+}
+
+export function profileAvatarUrl(
+  image: string | null | undefined,
+  updatedAt?: string | null,
+): string | null {
+  const url = resolveApiAssetUrl(image);
+  if (!url) return null;
+  if (!updatedAt) return url;
+  return `${url}?v=${encodeURIComponent(updatedAt)}`;
+}
+
+export async function fetchProfile(): Promise<ProfileUserResponse> {
+  const res = await portfolioFetch(`${apiBase()}/profile`, { cache: "no-store" });
+  return parseJson<ProfileUserResponse>(res);
+}
+
+export async function updateProfileName(name: string): Promise<ProfileUserResponse> {
+  const res = await portfolioFetch(`${apiBase()}/profile`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name }),
+  });
+  return parseJson<ProfileUserResponse>(res);
+}
+
+export async function uploadProfileAvatar(dataUrl: string): Promise<ProfileUserResponse> {
+  const res = await portfolioFetch(`${apiBase()}/profile/avatar`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ dataUrl }),
+  });
+  return parseJson<ProfileUserResponse>(res);
+}

@@ -1,4 +1,14 @@
 import { normalizeFedCurveCompareDays } from "./fedCurveComparePeriod";
+import {
+  normalizeSymbolList,
+  normalizeWatchlistLists,
+  normalizeWatchlistChangeDisplay,
+  normalizeWatchlistChangePeriod,
+  resolveWatchlistWidgetState,
+  type WatchlistListData,
+  type WatchlistChangeDisplay,
+  type WatchlistChangePeriod,
+} from "@atlas-v1/shared";
 
 const STORAGE_KEY = "atlas-v1-dashboard-widgets";
 
@@ -9,7 +19,7 @@ export const DASHBOARD_EDGE_INSET = 20;
 /** Минимальный зазор между прямоугольниками виджетов (px). */
 export const DASHBOARD_WIDGET_GAP = 20;
 
-export type DashboardWidgetType = "price-sparkline" | "portfolio" | "macro-calendar" | "fed-curve";
+export type DashboardWidgetType = "price-sparkline" | "portfolio" | "macro-calendar" | "fed-curve" | "watchlist";
 
 export type DashboardWidget = {
   id: string;
@@ -20,6 +30,16 @@ export type DashboardWidget = {
   symbol?: string;
   /** Период серой линии (дней) — только для `fed-curve`. */
   compareDays?: number;
+  /** Тикеры в списке — только для `watchlist` (legacy). */
+  symbols?: string[];
+  /** Списки watchlist — только для `watchlist`. */
+  watchlistLists?: WatchlistListData[];
+  /** Активный список watchlist — только для `watchlist`. */
+  activeWatchlistListId?: string;
+  /** Отображение изменения цены — только для `watchlist`. */
+  watchlistChangeDisplay?: WatchlistChangeDisplay;
+  /** Период изменения цены — только для `watchlist`. */
+  watchlistChangePeriod?: WatchlistChangePeriod;
 };
 
 export const WIDGET_CATALOG: {
@@ -47,9 +67,15 @@ export const WIDGET_CATALOG: {
     title: "Кривая ФРС",
     description: "Доходность Treasury: сегодня и месяц назад",
   },
+  {
+    type: "watchlist",
+    title: "Список",
+    description: "Цены криптовалют и дневное изменение",
+  },
 ];
 
 const PRICE_WIDGET_H = 200;
+const WATCHLIST_WIDGET_H = 530;
 const PORTFOLIO_WIDGET_H = 250;
 const MACRO_CALENDAR_WIDGET_W = 550;
 const MACRO_CALENDAR_WIDGET_H = 300;
@@ -72,6 +98,10 @@ export function dashboardWidgetOuterSize(
     const w = Math.min(MACRO_CALENDAR_WIDGET_W, Math.max(280, viewportWidth - VIEWPORT_WIDGET_GUTTER));
     return { w, h: MACRO_CALENDAR_WIDGET_H };
   }
+  if (type === "watchlist") {
+    const w = Math.min(350, Math.max(200, viewportWidth - VIEWPORT_WIDGET_GUTTER));
+    return { w, h: WATCHLIST_WIDGET_H };
+  }
   const maxW = type === "portfolio" ? 500 : 350;
   const w = Math.min(maxW, Math.max(200, viewportWidth - VIEWPORT_WIDGET_GUTTER));
   const h = type === "portfolio" ? PORTFOLIO_WIDGET_H : PRICE_WIDGET_H;
@@ -83,7 +113,8 @@ function isWidgetType(v: unknown): v is DashboardWidgetType {
     v === "price-sparkline" ||
     v === "portfolio" ||
     v === "macro-calendar" ||
-    v === "fed-curve"
+    v === "fed-curve" ||
+    v === "watchlist"
   );
 }
 
@@ -279,6 +310,24 @@ function normalizeWidgets(raw: unknown): DashboardWidget[] {
       typeof compareDaysRaw === "number" && Number.isFinite(compareDaysRaw)
         ? normalizeFedCurveCompareDays(compareDaysRaw)
         : undefined;
+    const symbolsRaw = o.symbols;
+    const legacySymbols =
+      o.type === "watchlist" && symbolsRaw !== undefined ? normalizeSymbolList(symbolsRaw) : undefined;
+    const symbols =
+      legacySymbols && legacySymbols.length > 0 ? legacySymbols : undefined;
+    const watchlistListsRaw = o.type === "watchlist" ? normalizeWatchlistLists(o.watchlistLists) : undefined;
+    const activeWatchlistListIdRaw =
+      o.type === "watchlist" && typeof o.activeWatchlistListId === "string"
+        ? o.activeWatchlistListId
+        : undefined;
+    const watchlistState =
+      o.type === "watchlist"
+        ? resolveWatchlistWidgetState(
+            watchlistListsRaw,
+            activeWatchlistListIdRaw,
+            watchlistListsRaw ? undefined : legacySymbols,
+          )
+        : null;
     out.push({
       id,
       type: o.type,
@@ -286,6 +335,16 @@ function normalizeWidgets(raw: unknown): DashboardWidget[] {
       y,
       ...(symbol ? { symbol } : {}),
       ...(compareDays !== undefined ? { compareDays } : {}),
+      ...(o.type === "watchlist" && watchlistState
+        ? {
+            watchlistLists: watchlistState.watchlistLists,
+            activeWatchlistListId: watchlistState.activeWatchlistListId,
+            watchlistChangeDisplay: normalizeWatchlistChangeDisplay(o.watchlistChangeDisplay),
+            watchlistChangePeriod: normalizeWatchlistChangePeriod(o.watchlistChangePeriod),
+          }
+        : symbols !== undefined
+          ? { symbols }
+          : {}),
     });
   }
   return out.length > 0 ? out : defaultWidgets();

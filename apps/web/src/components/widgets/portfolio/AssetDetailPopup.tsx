@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { createPortal } from "react-dom";
 import type { PortfolioAssetDetailResponse } from "@atlas-v1/shared";
+import { useBackdropBlurPause } from "../../../lib/useBackdropBlurPause";
 
 type Props = {
   open: boolean;
@@ -54,6 +55,7 @@ export function AssetDetailPopup({
   onDeleteAsset,
   onEditTransaction,
 }: Props) {
+  useBackdropBlurPause(open);
   const sortedTx = useMemo(() => detail?.transactions ?? [], [detail]);
 
   if (!open || typeof document === "undefined") return null;

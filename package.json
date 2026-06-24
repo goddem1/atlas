@@ -10,6 +10,7 @@
     "db:push": "pnpm --filter @atlas-v1/api exec prisma db push",
     "db:migrate": "pnpm --filter @atlas-v1/api exec prisma migrate dev",
     "db:seed": "pnpm --filter @atlas-v1/api exec prisma db seed",
+    "icons:sync": "pnpm --filter @atlas-v1/api icons:sync",
     "db:studio": "pnpm --filter @atlas-v1/api exec prisma studio"
   },
   "engines": {
