@@ -10,7 +10,7 @@ import { WatchlistWidget, type WatchlistWidgetState } from "../components/widget
 import { fetchProfile, fetchUserDashboardState, saveUserDashboardState, type ProfileUserResponse } from "../services/api";
 import "./dashboard-page.css";
 import { applyGuestDashboard } from "../lib/guestDashboard";
-import { getThemeColors, hexToRgba, type DashboardPrefs } from "../lib/dashboardPrefs";
+import { getThemeColors, hexToRgba, mergeDashboardPrefs, type DashboardPrefs } from "../lib/dashboardPrefs";
 import {
   createWidgetId,
   DASHBOARD_GRID_SIZE,
@@ -275,7 +275,7 @@ export function DashboardPage() {
             window.innerWidth,
           ),
         );
-        setPrefs(state.prefs);
+        setPrefs(mergeDashboardPrefs(state.prefs));
         setBoundsVersion((v) => v + 1);
       } catch {
         if (!cancelled) resetToGuestDashboard();
