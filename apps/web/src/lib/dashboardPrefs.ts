@@ -1,3 +1,5 @@
+import type { DashboardUserPrefs } from "@atlas-v1/shared";
+
 const STORAGE_KEY = "atlas-v1-dashboard-prefs";
 
 export type DashboardTheme = "light" | "dark";
@@ -54,6 +56,23 @@ export function hexToRgba(hex: string, alpha: number): string {
 
 export function clampGridOpacity(n: number): number {
   return Math.min(100, Math.max(0, Math.round(n)));
+}
+
+/** API prefs могут не содержать новые поля — дополняем дефолтами для локального состояния. */
+export function mergeDashboardPrefs(raw: DashboardUserPrefs): DashboardPrefs {
+  const theme: DashboardTheme = raw.theme === "dark" ? "dark" : "light";
+  return {
+    theme,
+    gridOpacity: clampGridOpacity(
+      typeof raw.gridOpacity === "number" ? raw.gridOpacity : defaultDashboardPrefs.gridOpacity,
+    ),
+    language: raw.language === "en" ? "en" : defaultDashboardPrefs.language,
+    displayCurrency:
+      raw.displayCurrency === "eur" || raw.displayCurrency === "usd"
+        ? raw.displayCurrency
+        : defaultDashboardPrefs.displayCurrency,
+    notificationsDisabled: Boolean(raw.notificationsDisabled),
+  };
 }
 
 export function loadDashboardPrefs(): DashboardPrefs {

@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useMemo, useRef, useState } from "react";
 import { dashboardUserAvatarBackground, dashboardUserAvatarLetter } from "../auth/auth-utils";
 import type { DashboardPrefs, DashboardTheme } from "../../lib/dashboardPrefs";
 import { clampGridOpacity } from "../../lib/dashboardPrefs";
