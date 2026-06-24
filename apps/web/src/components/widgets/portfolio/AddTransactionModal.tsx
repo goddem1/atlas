@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { CryptocurrencyListItem, PortfolioTransactionUpsertInput } from "@atlas-v1/shared";
+import { useBackdropBlurPause } from "../../../lib/useBackdropBlurPause";
 
 type AmountMode = "coins" | "usd";
 type GoalPart = "all" | "half" | "third" | "quarter";
@@ -74,6 +75,7 @@ export function AddTransactionModal({
   onDeleteTransaction,
   onDeleteGoal,
 }: Props) {
+  useBackdropBlurPause(open);
   const lastInitSignatureRef = useRef<string | null>(null);
   const [createDrafts, setCreateDrafts] = useState<Draft[]>([makeDraft()]);
   const [editDrafts, setEditDrafts] = useState<Draft[]>([makeDraft(initial)]);

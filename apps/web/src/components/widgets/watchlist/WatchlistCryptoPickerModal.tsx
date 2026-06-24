@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type DragEvent } from "react";
 import { createPortal } from "react-dom";
 import type { CryptocurrencyListItem } from "@atlas-v1/shared";
+import { useBackdropBlurPause } from "../../../lib/useBackdropBlurPause";
 import "./asset-picker-watchlist.css";
 
 type Props = {
@@ -8,6 +9,7 @@ type Props = {
   items: CryptocurrencyListItem[];
   /** Уже добавленные тикеры (порядок сохраняется — так же вверху списка). */
   selectedSymbols?: string[];
+  maxSymbols?: number;
   loadError?: string | null;
   onClose: () => void;
   onAdd: (c: CryptocurrencyListItem) => void;
@@ -48,12 +50,14 @@ export function WatchlistCryptoPickerModal({
   open,
   items,
   selectedSymbols = [],
+  maxSymbols = Number.POSITIVE_INFINITY,
   loadError,
   onClose,
   onAdd,
   onRemove,
   onReorder,
 }: Props) {
+  useBackdropBlurPause(open);
   const [q, setQ] = useState("");
   const [draggingSymbol, setDraggingSymbol] = useState<string | null>(null);
   const [dropIndicator, setDropIndicator] = useState<DropIndicator | null>(null);
@@ -64,6 +68,7 @@ export function WatchlistCryptoPickerModal({
   );
 
   const selectedSet = useMemo(() => new Set(selectedOrder), [selectedOrder]);
+  const atSymbolLimit = selectedOrder.length >= maxSymbols;
 
   useEffect(() => {
     if (!open) {
@@ -210,6 +215,7 @@ export function WatchlistCryptoPickerModal({
               filtered.map((c) => {
                 const sym = c.symbol.toUpperCase();
                 const isSelected = selectedSet.has(sym);
+                const canAdd = !isSelected && !atSymbolLimit;
                 return (
                   <li
                     key={c.id}
@@ -246,17 +252,31 @@ export function WatchlistCryptoPickerModal({
                         aria-label={`Переместить ${c.symbol}`}
                         onDragStart={(e) => handleDragStart(e, sym)}
                         onDragEnd={finishDrag}
-                      />
+                      >
+                        <img
+                          src="/assets/portfolio-ui/arrow_move.svg"
+                          alt=""
+                          className="asset-picker-watchlist-item-drag-handle-icon"
+                          aria-hidden
+                        />
+                      </button>
                     ) : (
                       <span className="asset-picker-watchlist-item-drag-spacer" aria-hidden />
                     )}
                     <button
                       type="button"
                       onClick={() => {
-                        if (!isSelected) onAdd(c);
+                        if (canAdd) onAdd(c);
                       }}
                       className="asset-picker-watchlist-item-button list-on-glass"
-                      aria-label={isSelected ? `${c.symbol} уже в списке` : `Добавить ${c.symbol} в список`}
+                      aria-label={
+                        isSelected
+                          ? `${c.symbol} уже в списке`
+                          : atSymbolLimit
+                            ? `В списке уже ${maxSymbols} активов`
+                            : `Добавить ${c.symbol} в список`
+                      }
+                      disabled={!isSelected && atSymbolLimit}
                     >
                       <img src={c.iconUrl} alt="" className="asset-picker-watchlist-item-icon" />
                       <div className="asset-picker-watchlist-item-text">
@@ -267,11 +287,18 @@ export function WatchlistCryptoPickerModal({
                     <button
                       type="button"
                       className="asset-picker-watchlist-item-action btn-on-glass btn-on-glass--soft"
-                      aria-label={isSelected ? `Удалить ${c.symbol} из списка` : `Добавить ${c.symbol} в список`}
+                      aria-label={
+                        isSelected
+                          ? `Удалить ${c.symbol} из списка`
+                          : atSymbolLimit
+                            ? `В списке уже ${maxSymbols} активов`
+                            : `Добавить ${c.symbol} в список`
+                      }
+                      disabled={!isSelected && atSymbolLimit}
                       onClick={(e) => {
                         e.stopPropagation();
                         if (isSelected) onRemove(c);
-                        else onAdd(c);
+                        else if (canAdd) onAdd(c);
                       }}
                     >
                       <img

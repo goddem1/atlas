@@ -1,16 +1,24 @@
 const STORAGE_KEY = "atlas-v1-dashboard-prefs";
 
 export type DashboardTheme = "light" | "dark";
+export type DashboardLanguage = "ru" | "en";
+export type DashboardDisplayCurrency = "rub" | "eur" | "usd";
 
 export type DashboardPrefs = {
   theme: DashboardTheme;
   /** Прозрачность линий сетки в процентах (0..100). */
   gridOpacity: number;
+  language: DashboardLanguage;
+  displayCurrency: DashboardDisplayCurrency;
+  notificationsDisabled: boolean;
 };
 
 export const defaultDashboardPrefs: DashboardPrefs = {
   theme: "light",
   gridOpacity: 20,
+  language: "ru",
+  displayCurrency: "rub",
+  notificationsDisabled: false,
 };
 
 export function getThemeColors(theme: DashboardTheme): { background: string; gridColor: string } {
@@ -73,6 +81,12 @@ export function loadDashboardPrefs(): DashboardPrefs {
       gridOpacity: clampGridOpacity(
         typeof j.gridOpacity === "number" ? j.gridOpacity : defaultDashboardPrefs.gridOpacity,
       ),
+      language: j.language === "en" ? "en" : defaultDashboardPrefs.language,
+      displayCurrency:
+        j.displayCurrency === "eur" || j.displayCurrency === "usd"
+          ? j.displayCurrency
+          : defaultDashboardPrefs.displayCurrency,
+      notificationsDisabled: Boolean(j.notificationsDisabled),
     };
   } catch {
     return { ...defaultDashboardPrefs };
@@ -86,6 +100,9 @@ export function saveDashboardPrefs(prefs: DashboardPrefs): void {
       JSON.stringify({
         theme: prefs.theme,
         gridOpacity: clampGridOpacity(prefs.gridOpacity),
+        language: prefs.language,
+        displayCurrency: prefs.displayCurrency,
+        notificationsDisabled: prefs.notificationsDisabled,
       }),
     );
   } catch {

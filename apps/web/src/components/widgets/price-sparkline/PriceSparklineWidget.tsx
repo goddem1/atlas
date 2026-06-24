@@ -1,10 +1,14 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, memo, lazy, Suspense } from "react";
 import type { CandleApiRow, CryptocurrencyListItem } from "@atlas-v1/shared";
 import { fetchCandles, fetchCryptocurrencies } from "../../../services/api";
 import { formatPriceTicker, formatRuDayMonth, percentChangeLast } from "../../../lib/formatChart";
-import { CryptoPickerModal } from "../shared/CryptoPickerModal";
+import { GALLERY_PRICE_SPARKLINE } from "../../dashboard/widgetGalleryPreviewData";
 import { PriceSparklineCard } from "./PriceSparklineCard";
 import "./price-sparkline-widget.css";
+
+const CryptoPickerModal = lazy(() =>
+  import("../shared/CryptoPickerModal").then((m) => ({ default: m.CryptoPickerModal })),
+);
 
 type LivePriceDirection = "up" | "down";
 
@@ -22,14 +26,31 @@ type Props = {
   /** Вызов при выборе актива в модалке (родитель пишет в localStorage). */
   onPreferredSymbolChange?: (symbol: string) => void;
   onDeleteWidget?: () => void;
+  /** Статичное превью для галереи виджетов — без API. */
+  galleryPreview?: boolean;
 };
 
-export function PriceSparklineWidget({
+function PriceSparklineWidgetGalleryPreview() {
+  const demo = GALLERY_PRICE_SPARKLINE;
+  return (
+    <PriceSparklineCard
+      symbol={demo.symbol}
+      priceDisplay={demo.priceDisplay}
+      changePercent={demo.changePercent}
+      liveDirection={demo.liveDirection}
+      series={demo.series}
+      xLabels={demo.xLabels}
+      icon={<img src={demo.iconUrl} alt="" className="price-widget-asset-icon" />}
+    />
+  );
+}
+
+const PriceSparklineWidgetLive = memo(function PriceSparklineWidgetLive({
   dragHandleClassName,
   preferredSymbol,
   onPreferredSymbolChange,
   onDeleteWidget,
-}: Props) {
+}: Omit<Props, "galleryPreview">) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [list, setList] = useState<CryptocurrencyListItem[]>([]);
   const [loadErr, setLoadErr] = useState<string | null>(null);
@@ -178,8 +199,10 @@ export function PriceSparklineWidget({
         }
       />
 
+      {pickerOpen ? (
+        <Suspense fallback={null}>
       <CryptoPickerModal
-        open={pickerOpen}
+        open
         items={list}
         loadError={loadErr}
         onClose={() => setPickerOpen(false)}
@@ -187,6 +210,16 @@ export function PriceSparklineWidget({
           onPreferredSymbolChange?.(c.symbol);
         }}
       />
+        </Suspense>
+      ) : null}
     </>
   );
-}
+});
+
+export const PriceSparklineWidget = memo(function PriceSparklineWidget({
+  galleryPreview = false,
+  ...props
+}: Props) {
+  if (galleryPreview) return <PriceSparklineWidgetGalleryPreview />;
+  return <PriceSparklineWidgetLive {...props} />;
+});

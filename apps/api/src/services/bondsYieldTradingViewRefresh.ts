@@ -122,9 +122,25 @@ export async function refreshBondsYieldFromTradingView(
     if (i > 0) await sleep(delayMs);
 
     try {
-      const apiKey = await pickBondsRapidApiKey(prisma, now);
+      const existing = await prisma.bondsPrices.findUnique({
+        where: {
+          symbol_interval_closeTime: {
+            symbol,
+            interval: BONDS_YIELD_INTERVAL,
+            closeTime,
+          },
+        },
+        select: { close: true },
+      });
+      if (existing) {
+        skipped += 1;
+        logger.info(`[bonds-tv] ${symbol}: already stored for ${closeTime.toISOString().slice(0, 10)}`);
+        continue;
+      }
+
+      const { apiKey, slot } = await pickBondsRapidApiKey(prisma, now);
       const rawClose = await fetchTvClose(tvTicker, apiKey);
-      const quotaCount = await recordBondsRapidApiRequest(prisma, now);
+      const quotaCount = await recordBondsRapidApiRequest(prisma, slot, now);
       if (quotaCount === null && i === 0) {
         logger.warn("[bonds-tv] RapidApiBondsUsage table missing or unavailable — quota not tracked");
       }

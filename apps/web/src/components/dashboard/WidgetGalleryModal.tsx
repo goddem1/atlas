@@ -1,9 +1,17 @@
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import type { DashboardWidgetType } from "../../lib/dashboardWidgets";
-import { WIDGET_CATALOG } from "../../lib/dashboardWidgets";
-import "../widgets/shared/asset-picker.css";
-import "../widgets/shared/widget-gallery.css";
+import {
+  filterWidgetGalleryItems,
+  isWidgetGalleryCategoryEnabled,
+  WIDGET_GALLERY_CATEGORIES,
+  WIDGET_GALLERY_ITEMS,
+  type WidgetGalleryCategoryId,
+} from "../../lib/widgetGalleryCatalog";
+import { WidgetGalleryPreview } from "./WidgetGalleryPreview";
+import { useBackdropBlurPause } from "../../lib/useBackdropBlurPause";
+import "../widgets/portfolio/portfolio-widget.css";
+import "./widget-gallery.css";
 
 type Props = {
   open: boolean;
@@ -13,7 +21,16 @@ type Props = {
 };
 
 export function WidgetGalleryModal({ open, isLoggedIn, onClose, onPick }: Props) {
-  const catalog = isLoggedIn ? WIDGET_CATALOG : WIDGET_CATALOG.filter((item) => item.type !== "portfolio");
+  useBackdropBlurPause(open);
+  const [categoryId, setCategoryId] = useState<WidgetGalleryCategoryId>("all");
+  const [query, setQuery] = useState("");
+
+  useEffect(() => {
+    if (!open) return;
+    setCategoryId("all");
+    setQuery("");
+  }, [open]);
+
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -23,58 +40,104 @@ export function WidgetGalleryModal({ open, isLoggedIn, onClose, onPick }: Props)
     return () => document.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
+  const baseItems = useMemo(() => {
+    return WIDGET_GALLERY_ITEMS.filter(
+      (item) => isLoggedIn || item.widgetType !== "portfolio",
+    );
+  }, [isLoggedIn]);
+
+  const items = useMemo(() => {
+    return filterWidgetGalleryItems(baseItems, categoryId, query);
+  }, [baseItems, categoryId, query]);
+
+  useEffect(() => {
+    if (!open) return;
+    if (isWidgetGalleryCategoryEnabled(categoryId, baseItems)) return;
+    setCategoryId("all");
+  }, [open, categoryId, baseItems]);
+
   if (!open) return null;
   if (typeof document === "undefined") return null;
 
   return createPortal(
-    <div className="asset-picker-overlay" role="presentation">
-      <button type="button" className="asset-picker-backdrop" aria-label="Закрыть" onClick={onClose} />
-
+    <div className="widget-gallery-overlay" role="presentation">
+      <button type="button" className="widget-gallery-backdrop" aria-label="Закрыть" onClick={onClose} />
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="widget-gallery-title"
-        className="asset-picker-dialog widget-gallery-dialog"
+        className="widget-gallery-dialog atlas-glass"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="asset-picker-header">
-          <h2 id="widget-gallery-title" className="widget-gallery-title">
-            Добавить виджет
-          </h2>
-          <button type="button" onClick={onClose} className="asset-picker-close-button btn-glass" aria-label="Закрыть">
-            <img src="/assets/portfolio-ui/close.svg" alt="" className="asset-picker-close-icon" />
-          </button>
-        </div>
+        <h2 id="widget-gallery-title" className="widget-gallery-sr-only">
+          Добавить виджет
+        </h2>
+        <div className="widget-gallery-layout">
+          <aside className="widget-gallery-sidebar">
+            <label className="widget-gallery-search">
+              <span className="widget-gallery-sr-only">Поиск виджета</span>
+              <span className="widget-gallery-search-icon" aria-hidden />
+              <input
+                type="search"
+                className="portfolio-input-ghost list-on-glass widget-gallery-search-input"
+                placeholder="Поиск виджета"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+              />
+            </label>
+            <nav className="widget-gallery-categories" aria-label="Категории виджетов">
+              <ul className="widget-gallery-categories-list">
+                {WIDGET_GALLERY_CATEGORIES.map((category) => {
+                  const enabled = isWidgetGalleryCategoryEnabled(category.id, baseItems);
+                  return (
+                    <li key={category.id}>
+                      <button
+                        type="button"
+                        className={`widget-gallery-category-btn${categoryId === category.id ? " is-active" : ""}`}
+                        aria-current={categoryId === category.id ? "true" : undefined}
+                        disabled={!enabled}
+                        onClick={() => {
+                          if (!enabled) return;
+                          setCategoryId(category.id);
+                        }}
+                      >
+                        {category.label}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </nav>
+          </aside>
 
-        <div className="widget-gallery-body">
-          <ul className="widget-gallery-grid">
-            {catalog.map((item) => (
-              <li key={item.type}>
-                <button
-                  type="button"
-                  className="widget-gallery-card"
-                  onClick={() => {
-                    onPick(item.type);
-                    onClose();
-                  }}
-                >
-                  <div className="widget-gallery-card-icon" aria-hidden>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M3 17l6-6 4 4 8-8M14 7h7v7"
-                      />
-                    </svg>
-                  </div>
-                  <div className="widget-gallery-card-text">
-                    <p className="widget-gallery-card-title">{item.title}</p>
-                    <p className="widget-gallery-card-desc">{item.description}</p>
-                  </div>
-                </button>
-              </li>
-            ))}
-          </ul>
+          <div className="widget-gallery-content">
+            {items.length === 0 ? (
+              <p className="widget-gallery-empty">Ничего не найдено</p>
+            ) : (
+              <ul className="widget-gallery-grid">
+                {items.map((item) => (
+                    <li key={item.id}>
+                      <button
+                        type="button"
+                        className="widget-gallery-card"
+                        onClick={() => {
+                          onPick(item.widgetType);
+                          onClose();
+                        }}
+                      >
+                        <div className="widget-gallery-card-preview">
+                          <WidgetGalleryPreview widgetType={item.widgetType} />
+                        </div>
+                        <div className="widget-gallery-card-text">
+                          <p className="widget-gallery-card-title">{item.title}</p>
+                          <p className="widget-gallery-card-desc">{item.description}</p>
+                        </div>
+                      </button>
+                    </li>
+                  ))}
+              </ul>
+            )}
+          </div>
         </div>
       </div>
     </div>,

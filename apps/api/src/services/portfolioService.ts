@@ -65,9 +65,59 @@ type AssetSnapshot = {
   pairSymbol: string;
   name: string;
   iconUrl: string;
-  coinsHeld: number;
-  investedUsd: number;
+  pnlState: AssetPnlState;
 };
+
+export type AssetPnlState = {
+  coinsHeld: number;
+  costBasisUsd: number;
+  realizedPnlUsd: number;
+};
+
+export function calcAssetPnlState(
+  txs: Array<{ type: TransactionType; amountCoins: number; amountUsd: number; date: Date }>,
+): AssetPnlState {
+  const sorted = [...txs].sort((a, b) => a.date.getTime() - b.date.getTime());
+  let coinsHeld = 0;
+  let costBasisUsd = 0;
+  let realizedPnlUsd = 0;
+
+  for (const tx of sorted) {
+    const coins = tx.amountCoins;
+    const usd = tx.amountUsd;
+    if (!Number.isFinite(coins) || coins <= 0) continue;
+
+    if (tx.type === "BUY") {
+      coinsHeld += coins;
+      costBasisUsd += Number.isFinite(usd) && usd > 0 ? usd : 0;
+      continue;
+    }
+
+    const sellCoins = Math.min(coins, coinsHeld);
+    if (sellCoins <= 0) continue;
+
+    const avgCost = costBasisUsd / coinsHeld;
+    const costRemoved = avgCost * sellCoins;
+    const proceeds = Number.isFinite(usd) && usd > 0 ? usd : 0;
+
+    realizedPnlUsd += proceeds - costRemoved;
+    costBasisUsd -= costRemoved;
+    coinsHeld -= sellCoins;
+  }
+
+  if (coinsHeld <= 1e-12) {
+    coinsHeld = 0;
+    costBasisUsd = 0;
+  }
+
+  return { coinsHeld, costBasisUsd, realizedPnlUsd };
+}
+
+/** Полный P/L по активу: реализованный + нереализованный на остаток. */
+export function calcAssetPnlUsd(state: AssetPnlState, currentValueUsd: number): number {
+  const unrealized = state.coinsHeld > 0 ? currentValueUsd - state.costBasisUsd : 0;
+  return state.realizedPnlUsd + unrealized;
+}
 
 function toDayKey(date: Date): string {
   return date.toISOString().slice(0, 10);
@@ -184,19 +234,14 @@ export async function getPortfolioSummary(
   const bySymbol = new Map(list.map((x) => [x.symbol, x]));
 
   const snapshots: AssetSnapshot[] = assets.map((asset) => {
-    let coinsHeld = 0;
-    let investedUsd = 0;
-    for (const tx of asset.transactions) {
-      const coins = Number(tx.amountCoins);
-      const usd = Number(tx.amountUsd);
-      if (tx.type === "BUY") {
-        coinsHeld += coins;
-        investedUsd += usd;
-      } else {
-        coinsHeld -= coins;
-        investedUsd -= usd;
-      }
-    }
+    const pnlState = calcAssetPnlState(
+      asset.transactions.map((tx) => ({
+        type: tx.type,
+        amountCoins: Number(tx.amountCoins),
+        amountUsd: Number(tx.amountUsd),
+        date: tx.date,
+      })),
+    );
     const info = bySymbol.get(asset.symbol);
     const pairSymbol = (info?.pairSymbol?.trim() || `${asset.symbol}USDT`).toUpperCase();
     return {
@@ -204,16 +249,17 @@ export async function getPortfolioSummary(
       pairSymbol,
       name: info?.name ?? asset.symbol,
       iconUrl: info?.iconUrl ?? "/assets/crypto/USDT.svg",
-      coinsHeld,
-      investedUsd,
+      pnlState,
     };
   });
 
   const priceMap = await fetchCurrentPricesUsd(snapshots.map((s) => s.pairSymbol));
+  let totalPnlRaw = 0;
   const view = snapshots.map((s) => {
     const currentPrice = priceMap.get(s.pairSymbol) ?? 0;
-    const currentValue = s.coinsHeld * currentPrice;
-    const pnl = currentValue - s.investedUsd;
+    const currentValue = s.pnlState.coinsHeld * currentPrice;
+    const pnl = calcAssetPnlUsd(s.pnlState, currentValue);
+    totalPnlRaw += pnl;
     return {
       symbol: s.symbol,
       name: s.name,
@@ -221,14 +267,17 @@ export async function getPortfolioSummary(
       currentPriceUsd: toFixedUsd(currentPrice),
       currentValueUsd: toFixedUsd(currentValue),
       pnlUsd: toFixedUsd(pnl),
-      coinsHeld: toFixedCoins(s.coinsHeld),
+      coinsHeld: toFixedCoins(s.pnlState.coinsHeld),
     };
   });
 
   view.sort((a, b) => Number(b.currentValueUsd) - Number(a.currentValueUsd));
   const totalValue = view.reduce((acc, x) => acc + Number(x.currentValueUsd), 0);
-  const totalPnl = view.reduce((acc, x) => acc + Number(x.pnlUsd), 0);
-  return { totalValueUsd: toFixedUsd(totalValue), totalPnlUsd: toFixedUsd(totalPnl), assets: view };
+  return {
+    totalValueUsd: toFixedUsd(totalValue),
+    totalPnlUsd: toFixedUsd(totalPnlRaw),
+    assets: view,
+  };
 }
 
 export async function validateAndCreateTransaction(

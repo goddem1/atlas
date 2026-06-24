@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, lazy, Suspense } from "react";
 import { createPortal } from "react-dom";
 import type { MacroEventRow } from "@atlas-v1/shared";
 import {
@@ -10,11 +10,16 @@ import {
   withMacroUnit,
   ymdMskFromDate,
 } from "../../lib/macroEventUi";
+import { mskMinuteKey, mskSecond, pickMacroReleaseStatusPollDelay } from "../../lib/macroEventMskTime";
 import { buildMacroSlotImageUrl, fetchMacroEvents, fetchMacroReleaseStatus } from "../../services/api";
-import { MacroSeriesDetailModal } from "./MacroSeriesDetailModal";
+import { useBackdropBlurPause } from "../../lib/useBackdropBlurPause";
 import "../widgets/shared/asset-picker.css";
 import "../widgets/portfolio/portfolio-widget.css";
 import "./macro-events-modal.css";
+
+const MacroSeriesDetailModal = lazy(() =>
+  import("./MacroSeriesDetailModal").then((m) => ({ default: m.MacroSeriesDetailModal })),
+);
 
 type Props = {
   open: boolean;
@@ -190,71 +195,9 @@ const MACRO_STICKY_HEADER_OFFSET = -85;
 const MACRO_INITIAL_SCROLL_OFFSET = -85;
 /** Интервал между появлением мини-графиков (видимые сначала, затем при скролле). */
 const MACRO_CHART_REVEAL_MS = 72;
-const MACRO_RELEASE_STATUS_HOT_POLL_MS = 1000;
-const MACRO_RELEASE_STATUS_NEAR_POLL_MS = 5000;
-const MACRO_RELEASE_STATUS_IDLE_POLL_MS = 30000;
-
-function mskMinuteKey(value: Date): string {
-  const parts = new Intl.DateTimeFormat("sv-SE", {
-    timeZone: "Europe/Moscow",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).formatToParts(value);
-  const get = (type: Intl.DateTimeFormatPartTypes) => parts.find((p) => p.type === type)?.value ?? "";
-  return `${get("year")}-${get("month")}-${get("day")} ${get("hour")}:${get("minute")}`;
-}
-
-function mskEpochParts(value: Date): { epochMinute: number; second: number } {
-  const parts = new Intl.DateTimeFormat("sv-SE", {
-    timeZone: "Europe/Moscow",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: false,
-  }).formatToParts(value);
-  const get = (type: Intl.DateTimeFormatPartTypes) => parts.find((p) => p.type === type)?.value ?? "";
-  const y = Number.parseInt(get("year"), 10) || 1970;
-  const m = Number.parseInt(get("month"), 10) || 1;
-  const d = Number.parseInt(get("day"), 10) || 1;
-  const hh = Number.parseInt(get("hour"), 10) || 0;
-  const mm = Number.parseInt(get("minute"), 10) || 0;
-  const ss = Number.parseInt(get("second"), 10) || 0;
-  const epochMinute = Date.UTC(y, m - 1, d, hh, mm, 0) / 60000;
-  return { epochMinute, second: ss };
-}
-
-function pickReleaseStatusPollDelay(
-  events: MacroEventRow[],
-  inProgressSize: number,
-  now = new Date(),
-): number {
-  if (typeof document !== "undefined" && document.visibilityState === "hidden") {
-    return Math.max(MACRO_RELEASE_STATUS_IDLE_POLL_MS, 60000);
-  }
-  if (inProgressSize > 0) return MACRO_RELEASE_STATUS_HOT_POLL_MS;
-
-  const nowParts = mskEpochParts(now);
-  const nowMinute = nowParts.epochMinute;
-  const hotSecondWindow = nowParts.second < 8;
-  let hasNearRelease = false;
-  for (const e of events) {
-    const eventMinute = mskEpochParts(new Date(e.date)).epochMinute;
-    const delta = eventMinute - nowMinute;
-    if (delta < 0 || delta > 15) continue;
-    hasNearRelease = true;
-    if (delta === 0 && hotSecondWindow) return MACRO_RELEASE_STATUS_HOT_POLL_MS;
-  }
-  return hasNearRelease ? MACRO_RELEASE_STATUS_NEAR_POLL_MS : MACRO_RELEASE_STATUS_IDLE_POLL_MS;
-}
 
 export function MacroEventsModal({ open, onClose }: Props) {
+  useBackdropBlurPause(open);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [events, setEvents] = useState<MacroEventRow[]>([]);
@@ -496,7 +439,7 @@ export function MacroEventsModal({ open, onClose }: Props) {
         if (!cancelled) setReleaseLoadingIds(new Set());
       } finally {
         if (!cancelled) {
-          const delay = pickReleaseStatusPollDelay(events, previousActiveCount, new Date());
+          const delay = pickMacroReleaseStatusPollDelay(events, previousActiveCount, new Date());
           timer = window.setTimeout(() => void poll(), delay);
         }
       }
@@ -756,13 +699,7 @@ export function MacroEventsModal({ open, onClose }: Props) {
   if (typeof document === "undefined") return null;
   const now = new Date(nowTick);
   const nowMinute = mskMinuteKey(now);
-  const nowSecond = Number(
-    new Intl.DateTimeFormat("sv-SE", {
-      timeZone: "Europe/Moscow",
-      second: "2-digit",
-      hour12: false,
-    }).format(now),
-  );
+  const nowSecond = mskSecond(now);
 
   return createPortal(
     <>
@@ -1143,11 +1080,15 @@ export function MacroEventsModal({ open, onClose }: Props) {
           </div>
       </div>
     </div>
-    <MacroSeriesDetailModal
-      open={seriesIndicatorId !== null}
-      onClose={() => setSeriesIndicatorId(null)}
-      indicatorId={seriesIndicatorId}
-    />
+    {seriesIndicatorId !== null ? (
+      <Suspense fallback={null}>
+        <MacroSeriesDetailModal
+          open
+          onClose={() => setSeriesIndicatorId(null)}
+          indicatorId={seriesIndicatorId}
+        />
+      </Suspense>
+    ) : null}
     </>,
     document.body,
   );

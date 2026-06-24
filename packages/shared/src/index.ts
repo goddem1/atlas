@@ -1,3 +1,5 @@
+import type { WatchlistListData, WatchlistChangeDisplay, WatchlistChangePeriod } from "./watchlistDashboard.js";
+
 /** Base dashboard grid item (react-grid-layout layout entry). */
 export interface DashboardLayoutItem {
   i: string;
@@ -11,8 +13,6 @@ export interface DashboardLayoutItem {
   maxH?: number;
   static?: boolean;
 }
-
-export type DashboardLayout = DashboardLayoutItem[];
 
 /** Виджет на канвасе дашборда (web). */
 export type DashboardCanvasWidgetType =
@@ -30,15 +30,28 @@ export interface DashboardCanvasWidget {
   symbol?: string;
   /** Смещение серой линии кривой ФРС (дней), только для `fed-curve`. */
   compareDays?: number;
-  /** Тикеры в списке, только для `watchlist`. */
+  /** Тикеры в списке, только для `watchlist` (legacy — мигрируется в `watchlistLists`). */
   symbols?: string[];
+  /** Списки watchlist с тикерами — только для `watchlist`. */
+  watchlistLists?: WatchlistListData[];
+  /** Активный список watchlist — только для `watchlist`. */
+  activeWatchlistListId?: string;
+  /** Отображение изменения цены — только для `watchlist`. */
+  watchlistChangeDisplay?: WatchlistChangeDisplay;
+  /** Период изменения цены — только для `watchlist`. */
+  watchlistChangePeriod?: WatchlistChangePeriod;
 }
 
 export type DashboardTheme = "light" | "dark";
+export type DashboardLanguage = "ru" | "en";
+export type DashboardDisplayCurrency = "rub" | "eur" | "usd";
 
 export interface DashboardUserPrefs {
   theme: DashboardTheme;
   gridOpacity: number;
+  language?: DashboardLanguage;
+  displayCurrency?: DashboardDisplayCurrency;
+  notificationsDisabled?: boolean;
 }
 
 /** Сохранённое состояние дашборда пользователя (layout в Prisma Dashboard). */
@@ -238,3 +251,17 @@ export interface MacroSeriesResponse {
   indicator: MacroSeriesIndicatorDto;
   points: MacroSeriesPointDto[];
 }
+
+export type { WatchlistListData, WatchlistChangeDisplay, WatchlistChangePeriod } from "./watchlistDashboard.js";
+export {
+  DEFAULT_WATCHLIST_LIST_ID,
+  DEFAULT_WATCHLIST_CHANGE_DISPLAY,
+  DEFAULT_WATCHLIST_CHANGE_PERIOD,
+  WATCHLIST_MAX_SYMBOLS,
+  capWatchlistSymbolList,
+  normalizeSymbolList,
+  normalizeWatchlistLists,
+  normalizeWatchlistChangeDisplay,
+  normalizeWatchlistChangePeriod,
+  resolveWatchlistWidgetState,
+} from "./watchlistDashboard.js";

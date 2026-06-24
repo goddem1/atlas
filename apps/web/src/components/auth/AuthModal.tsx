@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { AuthPanoLogo } from "./AuthPanoLogo";
+import { useBackdropBlurPause } from "../../lib/useBackdropBlurPause";
 import { SignInForm } from "./SignInForm";
 import { SignUpForm } from "./SignUpForm";
 import { ResetPasswordForm } from "./ResetPasswordForm";
@@ -16,6 +17,7 @@ type Props = {
 };
 
 export function AuthModal({ open, onClose, onAuthenticated }: Props) {
+  useBackdropBlurPause(open);
   const modalRef = useRef<HTMLDivElement>(null);
   const [screen, setScreen] = useState<AuthScreen>("signin");
   const [banner, setBanner] = useState<string | null>(null);

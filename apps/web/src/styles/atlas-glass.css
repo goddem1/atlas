@@ -154,14 +154,20 @@ html[data-dashboard-theme="dark"] {
 
 /** Растровые иконки под тему дашборда (см. селекторы ниже). */
 
-.atlas-fg-primary .portfolio-menu-trigger-icon,
+.atlas-fg-primary .portfolio-menu-trigger-icon {
+  filter: brightness(100%) saturate(1%) invert(100%) sepia(100%) saturate(100%) hue-rotate(173deg) brightness(100%) contrast(40%);
+}
+
 .asset-picker-close-button .asset-picker-close-icon,
 .macro-events-filters-close .asset-picker-close-icon,
 .macro-events-icon-button:not(.is-active) .macro-events-header-icon {
   filter: brightness(0) saturate(100%) invert(35%) sepia(0%) saturate(1%) hue-rotate(173deg) brightness(95%) contrast(90%);
 }
 
-html[data-dashboard-theme="dark"] .atlas-fg-primary .portfolio-menu-trigger-icon,
+html[data-dashboard-theme="dark"] .atlas-fg-primary .portfolio-menu-trigger-icon {
+  filter: brightness(100%) saturate(1%) invert(100%) sepia(100%) saturate(100%) hue-rotate(173deg) brightness(100%) contrast(40%);
+}
+
 html[data-dashboard-theme="dark"] .asset-picker-close-button .asset-picker-close-icon,
 html[data-dashboard-theme="dark"] .macro-events-filters-close .asset-picker-close-icon,
 html[data-dashboard-theme="dark"] .macro-events-icon-button:not(.is-active) .macro-events-header-icon {
@@ -171,15 +177,13 @@ html[data-dashboard-theme="dark"] .macro-events-icon-button:not(.is-active) .mac
 .atlas-glass {
   position: relative;
   isolation: isolate;
+  contain: layout paint;
   background-color: var(--atlas-glass-bg);
   border: var(--atlas-glass-border);
   box-shadow: var(--atlas-glass-shadow);
   backdrop-filter: var(--atlas-glass-backdrop);
   -webkit-backdrop-filter: var(--atlas-glass-backdrop);
 }
-
-
-
 
 /*
 СТЕКЛЯННЫЕ КНОПКИ - btn-glass
@@ -288,4 +292,19 @@ html[data-dashboard-theme="dark"] .btn-on-glass:active:not(:disabled):not(.disab
 .recharts-tooltip-cursor {
   fill: var(--atlas-input-bg);
   stroke: var(--atlas-input-bg);
+}
+
+/*
+  Оверлей с backdrop-blur уже размывает фон — отключаем blur у виджетов и chrome
+  дашборда под ним, чтобы не дублировать дорогой GPU-blur.
+  Модалки в portal (body) и AuthModal не попадают под эти селекторы.
+*/
+html[data-backdrop-blur-pause] .dashboard-page-root .dashboard-main-surface,
+html[data-backdrop-blur-pause] .dashboard-page-root .dashboard-main-surface *,
+html[data-backdrop-blur-pause] .dashboard-page-root .dashboard-floating-actions,
+html[data-backdrop-blur-pause] .dashboard-page-root .dashboard-floating-actions *,
+html[data-backdrop-blur-pause] .dashboard-page-root .dashboard-quick-tabs,
+html[data-backdrop-blur-pause] .dashboard-page-root .dashboard-quick-tabs * {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
 }

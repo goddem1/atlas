@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import type { CryptocurrencyListItem } from "@atlas-v1/shared";
+import { useBackdropBlurPause } from "../../../lib/useBackdropBlurPause";
 import "./asset-picker.css";
 
 type Props = {
@@ -13,6 +14,7 @@ type Props = {
 };
 
 export function CryptoPickerModal({ open, items, loadError, onClose, onSelect }: Props) {
+  useBackdropBlurPause(open);
   const [q, setQ] = useState("");
 
   useEffect(() => {

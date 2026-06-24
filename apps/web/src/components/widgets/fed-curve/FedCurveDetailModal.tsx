@@ -25,6 +25,7 @@ import {
 } from "./fedCurveDetailTooltip";
 import { FedCurveDateCalendar } from "./FedCurveDateCalendar";
 import { FedCurveLineGroup } from "./FedCurveLineGroup";
+import { useBackdropBlurPause } from "../../../lib/useBackdropBlurPause";
 import "./fed-curve-detail-modal.css";
 
 const CALENDAR_POPOVER_WIDTH = 300;
@@ -70,6 +71,7 @@ type Props = {
 };
 
 export function FedCurveDetailModal({ open, onClose, compareDays }: Props) {
+  useBackdropBlurPause(open);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [dateBounds, setDateBounds] = useState<BondsYieldDateBounds | null>(null);
   const [hasPrevDate, setHasPrevDate] = useState(false);

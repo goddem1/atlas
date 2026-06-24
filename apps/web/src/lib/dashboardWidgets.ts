@@ -1,4 +1,14 @@
 import { normalizeFedCurveCompareDays } from "./fedCurveComparePeriod";
+import {
+  normalizeSymbolList,
+  normalizeWatchlistLists,
+  normalizeWatchlistChangeDisplay,
+  normalizeWatchlistChangePeriod,
+  resolveWatchlistWidgetState,
+  type WatchlistListData,
+  type WatchlistChangeDisplay,
+  type WatchlistChangePeriod,
+} from "@atlas-v1/shared";
 
 const STORAGE_KEY = "atlas-v1-dashboard-widgets";
 
@@ -20,8 +30,16 @@ export type DashboardWidget = {
   symbol?: string;
   /** Период серой линии (дней) — только для `fed-curve`. */
   compareDays?: number;
-  /** Тикеры в списке — только для `watchlist`. */
+  /** Тикеры в списке — только для `watchlist` (legacy). */
   symbols?: string[];
+  /** Списки watchlist — только для `watchlist`. */
+  watchlistLists?: WatchlistListData[];
+  /** Активный список watchlist — только для `watchlist`. */
+  activeWatchlistListId?: string;
+  /** Отображение изменения цены — только для `watchlist`. */
+  watchlistChangeDisplay?: WatchlistChangeDisplay;
+  /** Период изменения цены — только для `watchlist`. */
+  watchlistChangePeriod?: WatchlistChangePeriod;
 };
 
 export const WIDGET_CATALOG: {
@@ -293,16 +311,23 @@ function normalizeWidgets(raw: unknown): DashboardWidget[] {
         ? normalizeFedCurveCompareDays(compareDaysRaw)
         : undefined;
     const symbolsRaw = o.symbols;
-    const symbols = Array.isArray(symbolsRaw)
-      ? [
-          ...new Set(
-            symbolsRaw
-              .filter((s): s is string => typeof s === "string")
-              .map((s) => s.trim().toUpperCase())
-              .filter(Boolean),
-          ),
-        ]
-      : undefined;
+    const legacySymbols =
+      o.type === "watchlist" && symbolsRaw !== undefined ? normalizeSymbolList(symbolsRaw) : undefined;
+    const symbols =
+      legacySymbols && legacySymbols.length > 0 ? legacySymbols : undefined;
+    const watchlistListsRaw = o.type === "watchlist" ? normalizeWatchlistLists(o.watchlistLists) : undefined;
+    const activeWatchlistListIdRaw =
+      o.type === "watchlist" && typeof o.activeWatchlistListId === "string"
+        ? o.activeWatchlistListId
+        : undefined;
+    const watchlistState =
+      o.type === "watchlist"
+        ? resolveWatchlistWidgetState(
+            watchlistListsRaw,
+            activeWatchlistListIdRaw,
+            watchlistListsRaw ? undefined : legacySymbols,
+          )
+        : null;
     out.push({
       id,
       type: o.type,
@@ -310,7 +335,16 @@ function normalizeWidgets(raw: unknown): DashboardWidget[] {
       y,
       ...(symbol ? { symbol } : {}),
       ...(compareDays !== undefined ? { compareDays } : {}),
-      ...(symbols !== undefined ? { symbols } : {}),
+      ...(o.type === "watchlist" && watchlistState
+        ? {
+            watchlistLists: watchlistState.watchlistLists,
+            activeWatchlistListId: watchlistState.activeWatchlistListId,
+            watchlistChangeDisplay: normalizeWatchlistChangeDisplay(o.watchlistChangeDisplay),
+            watchlistChangePeriod: normalizeWatchlistChangePeriod(o.watchlistChangePeriod),
+          }
+        : symbols !== undefined
+          ? { symbols }
+          : {}),
     });
   }
   return out.length > 0 ? out : defaultWidgets();

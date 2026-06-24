@@ -9,3 +9,5 @@ docker/.env
 coverage
 .turbo
 *.tsbuildinfo
+apps/api/.cache/
+apps/api/data/avatars/

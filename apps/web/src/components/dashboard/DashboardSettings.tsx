@@ -1,15 +1,27 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { dashboardUserAvatarBackground, dashboardUserAvatarLetter } from "../auth/auth-utils";
 import type { DashboardPrefs, DashboardTheme } from "../../lib/dashboardPrefs";
 import { clampGridOpacity } from "../../lib/dashboardPrefs";
+import { profileAvatarUrl, type ProfileUserResponse } from "../../services/api";
+
+const ProfileSettingsModal = lazy(() =>
+  import("./ProfileSettingsModal").then((m) => ({ default: m.ProfileSettingsModal })),
+);
 
 type Props = {
   prefs: DashboardPrefs;
   onChange: (next: DashboardPrefs) => void;
   onOpenAuth: () => void;
   isLoggedIn: boolean;
-  user?: { id: string; name: string; email: string } | null;
+  user?: {
+    id: string;
+    name: string;
+    email: string;
+    image?: string | null;
+    profileVersion?: string | null;
+  } | null;
   onSignOut?: () => void;
+  onUserUpdated?: (user: ProfileUserResponse) => void;
 };
 
 function GearIcon({ className }: { className?: string }) {
@@ -23,26 +35,18 @@ function GearIcon({ className }: { className?: string }) {
 function ThemeToggle({
   theme,
   onSelect,
-  variant,
 }: {
   theme: DashboardTheme;
   onSelect: (theme: DashboardTheme) => void;
-  variant: "menu" | "panel";
 }) {
-  const btnRole = variant === "menu" ? "menuitemradio" : "radio";
-
   const btnClass = (active: boolean) =>
     ["dashboard-theme-toggle-btn", active ? "is-active" : ""].join(" ");
 
   return (
-    <div
-      className={`dashboard-theme-toggle dashboard-theme-toggle--${variant}`}
-      role={variant === "menu" ? "group" : "radiogroup"}
-      aria-label="Тема"
-    >
+    <div className="dashboard-theme-toggle dashboard-theme-toggle--menu" role="group" aria-label="Тема">
       <button
         type="button"
-        role={btnRole}
+        role="menuitemradio"
         aria-checked={theme === "light"}
         className={btnClass(theme === "light")}
         aria-label="Светлая тема"
@@ -57,7 +61,7 @@ function ThemeToggle({
       </button>
       <button
         type="button"
-        role={btnRole}
+        role="menuitemradio"
         aria-checked={theme === "dark"}
         className={btnClass(theme === "dark")}
         aria-label="Тёмная тема"
@@ -81,30 +85,19 @@ export function DashboardSettings({
   isLoggedIn,
   user,
   onSignOut,
+  onUserUpdated,
 }: Props) {
   const avatarLetter = isLoggedIn ? dashboardUserAvatarLetter(user?.name, user?.email) : null;
+  const avatarImageUrl = useMemo(
+    () => (isLoggedIn ? profileAvatarUrl(user?.image, user?.profileVersion) : null),
+    [isLoggedIn, user?.image, user?.profileVersion],
+  );
   const avatarBackground = useMemo(
     () => (isLoggedIn ? dashboardUserAvatarBackground(user?.id, user?.email) : undefined),
     [isLoggedIn, user?.id, user?.email],
   );
-  const [open, setOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
-    };
-    const onPointer = (e: MouseEvent | PointerEvent) => {
-      if (!wrapRef.current?.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("keydown", onKey);
-    document.addEventListener("pointerdown", onPointer);
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.removeEventListener("pointerdown", onPointer);
-    };
-  }, [open]);
 
   const patch = (partial: Partial<DashboardPrefs>) => {
     onChange({
@@ -117,10 +110,17 @@ export function DashboardSettings({
     });
   };
 
+  const profileUser = user ?? {
+    id: "guest-preview",
+    name: "Максим",
+    email: "guest@preview.local",
+    image: null,
+  };
+
   return (
     <div
       ref={wrapRef}
-      className={`dashboard-floating-actions-settings${open ? " dashboard-floating-actions-settings--panel-open" : ""}`}
+      className={`dashboard-floating-actions-settings${profileOpen ? " dashboard-floating-actions-settings--panel-open" : ""}`}
     >
       <div className="dashboard-floating-actions-settings-slot">
         <div className="dashboard-floating-actions-settings-stack">
@@ -132,7 +132,14 @@ export function DashboardSettings({
               if (!isLoggedIn) onOpenAuth();
             }}
           >
-            {isLoggedIn && avatarLetter ? (
+            {isLoggedIn && avatarImageUrl ? (
+              <img
+                src={avatarImageUrl}
+                alt=""
+                aria-hidden
+                className="dashboard-floating-action-avatar-image"
+              />
+            ) : isLoggedIn && avatarLetter ? (
               <span
                 className="dashboard-floating-action-avatar"
                 style={{ backgroundColor: avatarBackground }}
@@ -155,11 +162,11 @@ export function DashboardSettings({
               role="menuitem"
               className="dashboard-floating-action-expanded-btn dashboard-floating-action-expanded-btn--settings"
               aria-label="Настройки"
-              onClick={() => setOpen(true)}
+              onClick={() => setProfileOpen(true)}
             >
               <GearIcon className="dashboard-floating-action-expanded-gear" />
             </button>
-            <ThemeToggle theme={prefs.theme} onSelect={(theme) => patch({ theme })} variant="menu" />
+            <ThemeToggle theme={prefs.theme} onSelect={(theme) => patch({ theme })} />
             {isLoggedIn ? (
               <button
                 type="button"
@@ -180,42 +187,20 @@ export function DashboardSettings({
         </div>
       </div>
 
-      {open ? <div className="dashboard-floating-actions-settings-hover-bridge" aria-hidden /> : null}
+      {profileOpen ? <div className="dashboard-floating-actions-settings-hover-bridge" aria-hidden /> : null}
 
-      {open ? (
-        <div className="dashboard-floating-actions-panel" role="dialog" aria-label="Настройки">
-          <h2 className="dashboard-floating-actions-panel-title">Настройки</h2>
-          <div className="dashboard-floating-actions-panel-body">
-            <label className="dashboard-floating-actions-field">
-              <span>Тема</span>
-              <ThemeToggle theme={prefs.theme} onSelect={(theme) => patch({ theme })} variant="panel" />
-            </label>
-
-            <label className="dashboard-floating-actions-field">
-              <span>Прозрачность сетки (%)</span>
-              <input
-                type="number"
-                min={0}
-                max={100}
-                step={1}
-                value={prefs.gridOpacity}
-                onChange={(e) => patch({ gridOpacity: Number(e.target.value) })}
-                className="dashboard-floating-actions-input"
-              />
-              <input
-                type="range"
-                min={0}
-                max={100}
-                step={1}
-                value={prefs.gridOpacity}
-                onChange={(e) => patch({ gridOpacity: Number(e.target.value) })}
-                className="dashboard-floating-actions-range"
-                aria-label="Прозрачность сетки"
-              />
-              <p className="dashboard-floating-actions-hint">0 — скрыть, 100 — максимум.</p>
-            </label>
-          </div>
-        </div>
+      {profileOpen ? (
+        <Suspense fallback={null}>
+          <ProfileSettingsModal
+            open
+            prefs={prefs}
+            user={profileUser}
+            canPersistProfile={isLoggedIn && user != null && user.id !== "guest-preview"}
+            onClose={() => setProfileOpen(false)}
+            onPrefsChange={onChange}
+            onUserUpdated={onUserUpdated}
+          />
+        </Suspense>
       ) : null}
     </div>
   );
