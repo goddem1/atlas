@@ -48,13 +48,35 @@ test("calcHoldingsFromTransactions sorts by date before summing", () => {
   assert.equal(calcHoldingsFromTransactions(txs), 1);
 });
 
-test("pickResampled keeps tail point and respects timeframe limits", () => {
-  const points = Array.from({ length: 400 }, (_, i) => ({
-    date: `2024-01-${String((i % 30) + 1).padStart(2, "0")}-${i}`,
+test("pickResampled shows last 7 days for week timeframe", () => {
+  const points = Array.from({ length: 14 }, (_, i) => ({
+    date: `2024-06-${String(i + 1).padStart(2, "0")}`,
+    valueUsd: String(i),
+  }));
+  const week = pickResampled(points, "d");
+  assert.equal(week.length, 7);
+  assert.equal(week[0]?.date, "2024-06-08");
+  assert.equal(week[week.length - 1]?.date, "2024-06-14");
+});
+
+test("pickResampled filters all timeframe from 2021", () => {
+  const points = [
+    { date: "2020-12-31", valueUsd: "0" },
+    { date: "2021-01-01", valueUsd: "1" },
+    { date: "2024-06-20", valueUsd: "2" },
+  ];
+  const all = pickResampled(points, "all");
+  assert.equal(all[0]?.date, "2021-01-01");
+  assert.equal(all[all.length - 1]?.date, "2024-06-20");
+});
+
+test("pickResampled downsamples long month ranges", () => {
+  const points = Array.from({ length: 60 }, (_, i) => ({
+    date: `2024-05-${String((i % 30) + 1).padStart(2, "0")}`,
     valueUsd: String(i),
   }));
   const m = pickResampled(points, "m");
-  assert.ok(m.length <= 91);
+  assert.ok(m.length <= 31);
   assert.equal(m[m.length - 1]?.date, points[points.length - 1]?.date);
 });
 

@@ -201,17 +201,45 @@ export async function fetchCurrentPricesUsd(pairs: string[]): Promise<Map<string
   return out;
 }
 
-export function pickResampled(points: PortfolioChartPoint[], timeframe: PortfolioTimeframe): PortfolioChartPoint[] {
-  if (points.length <= 1) return points;
-  if (timeframe === "d") return points.slice(-30);
+export const PORTFOLIO_CHART_ALL_START_DATE = "2021-01-01";
 
-  const maxPoints = timeframe === "m" ? 90 : timeframe === "y" ? 140 : 180;
+function startDateKeyForTimeframe(timeframe: PortfolioTimeframe, lastDateKey: string): string {
+  const last = new Date(`${lastDateKey}T00:00:00.000Z`);
+  switch (timeframe) {
+    case "d":
+      return toDayKey(plusDays(last, -6));
+    case "m":
+      return toDayKey(plusDays(last, -29));
+    case "y":
+      return toDayKey(plusDays(last, -364));
+    case "all":
+      return PORTFOLIO_CHART_ALL_START_DATE;
+  }
+}
+
+function downsampleChartPoints(points: PortfolioChartPoint[], maxPoints: number): PortfolioChartPoint[] {
   if (points.length <= maxPoints) return points;
   const step = Math.ceil(points.length / maxPoints);
   const sampled = points.filter((_, i) => i % step === 0);
   const last = points[points.length - 1];
-  if (sampled[sampled.length - 1]?.date !== last?.date && last) sampled.push(last);
+  if (last && sampled[sampled.length - 1]?.date !== last.date) sampled.push(last);
   return sampled;
+}
+
+/** Фильтр графика портфеля: Д — неделя, М — месяц, Г — год, Все — с 2021-01-01. */
+export function pickResampled(points: PortfolioChartPoint[], timeframe: PortfolioTimeframe): PortfolioChartPoint[] {
+  if (points.length === 0) return points;
+
+  const last = points[points.length - 1]!;
+  const startKey = startDateKeyForTimeframe(timeframe, last.date);
+  let filtered = points.filter((p) => p.date >= startKey);
+  if (filtered.length === 0) filtered = [last];
+  if (filtered.length === 1) return filtered;
+
+  const maxPoints =
+    timeframe === "d" ? 7 : timeframe === "m" ? 31 : timeframe === "y" ? 140 : 180;
+
+  return downsampleChartPoints(filtered, maxPoints);
 }
 
 export async function getPortfolioSummary(
