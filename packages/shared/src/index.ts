@@ -265,3 +265,8 @@ export {
   normalizeWatchlistChangePeriod,
   resolveWatchlistWidgetState,
 } from "./watchlistDashboard.js";
+export {
+  parsePortfolioUsd,
+  roundPortfolioUsdForDisplay,
+  sumPortfolioPnlUsd,
+} from "./portfolioPnl.js";

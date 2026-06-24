@@ -157,15 +157,17 @@ export function DashboardSettings({
             )}
           </button>
           <div className="dashboard-floating-action-expanded" role="menu" aria-label="Быстрые настройки">
-            <button
-              type="button"
-              role="menuitem"
-              className="dashboard-floating-action-expanded-btn dashboard-floating-action-expanded-btn--settings"
-              aria-label="Настройки"
-              onClick={() => setProfileOpen(true)}
-            >
-              <GearIcon className="dashboard-floating-action-expanded-gear" />
-            </button>
+            {isLoggedIn ? (
+              <button
+                type="button"
+                role="menuitem"
+                className="dashboard-floating-action-expanded-btn dashboard-floating-action-expanded-btn--settings"
+                aria-label="Настройки"
+                onClick={() => setProfileOpen(true)}
+              >
+                <GearIcon className="dashboard-floating-action-expanded-gear" />
+              </button>
+            ) : null}
             <ThemeToggle theme={prefs.theme} onSelect={(theme) => patch({ theme })} />
             {isLoggedIn ? (
               <button

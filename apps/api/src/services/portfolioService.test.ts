@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import type { TransactionType } from "@prisma/client";
+import { sumPortfolioPnlUsd } from "@atlas-v1/shared";
 import {
   calcAssetPnlState,
   calcAssetPnlUsd,
@@ -8,6 +9,18 @@ import {
   pickResampled,
   validateSellTimeline,
 } from "./portfolioService.js";
+
+test("sumPortfolioPnlUsd adds pnlUsd of all portfolio assets", () => {
+  const total = sumPortfolioPnlUsd([
+    { pnlUsd: "-177.40" },
+    { pnlUsd: "232.10" },
+    { pnlUsd: "-132.00" },
+    { pnlUsd: "-61.25" },
+    { pnlUsd: "-20.00" },
+    { pnlUsd: "-15.00" },
+  ]);
+  assert.equal(total, -173.55);
+});
 
 test("validateSellTimeline allows valid BUY/SELL sequence", () => {
   const txs: Array<{ type: TransactionType; amountCoins: number; date: Date }> = [

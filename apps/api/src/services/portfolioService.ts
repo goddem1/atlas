@@ -1,4 +1,5 @@
 import type { PrismaClient, TransactionType } from "@prisma/client";
+import { sumPortfolioPnlUsd } from "@atlas-v1/shared";
 
 export type PortfolioTimeframe = "d" | "m" | "y" | "all";
 
@@ -254,12 +255,10 @@ export async function getPortfolioSummary(
   });
 
   const priceMap = await fetchCurrentPricesUsd(snapshots.map((s) => s.pairSymbol));
-  let totalPnlRaw = 0;
   const view = snapshots.map((s) => {
     const currentPrice = priceMap.get(s.pairSymbol) ?? 0;
     const currentValue = s.pnlState.coinsHeld * currentPrice;
     const pnl = calcAssetPnlUsd(s.pnlState, currentValue);
-    totalPnlRaw += pnl;
     return {
       symbol: s.symbol,
       name: s.name,
@@ -273,9 +272,10 @@ export async function getPortfolioSummary(
 
   view.sort((a, b) => Number(b.currentValueUsd) - Number(a.currentValueUsd));
   const totalValue = view.reduce((acc, x) => acc + Number(x.currentValueUsd), 0);
+  const totalPnl = sumPortfolioPnlUsd(view);
   return {
     totalValueUsd: toFixedUsd(totalValue),
-    totalPnlUsd: toFixedUsd(totalPnlRaw),
+    totalPnlUsd: toFixedUsd(totalPnl),
     assets: view,
   };
 }

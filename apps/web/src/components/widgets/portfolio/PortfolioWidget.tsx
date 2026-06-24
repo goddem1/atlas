@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, memo, lazy, Suspense } from "react";
 import { createPortal } from "react-dom";
 import type { CryptocurrencyListItem, PortfolioTimeframe } from "@atlas-v1/shared";
+import { sumPortfolioPnlUsd } from "@atlas-v1/shared";
 import {
   createPortfolioGoal,
   createPortfolioTransaction,
@@ -129,12 +130,10 @@ export const PortfolioWidget = memo(function PortfolioWidget({
   }, [timeframe, galleryPreview]);
 
   const assets = summary?.assets ?? [];
-  const visibleAssets = assets.slice(0, 4);
+  const maxVisible = assets.length <= 6 ? assets.length : 4;
+  const visibleAssets = assets.slice(0, maxVisible);
   const hiddenCount = Math.max(0, assets.length - visibleAssets.length);
-  const totalPnl = useMemo(
-    () => assets.reduce((sum, asset) => sum + asNum(asset.pnlUsd), 0),
-    [assets],
-  );
+  const totalPnl = useMemo(() => sumPortfolioPnlUsd(assets), [assets]);
   const filteredAllAssets = useMemo(() => {
     const q = allAssetsQuery.trim().toLowerCase();
     if (!q) return assets;
