@@ -4,6 +4,7 @@ import { fetchCandles, fetchCryptocurrencies } from "../../../services/api";
 import { formatPriceTicker, formatRuDayMonth, percentChangeLast } from "../../../lib/formatChart";
 import { GALLERY_PRICE_SPARKLINE } from "../../dashboard/widgetGalleryPreviewData";
 import { PriceSparklineCard } from "./PriceSparklineCard";
+import { pairForCryptocurrency } from "./atlasCryptoDatafeed";
 import "./price-sparkline-widget.css";
 
 const CryptoPickerModal = lazy(() =>
@@ -11,10 +12,6 @@ const CryptoPickerModal = lazy(() =>
 );
 
 type LivePriceDirection = "up" | "down";
-
-function pairFor(c: CryptocurrencyListItem): string {
-  return (c.pairSymbol?.trim() || `${c.symbol}USDT`).toUpperCase();
-}
 
 /** Live candle обновляется через WS на сервере, клиент polling каждые 30с. */
 const CANDLES_POLL_MS = 30 * 1000;
@@ -92,7 +89,7 @@ const PriceSparklineWidgetLive = memo(function PriceSparklineWidgetLive({
       setLiveDirection(null);
       return;
     }
-    const pair = pairFor(selected);
+    const pair = pairForCryptocurrency(selected);
     let cancelled = false;
     let previousLiveClose: number | null = null;
 
@@ -205,6 +202,7 @@ const PriceSparklineWidgetLive = memo(function PriceSparklineWidgetLive({
         open
         items={list}
         loadError={loadErr}
+        activeSymbol={selected?.symbol ?? null}
         onClose={() => setPickerOpen(false)}
         onSelect={(c) => {
           onPreferredSymbolChange?.(c.symbol);

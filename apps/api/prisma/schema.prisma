@@ -18,8 +18,34 @@ model User {
 
   dashboards      Dashboard[]
   portfolioAssets PortfolioAsset[]
+  klineChartPrefs UserKlineChartPrefs?
+  klineChartOverlays UserKlineChartOverlays[]
   sessions        Session[]
   accounts        Account[]
+}
+
+model UserKlineChartPrefs {
+  userId          String   @id
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  drawingToolPins Json     @default("[]")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("UserKlineChartPrefs")
+}
+
+model UserKlineChartOverlays {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pair      String
+  overlays  Json     @default("[]")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, pair])
+  @@index([userId])
+  @@map("UserKlineChartOverlays")
 }
 
 model Session {

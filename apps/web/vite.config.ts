@@ -7,7 +7,12 @@ export default defineConfig({
   resolve: {
     alias: {
       "@atlas-v1/shared": path.resolve(__dirname, "../../packages/shared/src/index.ts"),
+      klinecharts: path.resolve(__dirname, "node_modules/klinecharts"),
     },
+    dedupe: ["klinecharts"],
+  },
+  optimizeDeps: {
+    include: ["klinecharts", "@klinecharts/pro"],
   },
   server: {
     port: 5173,

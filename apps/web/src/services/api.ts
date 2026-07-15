@@ -10,7 +10,13 @@ import type {
   PortfolioTimeframe,
   PortfolioTransactionUpsertInput,
   UserDashboardState,
+  type KlineDrawingPinsResponse,
+  type KlineDrawingToolPin,
+  type KlineOverlaysResponse,
+  type KlineStoredOverlay,
 } from "@atlas-v1/shared";
+
+import { normalizeKlinePairSymbol } from "@atlas-v1/shared";
 
 function apiBase(): string {
   const raw = (import.meta.env.VITE_API_URL as string | undefined)?.trim() ?? "";
@@ -303,4 +309,43 @@ export async function uploadProfileAvatar(dataUrl: string): Promise<ProfileUserR
     body: JSON.stringify({ dataUrl }),
   });
   return parseJson<ProfileUserResponse>(res);
+}
+
+export async function fetchKlineDrawingPins(): Promise<KlineDrawingToolPin[]> {
+  const res = await portfolioFetch(`${apiBase()}/kline-chart/drawing-pins`, { cache: "no-store" });
+  const body = await parseJson<KlineDrawingPinsResponse>(res);
+  return body.pins ?? [];
+}
+
+export async function saveKlineDrawingPins(pins: KlineDrawingToolPin[]): Promise<KlineDrawingToolPin[]> {
+  const res = await portfolioFetch(`${apiBase()}/kline-chart/drawing-pins`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ pins }),
+  });
+  const body = await parseJson<KlineDrawingPinsResponse>(res);
+  return body.pins ?? [];
+}
+
+export async function fetchKlineOverlays(pair: string): Promise<KlineStoredOverlay[]> {
+  const normalizedPair = encodeURIComponent(normalizeKlinePairSymbol(pair));
+  const res = await portfolioFetch(`${apiBase()}/kline-chart/overlays/${normalizedPair}`, {
+    cache: "no-store",
+  });
+  const body = await parseJson<KlineOverlaysResponse>(res);
+  return body.overlays ?? [];
+}
+
+export async function saveKlineOverlays(
+  pair: string,
+  overlays: KlineStoredOverlay[],
+): Promise<KlineStoredOverlay[]> {
+  const normalizedPair = encodeURIComponent(normalizeKlinePairSymbol(pair));
+  const res = await portfolioFetch(`${apiBase()}/kline-chart/overlays/${normalizedPair}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ overlays }),
+  });
+  const body = await parseJson<KlineOverlaysResponse>(res);
+  return body.overlays ?? [];
 }

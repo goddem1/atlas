@@ -253,6 +253,21 @@ export interface MacroSeriesResponse {
 }
 
 export type { WatchlistListData, WatchlistChangeDisplay, WatchlistChangePeriod } from "./watchlistDashboard.js";
+export type { KlineDrawingToolPin, KlineDrawingPinsResponse } from "./klineDrawingPins.js";
+export type {
+  KlineStoredOverlay,
+  KlineStoredOverlayPoint,
+  KlineOverlaysResponse,
+  KlineOverlayLabelData,
+  KlineOverlayLabelAlong,
+  KlineOverlayLabelSide,
+} from "./klineOverlays.js";
+export { normalizeKlineDrawingPins } from "./klineDrawingPins.js";
+export {
+  normalizeKlineOverlays,
+  normalizeKlinePairSymbol,
+  normalizeKlineOverlayLabelData,
+} from "./klineOverlays.js";
 export {
   DEFAULT_WATCHLIST_LIST_ID,
   DEFAULT_WATCHLIST_CHANGE_DISPLAY,

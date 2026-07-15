@@ -28,6 +28,8 @@ export interface PriceSparklineCardProps {
   icon?: ReactNode;
   /** Открыть выбор актива (иконка становится кнопкой) */
   onIconClick?: () => void;
+  /** Открыть полноэкранный KLineChart по клику на название */
+  onSymbolClick?: () => void;
   /** Сообщение об ошибке / состоянии под графиком */
   statusText?: string | null;
   onDeleteWidget?: () => void;
@@ -104,6 +106,7 @@ export function PriceSparklineCard({
   xLabels,
   icon,
   onIconClick,
+  onSymbolClick,
   statusText,
   onDeleteWidget,
   className = "",
@@ -137,6 +140,22 @@ export function PriceSparklineCard({
     </button>
   ) : (
     iconBody
+  );
+
+  const symbolEl = onSymbolClick ? (
+    <button
+      type="button"
+      className="price-widget-symbol-btn"
+      onClick={(e) => {
+        e.stopPropagation();
+        onSymbolClick();
+      }}
+      aria-label={`Открыть график ${symbol}`}
+    >
+      {symbol}
+    </button>
+  ) : (
+    <p className="price-widget-symbol">{symbol}</p>
   );
 
   const dragCn = cn("price-widget-drag-handle", dragHandleClassName);
@@ -206,7 +225,7 @@ export function PriceSparklineCard({
       <div className={cn("price-widget-header", dragCn)}>
         <div className="price-widget-asset-head">
           {iconEl}
-          <p className="price-widget-symbol">{symbol}</p>
+          {symbolEl}
         </div>
         <div className="price-widget-price-group">
           <span className="price-widget-price">{displayPrice}</span>

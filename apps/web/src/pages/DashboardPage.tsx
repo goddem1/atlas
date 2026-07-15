@@ -1,4 +1,10 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, memo, lazy, Suspense, type CSSProperties } from "react";
+import {
+  resolveWatchlistWidgetState,
+  normalizeWatchlistChangeDisplay,
+  normalizeWatchlistChangePeriod,
+  type CryptocurrencyListItem,
+} from "@atlas-v1/shared";
 import Draggable from "react-draggable";
 import { DashboardSettings } from "../components/dashboard/DashboardSettings";
 import { authClient } from "../lib/auth-client";
@@ -6,8 +12,15 @@ import { MacroCalendarWidget } from "../components/widgets/macro-calendar/MacroC
 import { PortfolioWidget } from "../components/widgets/portfolio/PortfolioWidget";
 import { FedCurveWidget } from "../components/widgets/fed-curve/FedCurveWidget";
 import { PriceSparklineWidget } from "../components/widgets/price-sparkline/PriceSparklineWidget";
+import { pairForCryptocurrency } from "../components/widgets/price-sparkline/atlasCryptoDatafeed";
 import { WatchlistWidget, type WatchlistWidgetState } from "../components/widgets/watchlist/WatchlistWidget";
-import { fetchProfile, fetchUserDashboardState, saveUserDashboardState, type ProfileUserResponse } from "../services/api";
+import {
+  fetchCryptocurrencies,
+  fetchProfile,
+  fetchUserDashboardState,
+  saveUserDashboardState,
+  type ProfileUserResponse,
+} from "../services/api";
 import "./dashboard-page.css";
 import { applyGuestDashboard } from "../lib/guestDashboard";
 import { getThemeColors, hexToRgba, mergeDashboardPrefs, type DashboardPrefs } from "../lib/dashboardPrefs";
@@ -31,6 +44,11 @@ const WidgetGalleryModal = lazy(() =>
 );
 const MacroEventsModal = lazy(() =>
   import("../components/dashboard/MacroEventsModal").then((m) => ({ default: m.MacroEventsModal })),
+);
+const PriceSparklineKlineModal = lazy(() =>
+  import("../components/widgets/price-sparkline/PriceSparklineKlineModal").then((m) => ({
+    default: m.PriceSparklineKlineModal,
+  })),
 );
 const AuthModal = lazy(() => import("../components/auth/AuthModal").then((m) => ({ default: m.AuthModal })));
 
@@ -182,6 +200,8 @@ export function DashboardPage() {
   const [widgets, setWidgets] = useState<DashboardWidget[]>(() => guestSnapshot.widgets);
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [macroOpen, setMacroOpen] = useState(false);
+  const [klineOpen, setKlineOpen] = useState(false);
+  const [klineCryptoList, setKlineCryptoList] = useState<CryptocurrencyListItem[]>([]);
   const [authOpen, setAuthOpen] = useState(false);
   const [profileUser, setProfileUser] = useState<ProfileUserResponse | null>(null);
 
@@ -401,6 +421,98 @@ export function DashboardPage() {
   );
 
   const openMacroCalendar = useCallback(() => setMacroOpen(true), []);
+  const openKlineChart = useCallback(() => setKlineOpen(true), []);
+  const closeKlineChart = useCallback(() => {
+    if (document.fullscreenElement) {
+      void document.exitFullscreen().catch(() => undefined);
+    }
+    setKlineOpen(false);
+  }, []);
+
+  const primaryPriceWidget = useMemo(
+    () => widgets.find((w) => w.type === "price-sparkline") ?? null,
+    [widgets],
+  );
+
+  const primaryWatchlistWidget = useMemo(
+    () => widgets.find((w) => w.type === "watchlist") ?? null,
+    [widgets],
+  );
+
+  useEffect(() => {
+    if (!klineOpen) return;
+    let cancelled = false;
+    fetchCryptocurrencies()
+      .then((rows) => {
+        if (!cancelled) setKlineCryptoList(rows);
+      })
+      .catch(() => {
+        if (!cancelled) setKlineCryptoList([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [klineOpen]);
+
+  const klineWatchlistLists = useMemo(() => {
+    if (!primaryWatchlistWidget) return [];
+    const { watchlistLists } = resolveWatchlistWidgetState(
+      primaryWatchlistWidget.watchlistLists,
+      primaryWatchlistWidget.activeWatchlistListId,
+      primaryWatchlistWidget.symbols,
+    );
+    return watchlistLists;
+  }, [primaryWatchlistWidget]);
+
+  const klineCoinListItems = useMemo(() => {
+    if (klineCryptoList.length === 0 || klineWatchlistLists.length === 0) return [];
+    const bySymbol = new Map(
+      klineCryptoList.map((crypto) => [crypto.symbol.toUpperCase(), crypto] as const),
+    );
+    const seen = new Set<string>();
+    const out: CryptocurrencyListItem[] = [];
+    for (const list of klineWatchlistLists) {
+      for (const symbol of list.symbols) {
+        const key = symbol.toUpperCase();
+        if (seen.has(key)) continue;
+        const crypto = bySymbol.get(key);
+        if (!crypto) continue;
+        seen.add(key);
+        out.push(crypto);
+      }
+    }
+    return out;
+  }, [klineCryptoList, klineWatchlistLists]);
+
+  const klineTarget = useMemo(() => {
+    if (klineCryptoList.length === 0) return null;
+    const pref = primaryPriceWidget?.symbol?.trim();
+    if (pref) {
+      const u = pref.toUpperCase();
+      const match = klineCryptoList.find((c) => c.symbol.toUpperCase() === u);
+      if (match) return match;
+    }
+    return klineCoinListItems[0] ?? klineCryptoList[0] ?? null;
+  }, [klineCryptoList, klineCoinListItems, primaryPriceWidget?.symbol]);
+
+  const updateKlineWatchlistLists = useCallback(
+    (nextLists: typeof klineWatchlistLists) => {
+      const widget = primaryWatchlistWidget;
+      if (!widget) return;
+      const { activeWatchlistListId } = resolveWatchlistWidgetState(
+        widget.watchlistLists,
+        widget.activeWatchlistListId,
+        widget.symbols,
+      );
+      setWatchlistState(widget.id, {
+        watchlistLists: nextLists,
+        activeWatchlistListId,
+        watchlistChangeDisplay: normalizeWatchlistChangeDisplay(widget.watchlistChangeDisplay),
+        watchlistChangePeriod: normalizeWatchlistChangePeriod(widget.watchlistChangePeriod),
+      });
+    },
+    [primaryWatchlistWidget, setWatchlistState],
+  );
 
   const mainStyle = useMemo((): CSSProperties => {
     const colors = getThemeColors(prefs.theme);
@@ -426,6 +538,14 @@ export function DashboardPage() {
             onClick={() => setMacroOpen(true)}
           >
             <img src="/assets/portfolio-ui/calendar.svg" alt="" aria-hidden="true" className="dashboard-quick-tabs-item-icon" />
+          </button>
+          <button
+            type="button"
+            className="dashboard-quick-tabs-item dashboard-quick-tabs-item--chart"
+            aria-label="Открыть график"
+            onClick={openKlineChart}
+          >
+            <img src="/assets/portfolio-ui/chart_bar.svg" alt="" aria-hidden="true" className="dashboard-quick-tabs-item-icon" />
           </button>
         </div>
       </div>
@@ -495,6 +615,21 @@ export function DashboardPage() {
       {macroOpen ? (
         <Suspense fallback={null}>
           <MacroEventsModal open onClose={() => setMacroOpen(false)} />
+        </Suspense>
+      ) : null}
+      {klineOpen && klineTarget ? (
+        <Suspense fallback={null}>
+          <PriceSparklineKlineModal
+            open
+            onClose={closeKlineChart}
+            symbol={klineTarget.symbol}
+            pair={pairForCryptocurrency(klineTarget)}
+            iconUrl={klineTarget.iconUrl}
+            cryptocurrencies={klineCryptoList}
+            watchlistLists={klineWatchlistLists}
+            onWatchlistListsChange={updateKlineWatchlistLists}
+            isLoggedIn={isLoggedIn}
+          />
         </Suspense>
       ) : null}
       {authOpen ? (
