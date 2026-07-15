@@ -4,7 +4,9 @@ import type {
   CryptocurrencyListItem,
   KlineDrawingPinsResponse,
   KlineDrawingToolPin,
+  KlineIndicatorsResponse,
   KlineOverlaysResponse,
+  KlineStoredIndicators,
   KlineStoredOverlay,
   MacroEventsResponse,
   MacroSeriesResponse,
@@ -348,4 +350,27 @@ export async function saveKlineOverlays(
   });
   const body = await parseJson<KlineOverlaysResponse>(res);
   return body.overlays ?? [];
+}
+
+export async function fetchKlineIndicators(pair: string): Promise<KlineStoredIndicators | null> {
+  const normalizedPair = encodeURIComponent(normalizeKlinePairSymbol(pair));
+  const res = await portfolioFetch(`${apiBase()}/kline-chart/indicators/${normalizedPair}`, {
+    cache: "no-store",
+  });
+  const body = await parseJson<{ indicators: KlineStoredIndicators | null }>(res);
+  return body.indicators ?? null;
+}
+
+export async function saveKlineIndicators(
+  pair: string,
+  indicators: KlineStoredIndicators,
+): Promise<KlineStoredIndicators> {
+  const normalizedPair = encodeURIComponent(normalizeKlinePairSymbol(pair));
+  const res = await portfolioFetch(`${apiBase()}/kline-chart/indicators/${normalizedPair}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ indicators }),
+  });
+  const body = await parseJson<KlineIndicatorsResponse>(res);
+  return body.indicators ?? { main: [], sub: [] };
 }

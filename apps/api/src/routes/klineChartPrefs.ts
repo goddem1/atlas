@@ -1,12 +1,18 @@
 import type { FastifyInstance, FastifyPluginAsync } from "fastify";
 import type { PrismaClient } from "@prisma/client";
-import type { KlineDrawingToolPin, KlineStoredOverlay } from "@atlas-v1/shared";
+import type {
+  KlineDrawingToolPin,
+  KlineStoredIndicators,
+  KlineStoredOverlay,
+} from "@atlas-v1/shared";
 import { normalizeKlinePairSymbol } from "@atlas-v1/shared";
 import { requireSession } from "../middleware/requireSession.js";
 import {
   getUserKlineDrawingPins,
+  getUserKlineIndicators,
   getUserKlineOverlays,
   saveUserKlineDrawingPins,
+  saveUserKlineIndicators,
   saveUserKlineOverlays,
 } from "../services/klineChartPrefsService.js";
 
@@ -51,6 +57,30 @@ function klineChartPrefsPlugin(prisma: PrismaClient): FastifyPluginAsync {
           req.body?.overlays ?? [],
         );
         return { overlays };
+      },
+    );
+
+    app.get<{ Params: { pair: string } }>("/kline-chart/indicators/:pair", async (req, reply) => {
+      reply.header("Cache-Control", "no-store");
+      const pair = normalizeKlinePairSymbol(req.params.pair ?? "");
+      if (!pair) return reply.status(400).send({ error: "Invalid pair" });
+      const indicators = await getUserKlineIndicators(prisma, req.user!.id, pair);
+      return { indicators };
+    });
+
+    app.put<{ Params: { pair: string }; Body: { indicators?: KlineStoredIndicators } }>(
+      "/kline-chart/indicators/:pair",
+      async (req, reply) => {
+        reply.header("Cache-Control", "no-store");
+        const pair = normalizeKlinePairSymbol(req.params.pair ?? "");
+        if (!pair) return reply.status(400).send({ error: "Invalid pair" });
+        const indicators = await saveUserKlineIndicators(
+          prisma,
+          req.user!.id,
+          pair,
+          req.body?.indicators ?? { main: [], sub: [] },
+        );
+        return { indicators };
       },
     );
   };

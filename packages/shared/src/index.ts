@@ -262,12 +262,18 @@ export type {
   KlineOverlayLabelAlong,
   KlineOverlayLabelSide,
 } from "./klineOverlays.js";
+export type {
+  KlineStoredIndicatorEntry,
+  KlineStoredIndicators,
+  KlineIndicatorsResponse,
+} from "./klineIndicators.js";
 export { normalizeKlineDrawingPins } from "./klineDrawingPins.js";
 export {
   normalizeKlineOverlays,
   normalizeKlinePairSymbol,
   normalizeKlineOverlayLabelData,
 } from "./klineOverlays.js";
+export { normalizeKlineIndicators } from "./klineIndicators.js";
 export {
   DEFAULT_WATCHLIST_LIST_ID,
   DEFAULT_WATCHLIST_CHANGE_DISPLAY,

@@ -9,6 +9,7 @@ import {
 } from "./priceKlineLocaleRu";
 import {
   collectKlineIndicators,
+  persistActiveKlineIndicators,
   type StoredKlineIndicators,
 } from "./priceKlineIndicatorPersistence";
 import { resolveKlineChartFromProContainer } from "./priceKlineOverlayPersistence";
@@ -124,9 +125,10 @@ async function toggleIndicatorOnChart(container: HTMLElement, name: KlineIndicat
   const state = collectKlineIndicators(chart);
   if (isIndicatorActive(name, state)) {
     removeIndicator(chart, name);
-    return;
+  } else {
+    await addIndicator(chart, name);
   }
-  await addIndicator(chart, name);
+  persistActiveKlineIndicators({ immediate: true });
 }
 
 function getChartTheme(container: HTMLElement): "dark" | "light" {

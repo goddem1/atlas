@@ -1,6 +1,15 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
-import type { KlineDrawingToolPin, KlineStoredOverlay } from "@atlas-v1/shared";
-import { normalizeKlineDrawingPins, normalizeKlineOverlays, normalizeKlinePairSymbol } from "@atlas-v1/shared";
+import type {
+  KlineDrawingToolPin,
+  KlineStoredIndicators,
+  KlineStoredOverlay,
+} from "@atlas-v1/shared";
+import {
+  normalizeKlineDrawingPins,
+  normalizeKlineIndicators,
+  normalizeKlineOverlays,
+  normalizeKlinePairSymbol,
+} from "@atlas-v1/shared";
 
 function pinsToJson(pins: KlineDrawingToolPin[]): Prisma.InputJsonValue {
   return JSON.parse(JSON.stringify(pins)) as Prisma.InputJsonValue;
@@ -90,6 +99,52 @@ export async function saveUserKlineOverlays(
     },
     update: {
       overlays: overlaysToJson(normalized),
+    },
+  });
+
+  return normalized;
+}
+
+function indicatorsToJson(indicators: KlineStoredIndicators): Prisma.InputJsonValue {
+  return JSON.parse(JSON.stringify(indicators)) as Prisma.InputJsonValue;
+}
+
+function parseStoredIndicators(raw: Prisma.JsonValue | null | undefined): KlineStoredIndicators | null {
+  return normalizeKlineIndicators(raw);
+}
+
+export async function getUserKlineIndicators(
+  prisma: PrismaClient,
+  userId: string,
+  pair: string,
+): Promise<KlineStoredIndicators | null> {
+  const normalizedPair = normalizeKlinePairSymbol(pair);
+  const row = await prisma.userKlineChartIndicators.findUnique({
+    where: { userId_pair: { userId, pair: normalizedPair } },
+    select: { indicators: true },
+  });
+  if (!row) return null;
+  return parseStoredIndicators(row.indicators);
+}
+
+export async function saveUserKlineIndicators(
+  prisma: PrismaClient,
+  userId: string,
+  pair: string,
+  indicators: KlineStoredIndicators,
+): Promise<KlineStoredIndicators> {
+  const normalizedPair = normalizeKlinePairSymbol(pair);
+  const normalized = normalizeKlineIndicators(indicators) ?? { main: [], sub: [] };
+
+  await prisma.userKlineChartIndicators.upsert({
+    where: { userId_pair: { userId, pair: normalizedPair } },
+    create: {
+      userId,
+      pair: normalizedPair,
+      indicators: indicatorsToJson(normalized),
+    },
+    update: {
+      indicators: indicatorsToJson(normalized),
     },
   });
 
