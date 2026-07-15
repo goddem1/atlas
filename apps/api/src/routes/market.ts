@@ -43,7 +43,7 @@ export function registerMarketRoutes(app: FastifyInstance, prisma: PrismaClient)
   }>("/widgets/candles", async (req, reply) => {
     const pair = req.query.pair?.trim();
     const daysRaw = Number(req.query.days ?? 7);
-    const days = Number.isFinite(daysRaw) ? Math.min(30, Math.max(1, Math.floor(daysRaw))) : 7;
+    const days = Number.isFinite(daysRaw) ? Math.min(2000, Math.max(1, Math.floor(daysRaw))) : 7;
 
     if (!pair) {
       return reply.status(400).send({ error: "query pair is required (e.g. BTCUSDT)" });

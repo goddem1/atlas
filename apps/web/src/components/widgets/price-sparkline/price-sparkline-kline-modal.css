@@ -1,0 +1,2181 @@
+.price-kline-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 12000;
+  display: flex;
+  align-items: stretch;
+  justify-content: stretch;
+  padding: 0;
+  isolation: isolate;
+}
+
+/* blur на псевдоэлементе — иначе fixed-потомки и соседние меню ломаются stacking-контекстом */
+.price-kline-overlay::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  backdrop-filter: blur(8px) saturate(130%);
+  -webkit-backdrop-filter: blur(8px) saturate(130%);
+}
+
+.price-kline-dialog {
+  width: min(1120px, 100%);
+  height: min(88dvh, 820px);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 28px;
+}
+
+.price-kline-layout {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  padding: 50px;
+  box-sizing: border-box;
+  transition: gap 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.price-kline-layout--list-collapsed {
+  gap: 0;
+}
+
+.price-kline-coin-list-wrap {
+  width: min(320px, 30vw);
+  flex-shrink: 0;
+  min-height: 0;
+  overflow: hidden;
+  transition:
+    width 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.22s ease;
+}
+
+.price-kline-layout--list-collapsed .price-kline-coin-list-wrap {
+  width: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.price-kline-chart-panel {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 25px;
+}
+
+.price-kline-chart-stage {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.price-kline-chart--pro {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  outline: none;
+}
+
+.price-kline-chart--pro:focus {
+  outline: none;
+}
+
+.price-kline-chart--pro.klinecharts-pro {
+  --price-kline-pro-block-gap: 8px;
+  --price-kline-pro-block-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--price-kline-pro-block-gap);
+  box-sizing: border-box;
+  height: 100% !important;
+  padding: var(--price-kline-pro-block-gap);
+  overflow: hidden;
+  border-radius: 25px;
+  background: transparent !important;
+}
+
+.price-kline-chart--pro.klinecharts-pro.price-kline-drawing-rail {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
+  align-content: stretch;
+}
+
+.price-kline-drawing-toggle {
+  grid-column: 1;
+  grid-row: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 52px;
+  height: 38px;
+  margin: 0;
+  padding: 0;
+  border-radius: var(--price-kline-pro-block-radius, 16px);
+  background: var(--klinecharts-pro-background-color);
+  box-shadow: inset 0 0 0 1px var(--klinecharts-pro-border-color);
+}
+
+.price-kline-drawing-toggle > .menu-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  border-right: none;
+  cursor: pointer;
+}
+
+.price-kline-drawing-toggle > .menu-container svg {
+  width: 28px;
+  height: 28px;
+  fill: var(--klinecharts-pro-text-color);
+  transition: transform 0.2s ease;
+}
+
+.price-kline-drawing-toggle > .menu-container svg.rotate {
+  transform: rotate(180deg);
+  transform-origin: center;
+}
+
+.price-kline-chart--pro .klinecharts-pro-content {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: row;
+  align-items: stretch;
+  gap: var(--price-kline-pro-block-gap);
+  width: 100%;
+  min-height: 0;
+  height: auto !important;
+  overflow: visible;
+  isolation: isolate;
+}
+
+.price-kline-chart--pro.price-kline-drawing-rail .klinecharts-pro-content {
+  grid-column: 2;
+  grid-row: 2;
+  flex: unset;
+  width: auto;
+  min-width: 0;
+}
+
+.price-kline-chart--pro.price-kline-drawing-rail:has(
+    .price-kline-drawing-sidebar[hidden]
+  )
+  .klinecharts-pro-content,
+.price-kline-chart--pro.price-kline-drawing-rail:not(:has(.price-kline-drawing-sidebar))
+  .klinecharts-pro-content {
+  grid-column: 1 / -1;
+}
+
+.price-kline-chart--pro .klinecharts-pro-drawing-bar .item.price-kline-magnet-active .icon-overlay,
+.price-kline-chart--pro .klinecharts-pro-drawing-bar.price-kline-magnet-active .item.price-kline-magnet-active .icon-overlay,
+.price-kline-chart--pro .klinecharts-pro-drawing-bar .item.price-kline-lock-active .icon-overlay,
+.price-kline-chart--pro .klinecharts-pro-drawing-bar.price-kline-lock-active .item.price-kline-lock-active .icon-overlay {
+  background-color: var(--klinecharts-pro-selected-color) !important;
+  fill: var(--klinecharts-pro-primary-color);
+  stroke: var(--klinecharts-pro-primary-color);
+}
+
+.price-kline-chart--pro .klinecharts-pro-drawing-bar {
+  position: relative;
+  z-index: 30;
+  flex-shrink: 0;
+  width: 52px !important;
+  height: 100%;
+  margin: 0;
+  padding-bottom: 12px;
+  box-sizing: border-box;
+  border-right: none !important;
+  border-radius: var(--price-kline-pro-block-radius);
+  background: var(--klinecharts-pro-background-color);
+  box-shadow: inset 0 0 0 1px var(--klinecharts-pro-border-color);
+  overflow: visible;
+  pointer-events: auto;
+}
+
+.price-kline-chart--pro .klinecharts-pro-drawing-bar .item {
+  position: relative;
+  z-index: 1;
+  pointer-events: auto;
+}
+
+.price-kline-chart--pro .klinecharts-pro-drawing-bar .item .list {
+  z-index: 1000;
+  pointer-events: auto;
+}
+
+.price-kline-drawing-custom .klinecharts-pro-drawing-bar .item .list {
+  display: none !important;
+}
+
+.price-kline-drawing-custom .klinecharts-pro-drawing-bar {
+  --price-kline-drawing-arrow-width: 10px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.price-kline-drawing-sidebar {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  gap: var(--price-kline-pro-block-gap);
+  width: 52px;
+  height: 100%;
+  min-height: 0;
+  justify-content: flex-start;
+}
+
+.price-kline-chart--pro.price-kline-drawing-rail > .price-kline-drawing-sidebar {
+  grid-column: 1;
+  grid-row: 2;
+  height: auto;
+  min-height: 0;
+  align-self: stretch;
+}
+
+.price-kline-drawing-sidebar[hidden] {
+  display: none !important;
+}
+
+.price-kline-drawing-sidebar > .klinecharts-pro-drawing-bar {
+  flex: 1 1 0;
+  min-height: max(350px, var(--price-kline-drawing-bar-reserved-height, 350px));
+  flex-shrink: 0;
+  height: auto !important;
+  justify-content: flex-start;
+  align-content: flex-start;
+}
+
+.price-kline-drawing-pins-shell {
+  display: none;
+  flex: 0 1 auto;
+  flex-direction: column;
+  width: 52px;
+  min-height: 0;
+  max-height: var(--price-kline-drawing-pins-max-height, none);
+  margin: 0;
+  padding: 6px 0;
+  border-radius: var(--price-kline-pro-block-radius, 16px);
+  background: #ffffff;
+  box-shadow: inset 0 0 0 1px var(--klinecharts-pro-border-color);
+  overflow: hidden;
+}
+
+.price-kline-drawing-pins-shell.is-visible {
+  display: flex;
+}
+
+.price-kline-drawing-pins {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  min-height: 0;
+  margin: 0;
+  padding: 2px 0 4px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.price-kline-drawing-pins::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+.price-kline-drawing-custom .klinecharts-pro-drawing-bar > .item,
+.price-kline-drawing-custom .klinecharts-pro-drawing-bar > .split-line {
+  flex-shrink: 0;
+}
+
+.price-kline-drawing-pin-btn:first-child {
+  margin-top: 2px;
+}
+
+.price-kline-drawing-pin-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 32px;
+  width: 32px;
+  height: 32px;
+  margin-top: 6px;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  overflow: hidden;
+  transition: background-color 0.12s ease;
+}
+
+.price-kline-drawing-pin-btn:hover {
+  background: var(--klinecharts-pro-hover-background-color);
+}
+
+.price-kline-drawing-pin-icon-host {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+}
+
+.price-kline-drawing-pin-btn .price-kline-drawing-tool-icon {
+  width: 32px;
+  height: 32px;
+}
+
+.price-kline-drawing-pins-shell .price-kline-drawing-pin-btn .price-kline-drawing-tool-icon,
+.price-kline-chart--pro.price-kline-drawing-custom[data-theme="dark"] .price-kline-drawing-pins-shell .price-kline-drawing-pin-btn .price-kline-drawing-tool-icon,
+.price-kline-chart--pro.price-kline-drawing-custom[data-theme="light"] .price-kline-drawing-pins-shell .price-kline-drawing-pin-btn .price-kline-drawing-tool-icon,
+[data-dashboard-theme="dark"] .price-kline-chart--pro.price-kline-drawing-custom:not([data-theme="light"]) .price-kline-drawing-pins-shell .price-kline-drawing-pin-btn .price-kline-drawing-tool-icon,
+[data-dashboard-theme="light"] .price-kline-chart--pro.price-kline-drawing-custom:not([data-theme="dark"]) .price-kline-drawing-pins-shell .price-kline-drawing-pin-btn .price-kline-drawing-tool-icon {
+  fill: #131722 !important;
+  stroke: #131722 !important;
+  color: #131722;
+  filter: none;
+}
+
+.price-kline-chart--pro.price-kline-drawing-custom[data-theme="dark"] .klinecharts-pro-drawing-bar .item,
+[data-dashboard-theme="dark"] .price-kline-chart--pro.price-kline-drawing-custom:not([data-theme="light"]) .klinecharts-pro-drawing-bar .item {
+  color: var(--klinecharts-pro-text-color, #f8f8f8);
+  fill: var(--klinecharts-pro-text-color, #f8f8f8);
+  stroke: var(--klinecharts-pro-text-color, #f8f8f8);
+}
+
+.price-kline-chart--pro.price-kline-drawing-custom[data-theme="dark"] .klinecharts-pro-drawing-bar .item .icon-overlay,
+.price-kline-chart--pro.price-kline-drawing-custom[data-theme="dark"] .klinecharts-pro-drawing-bar .item .price-kline-drawing-tool-icon,
+[data-dashboard-theme="dark"] .price-kline-chart--pro.price-kline-drawing-custom:not([data-theme="light"]) .klinecharts-pro-drawing-bar .item .icon-overlay,
+[data-dashboard-theme="dark"] .price-kline-chart--pro.price-kline-drawing-custom:not([data-theme="light"]) .klinecharts-pro-drawing-bar .item .price-kline-drawing-tool-icon {
+  fill: var(--klinecharts-pro-text-color, #f8f8f8) !important;
+  stroke: var(--klinecharts-pro-text-color, #f8f8f8) !important;
+  color: var(--klinecharts-pro-text-color, #f8f8f8);
+  filter: none;
+}
+
+.price-kline-chart--pro.price-kline-drawing-custom[data-theme="light"] .klinecharts-pro-drawing-bar .item,
+[data-dashboard-theme="light"] .price-kline-chart--pro.price-kline-drawing-custom:not([data-theme="dark"]) .klinecharts-pro-drawing-bar .item {
+  color: var(--klinecharts-pro-text-color, #131722);
+  fill: var(--klinecharts-pro-text-color, #131722);
+  stroke: var(--klinecharts-pro-text-color, #131722);
+}
+
+.price-kline-chart--pro.price-kline-drawing-custom[data-theme="light"] .klinecharts-pro-drawing-bar .item .icon-overlay,
+.price-kline-chart--pro.price-kline-drawing-custom[data-theme="light"] .klinecharts-pro-drawing-bar .item .price-kline-drawing-tool-icon,
+[data-dashboard-theme="light"] .price-kline-chart--pro.price-kline-drawing-custom:not([data-theme="dark"]) .klinecharts-pro-drawing-bar .item .icon-overlay,
+[data-dashboard-theme="light"] .price-kline-chart--pro.price-kline-drawing-custom:not([data-theme="dark"]) .klinecharts-pro-drawing-bar .item .price-kline-drawing-tool-icon {
+  fill: var(--klinecharts-pro-text-color, #131722) !important;
+  stroke: var(--klinecharts-pro-text-color, #131722) !important;
+  color: var(--klinecharts-pro-text-color, #131722);
+  filter: none;
+}
+
+.price-kline-drawing-custom .klinecharts-pro-drawing-bar .item .icon-overlay path,
+.price-kline-drawing-custom .klinecharts-pro-drawing-bar .item .price-kline-drawing-tool-icon path,
+.price-kline-drawing-pins-shell .price-kline-drawing-tool-icon path {
+  fill: inherit;
+  stroke: inherit;
+}
+
+.price-kline-chart--pro.price-kline-drawing-custom[data-theme="dark"] .klinecharts-pro-drawing-bar .item.price-kline-magnet-active .icon-overlay,
+.price-kline-chart--pro.price-kline-drawing-custom[data-theme="dark"] .klinecharts-pro-drawing-bar.price-kline-magnet-active .item.price-kline-magnet-active .icon-overlay,
+[data-dashboard-theme="dark"] .price-kline-chart--pro.price-kline-drawing-custom:not([data-theme="light"]) .klinecharts-pro-drawing-bar .item.price-kline-magnet-active .icon-overlay,
+[data-dashboard-theme="dark"] .price-kline-chart--pro.price-kline-drawing-custom:not([data-theme="light"]) .klinecharts-pro-drawing-bar.price-kline-magnet-active .item.price-kline-magnet-active .icon-overlay,
+.price-kline-chart--pro.price-kline-drawing-custom[data-theme="dark"] .klinecharts-pro-drawing-bar .item.price-kline-lock-active .icon-overlay,
+.price-kline-chart--pro.price-kline-drawing-custom[data-theme="dark"] .klinecharts-pro-drawing-bar.price-kline-lock-active .item.price-kline-lock-active .icon-overlay,
+[data-dashboard-theme="dark"] .price-kline-chart--pro.price-kline-drawing-custom:not([data-theme="light"]) .klinecharts-pro-drawing-bar .item.price-kline-lock-active .icon-overlay,
+[data-dashboard-theme="dark"] .price-kline-chart--pro.price-kline-drawing-custom:not([data-theme="light"]) .klinecharts-pro-drawing-bar.price-kline-lock-active .item.price-kline-lock-active .icon-overlay {
+  fill: var(--klinecharts-pro-primary-color) !important;
+  stroke: var(--klinecharts-pro-primary-color) !important;
+  filter: none;
+}
+
+.price-kline-drawing-custom .klinecharts-pro-drawing-bar .item:has(> .icon-arrow) {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: visible;
+  gap: 0;
+}
+
+/* Замок / глаз / корзина — то же закругление, что у инструментов */
+.price-kline-drawing-custom .klinecharts-pro-drawing-bar .item:not(:has(> .icon-arrow)) {
+  width: 32px;
+  height: 32px;
+  margin-left: auto;
+  margin-right: auto;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.price-kline-drawing-custom .klinecharts-pro-drawing-bar .item:not(:has(> .icon-arrow)):hover,
+.price-kline-drawing-custom .klinecharts-pro-drawing-bar .item:not(:has(> .icon-arrow)).selected {
+  border-radius: 6px;
+}
+
+/* Основной инструмент — hover только на самой кнопке */
+.price-kline-drawing-custom .klinecharts-pro-drawing-bar .item:has(> .icon-arrow) > span:first-child {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 32px;
+  width: 32px !important;
+  height: 32px;
+  border-radius: 6px;
+  transition: background-color 0.12s ease, border-radius 0.12s ease;
+}
+
+.price-kline-drawing-custom .klinecharts-pro-drawing-bar .item:has(> .icon-arrow) > span:first-child:hover,
+.price-kline-drawing-custom .klinecharts-pro-drawing-bar .item.selected:has(> .icon-arrow) > span:first-child {
+  background: var(--klinecharts-pro-hover-background-color);
+}
+
+/* Когда рядом видна стрелка — у основной кнопки скругляем только левую сторону */
+.price-kline-drawing-custom .klinecharts-pro-drawing-bar .item:has(> .icon-arrow):hover > span:first-child,
+.price-kline-drawing-custom .klinecharts-pro-drawing-bar .item.price-kline-drawing-menu-open > span:first-child {
+  border-radius: 6px 0 0 6px;
+}
+
+/* Стрелка раскрывается при hover на всю пару, подсветка — только на самой стрелке */
+.price-kline-drawing-custom .klinecharts-pro-drawing-bar .item > .icon-arrow {
+  position: relative;
+  top: auto;
+  right: auto;
+  flex: 0 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 0;
+  height: 32px;
+  margin: 0;
+  overflow: hidden;
+  opacity: 0;
+  visibility: hidden;
+  border-radius: 0 6px 6px 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--klinecharts-pro-text-second-color);
+  transform: none;
+  transition:
+    width 0.12s ease,
+    flex-basis 0.12s ease,
+    opacity 0.12s ease,
+    visibility 0.12s ease,
+    color 0.12s ease,
+    background-color 0.12s ease;
+  z-index: 40;
+  pointer-events: none;
+}
+
+.price-kline-drawing-custom .klinecharts-pro-drawing-bar .item:has(> .icon-arrow):hover > .icon-arrow,
+.price-kline-drawing-custom .klinecharts-pro-drawing-bar .item.price-kline-drawing-menu-open > .icon-arrow {
+  flex: 0 0 var(--price-kline-drawing-arrow-width);
+  width: var(--price-kline-drawing-arrow-width);
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  color: var(--klinecharts-pro-text-color, var(--klinecharts-pro-text-second-color));
+}
+
+.price-kline-drawing-custom .klinecharts-pro-drawing-bar .item > .icon-arrow:hover,
+.price-kline-drawing-custom .klinecharts-pro-drawing-bar .item.price-kline-drawing-menu-open > .icon-arrow {
+  background: var(--klinecharts-pro-hover-background-color);
+}
+
+.price-kline-drawing-custom .klinecharts-pro-drawing-bar .item > .icon-arrow svg {
+  width: 5px;
+  height: 8px;
+  fill: currentColor;
+  stroke: currentColor;
+  transition: transform 0.12s ease;
+}
+
+.price-kline-drawing-custom .klinecharts-pro-drawing-bar .item.price-kline-drawing-menu-open > .icon-arrow svg {
+  transform: rotate(90deg);
+  transform-origin: center;
+}
+
+.price-kline-drawing-tool-menu {
+  width: max-content;
+  min-width: 260px;
+  max-width: min(320px, calc(100vw - 16px));
+}
+
+.price-kline-drawing-tool-row-main {
+  flex: 1;
+  min-width: 0;
+  width: auto;
+  gap: 10px;
+}
+
+.price-kline-drawing-tool-icon {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+}
+
+.price-kline-drawing-tool-menu .price-kline-candle-type-row {
+  min-height: 40px;
+  margin-inline: 4px;
+}
+
+.price-kline-drawing-tool-menu .price-kline-candle-type-row-main {
+  height: 40px;
+  padding-inline: 8px 10px;
+}
+
+.price-kline-drawing-tool-menu .price-kline-candle-type-row-label {
+  display: inline;
+  white-space: nowrap;
+}
+
+.price-kline-drawing-tool-menu[data-theme="dark"] .price-kline-drawing-tool-icon {
+  filter: invert(1) brightness(0.92);
+}
+
+.price-kline-drawing-tool-menu[data-theme="light"] .price-kline-drawing-tool-icon {
+  filter: none;
+}
+
+.price-kline-drawing-tool-menu[data-theme="dark"] .price-kline-candle-type-row.is-active .price-kline-drawing-tool-icon {
+  filter: none;
+  fill: var(--kline-menu-active-text);
+  stroke: var(--kline-menu-active-text);
+}
+
+.price-kline-chart--pro .klinecharts-pro-widget {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  width: auto !important;
+  min-width: 0;
+  height: 100%;
+  margin: 0;
+  border-radius: var(--price-kline-pro-block-radius);
+  overflow: hidden;
+  background: var(--klinecharts-pro-background-color);
+  box-shadow: inset 0 0 0 1px var(--klinecharts-pro-border-color);
+}
+
+.price-kline-chart--pro .klinecharts-pro-widget[data-drawing-bar-visible="false"] {
+  width: 100% !important;
+}
+
+.price-kline-coin-list {
+  width: 100%;
+  height: 100%;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: 25px;
+  color: var(--atlas-fg-primary);
+}
+
+.price-kline-coin-list-head {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 20px 20px 14px 24px;
+}
+
+.price-kline-coin-list-title-wrap {
+  position: relative;
+  min-width: 0;
+  flex: 1;
+}
+
+.price-kline-coin-list-title-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.price-kline-coin-list-title {
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.price-kline-coin-list-title-chevron {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  object-fit: contain;
+  filter: var(--atlas-search-icon-filter);
+  opacity: 0.75;
+  transition: transform 0.15s ease;
+}
+
+.price-kline-coin-list-title-chevron.is-open {
+  transform: rotate(180deg);
+}
+
+.price-kline-coin-list-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  box-sizing: border-box;
+  min-width: min(220px, 100%);
+  max-width: min(280px, calc(100vw - 48px));
+  padding: 8px;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.price-kline-coin-list-menu-item {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  margin: 0;
+  padding: 10px 10px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.12s ease;
+}
+
+.price-kline-coin-list-menu-item:hover,
+.price-kline-coin-list-menu-item.is-checked {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.price-kline-coin-list-menu-check {
+  box-sizing: border-box;
+  width: 18px;
+  height: 18px;
+  border-radius: 6px;
+  border: 1.5px solid rgba(188, 196, 207, 0.55);
+  background: transparent;
+}
+
+.price-kline-coin-list-menu-check.is-checked {
+  border-color: #1677ff;
+  background-color: #1677ff;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M3.5 8.2 6.4 11.1 12.5 4.9' stroke='%23fff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 12px 12px;
+}
+
+.price-kline-coin-list-menu-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.price-kline-coin-list-menu-count {
+  font-size: 12px;
+  color: var(--atlas-fg-muted, #737373);
+  font-variant-numeric: tabular-nums;
+}
+
+.price-kline-coin-list-collapse {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.price-kline-coin-list-collapse-icon {
+  width: 14px;
+  height: 14px;
+  object-fit: contain;
+  filter: var(--atlas-search-icon-filter);
+  transform: rotate(90deg);
+}
+
+.price-kline-coin-list-divider {
+  height: 1px;
+  margin: 0 20px;
+  background: linear-gradient(90deg, rgba(188, 196, 207, 0.35));
+  flex-shrink: 0;
+}
+
+.price-kline-coin-list-msg {
+  margin: 0;
+  padding: 12px 24px 0;
+  font-size: 14px;
+  color: var(--atlas-fg-muted, #737373);
+}
+
+.price-kline-coin-list-msg--err {
+  color: #ef4444;
+}
+
+.price-kline-coin-list-rows {
+  list-style: none;
+  margin: 0;
+  padding: 8px 16px 20px;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.price-kline-coin-row {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 8px 12px;
+  margin: 0;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 14px;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.12s ease;
+}
+
+.price-kline-coin-row:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.price-kline-coin-row.is-active {
+  background: rgba(22, 119, 255, 0.12);
+}
+
+[data-dashboard-theme="light"] .price-kline-coin-row:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+[data-dashboard-theme="light"] .price-kline-coin-row.is-active {
+  background: rgba(22, 119, 255, 0.1);
+}
+
+.price-kline-coin-asset {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.price-kline-coin-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.price-kline-coin-icon--fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #171717;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.price-kline-coin-symbol {
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.price-kline-coin-price {
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 1.25;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.price-kline-coin-change {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  min-width: 72px;
+  font-size: 13px;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.price-kline-coin-change--up {
+  color: #22c55e;
+}
+
+.price-kline-coin-change--down {
+  color: #ef4444;
+}
+
+.price-kline-coin-change--flat {
+  color: var(--atlas-second-primary, #737373);
+}
+
+.price-kline-dialog--pro {
+  width: min(1180px, 100%);
+  height: min(92dvh, 860px);
+}
+
+.price-kline-chart--pro .klinecharts-pro-period-bar.price-kline-period-bar--tv,
+.price-kline-chart--pro .klinecharts-pro-period-bar {
+  --price-kline-tv-pill: rgba(255, 255, 255, 0.1);
+  --price-kline-tv-hover: rgba(255, 255, 255, 0.06);
+  flex-shrink: 0;
+  gap: 0;
+  width: 100%;
+  min-width: 0;
+  height: 38px;
+  margin: 0;
+  padding: 0 6px;
+  border-bottom: none !important;
+  border-radius: var(--price-kline-pro-block-radius, 16px);
+  background: var(--klinecharts-pro-background-color);
+  box-shadow: inset 0 0 0 1px var(--klinecharts-pro-border-color);
+  overflow: hidden;
+}
+
+.price-kline-chart--pro.price-kline-drawing-rail > .klinecharts-pro-period-bar {
+  grid-column: 2;
+  grid-row: 1;
+  width: auto;
+  min-width: 0;
+}
+
+.price-kline-chart--pro[data-theme="light"] .klinecharts-pro-period-bar.price-kline-period-bar--tv,
+.price-kline-chart--pro[data-theme="light"] .klinecharts-pro-period-bar {
+  --price-kline-tv-pill: rgba(0, 0, 0, 0.08);
+  --price-kline-tv-hover: rgba(0, 0, 0, 0.04);
+}
+
+.price-kline-period-block {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  height: 100%;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.price-kline-period-block--period {
+  min-width: 0;
+  flex-shrink: 1;
+  overflow: hidden;
+}
+
+.price-kline-period-block--chart-type,
+.price-kline-period-block--indicators {
+  flex-shrink: 0;
+  overflow: visible;
+}
+
+.price-kline-period-block:not(.price-kline-period-block--actions) {
+  margin-right: 2px;
+  padding-right: 8px;
+  border-right: 1px solid var(--klinecharts-pro-border-color);
+}
+
+.price-kline-period-block > .symbol,
+.price-kline-period-block > .period,
+.price-kline-period-block > .item.tools {
+  height: auto;
+  margin: 0 !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.price-kline-period-block--symbol > .symbol {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  transition: background-color 0.12s ease;
+}
+
+.price-kline-period-block--symbol > .symbol:hover {
+  background: var(--price-kline-tv-hover);
+}
+
+.price-kline-period-block--symbol > .symbol img {
+  width: 18px;
+  height: 18px;
+  margin-right: 0;
+}
+
+.price-kline-period-block--period {
+  gap: 2px;
+  padding-left: 4px;
+}
+
+.price-kline-period-block--period > .period {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 8px;
+  margin: 0 !important;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1;
+  transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+.price-kline-period-block--period > .period:hover {
+  background: var(--price-kline-tv-hover);
+}
+
+.price-kline-period-block--period > .period.selected {
+  background: var(--price-kline-tv-pill) !important;
+  color: var(--klinecharts-pro-text-color) !important;
+}
+
+.price-kline-period-block--chart-type > .price-kline-candle-type-toolbar,
+.price-kline-period-block--indicators > .price-kline-indicator-toolbar {
+  padding: 0 !important;
+  min-width: auto;
+  gap: 2px;
+}
+
+.price-kline-period-block--actions {
+  flex-shrink: 0;
+  margin-left: auto;
+  margin-right: 0;
+  padding-left: 8px;
+  padding-right: 0;
+  border-right: 0;
+  border-left: 1px solid var(--klinecharts-pro-border-color);
+  gap: 2px;
+}
+
+.price-kline-period-block--actions > .item.tools {
+  width: 32px;
+  min-width: 32px;
+  height: 28px;
+  padding: 0 !important;
+  border-radius: 8px;
+  transition: background-color 0.12s ease;
+  color: var(--klinecharts-pro-text-color);
+  cursor: pointer;
+}
+
+.price-kline-period-block--actions > .item.tools:hover {
+  background: var(--price-kline-tv-hover);
+}
+
+.price-kline-period-block--actions > .item.tools.price-kline-close-btn {
+  color: var(--klinecharts-pro-text-color);
+}
+
+.price-kline-period-block--actions > .item.tools.price-kline-list-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: auto;
+  min-width: 0;
+  padding: 0 10px !important;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.price-kline-list-toggle-label {
+  color: inherit;
+}
+
+.price-kline-list-toggle-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: transform 0.15s ease;
+}
+
+.price-kline-list-toggle-btn.is-collapsed .price-kline-list-toggle-arrow {
+  transform: rotate(180deg);
+}
+
+.price-kline-status {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  font-size: 14px;
+  color: var(--atlas-fg-muted, #737373);
+  pointer-events: none;
+}
+
+.price-kline-status--error {
+  color: #ef4444;
+}
+
+.price-kline-overlay-toolbar {
+  position: fixed;
+  z-index: 12100;
+  display: none;
+  pointer-events: none;
+}
+
+.price-kline-overlay-toolbar.is-open {
+  display: block;
+  pointer-events: auto;
+}
+
+.price-kline-overlay-toolbar.is-dragging {
+  user-select: none;
+}
+
+.price-kline-overlay-toolbar-bar {
+  --kline-overlay-bar-bg: #ffffff;
+  --kline-overlay-bar-border: #ebedf1;
+  --kline-overlay-bar-text: #131722;
+  --kline-overlay-bar-hover: rgba(0, 0, 0, 0.06);
+  --kline-overlay-bar-active: rgba(0, 0, 0, 0.08);
+
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  border: 1px solid var(--kline-overlay-bar-border);
+  border-radius: 8px;
+  background: var(--kline-overlay-bar-bg);
+  color: var(--kline-overlay-bar-text);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+  font-family: -apple-system, BlinkMacSystemFont, "Trebuchet MS", Roboto, Ubuntu, sans-serif;
+}
+
+.price-kline-overlay-toolbar-bar[data-theme="dark"] {
+  --kline-overlay-bar-bg: #1e222d;
+  --kline-overlay-bar-border: #2a2e39;
+  --kline-overlay-bar-text: #d1d4dc;
+  --kline-overlay-bar-hover: rgba(255, 255, 255, 0.08);
+  --kline-overlay-bar-active: rgba(255, 255, 255, 0.12);
+}
+
+.price-kline-overlay-toolbar-drag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--kline-overlay-bar-text);
+  cursor: grab;
+  touch-action: none;
+  transition: background-color 0.12s ease;
+}
+
+.price-kline-overlay-toolbar-drag:hover {
+  background: var(--kline-overlay-bar-hover);
+}
+
+.price-kline-overlay-toolbar.is-dragging .price-kline-overlay-toolbar-drag {
+  cursor: grabbing;
+  background: var(--kline-overlay-bar-active);
+}
+
+.price-kline-overlay-toolbar-drag-icon {
+  width: 8px;
+  height: 12px;
+  display: block;
+  opacity: 0.72;
+}
+
+.price-kline-overlay-toolbar-sep {
+  width: 1px;
+  height: 18px;
+  margin: 0 2px;
+  background: var(--kline-overlay-bar-border);
+  flex-shrink: 0;
+}
+
+.price-kline-overlay-toolbar-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+.price-kline-overlay-toolbar-btn:hover {
+  background: var(--kline-overlay-bar-hover);
+}
+
+.price-kline-overlay-toolbar-btn.is-active,
+.price-kline-overlay-toolbar-btn.is-menu-open {
+  background: var(--kline-overlay-bar-active);
+}
+
+.price-kline-overlay-toolbar-btn--color.is-active::after,
+.price-kline-overlay-toolbar-btn--color.is-menu-open::after {
+  content: "";
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 3px;
+  height: 2px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.price-kline-overlay-toolbar-icon {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+
+.price-kline-overlay-toolbar-color-mark {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 3px;
+  height: 2px;
+  border-radius: 999px;
+  pointer-events: none;
+}
+
+.price-kline-overlay-toolbar-btn--color.is-active .price-kline-overlay-toolbar-color-mark,
+.price-kline-overlay-toolbar-btn--color.is-menu-open .price-kline-overlay-toolbar-color-mark {
+  display: none;
+}
+
+.price-kline-overlay-toolbar-btn--delete:hover {
+  color: #f23645;
+}
+
+.price-kline-overlay-text-editor {
+  --kline-overlay-menu-bg: #ffffff;
+  --kline-overlay-menu-border: #ebedf1;
+  --kline-overlay-menu-text: #131722;
+  --kline-overlay-menu-muted: #787b86;
+  --kline-overlay-menu-hover: rgba(0, 0, 0, 0.06);
+  --kline-overlay-menu-primary: #1677ff;
+
+  position: fixed;
+  z-index: 12101;
+  display: none;
+  flex-direction: column;
+  gap: 10px;
+  width: 320px;
+  padding: 10px;
+  border: 1px solid var(--kline-overlay-menu-border);
+  border-radius: 12px;
+  background: var(--kline-overlay-menu-bg);
+  color: var(--kline-overlay-menu-text);
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.28);
+  font-family: -apple-system, BlinkMacSystemFont, "Trebuchet MS", Roboto, Ubuntu, sans-serif;
+}
+
+.price-kline-overlay-text-editor[data-theme="dark"] {
+  --kline-overlay-menu-bg: #1e222d;
+  --kline-overlay-menu-border: #2a2e39;
+  --kline-overlay-menu-text: #d1d4dc;
+  --kline-overlay-menu-muted: #787b86;
+  --kline-overlay-menu-hover: rgba(255, 255, 255, 0.08);
+}
+
+.price-kline-overlay-text-editor.is-open {
+  display: flex;
+}
+
+.price-kline-overlay-text-editor-input {
+  box-sizing: border-box;
+  width: 100%;
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--kline-overlay-menu-border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--kline-overlay-menu-text);
+  font-size: 13px;
+  outline: none;
+}
+
+.price-kline-overlay-text-editor-input::placeholder {
+  color: var(--kline-overlay-menu-muted);
+}
+
+.price-kline-overlay-text-editor-input:focus {
+  border-color: var(--kline-overlay-menu-primary);
+  box-shadow: 0 0 0 2px rgba(22, 119, 255, 0.12);
+}
+
+.price-kline-overlay-text-editor-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.price-kline-overlay-text-editor-group-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--kline-overlay-menu-muted);
+}
+
+.price-kline-overlay-text-editor-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.price-kline-overlay-text-editor-option {
+  height: 30px;
+  padding: 0 4px;
+  border: 1px solid var(--kline-overlay-menu-border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--kline-overlay-menu-text);
+  font-size: 12px;
+  line-height: 1.1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+
+.price-kline-overlay-text-editor-option:hover {
+  background: var(--kline-overlay-menu-hover);
+}
+
+.price-kline-overlay-text-editor-option.is-active {
+  border-color: var(--kline-overlay-menu-primary);
+  background: color-mix(in srgb, var(--kline-overlay-menu-primary) 14%, transparent);
+  color: var(--kline-overlay-menu-primary);
+}
+
+.price-kline-overlay-text-editor-size-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.price-kline-overlay-text-editor-size-range {
+  width: 100%;
+  margin: 0;
+  accent-color: var(--kline-overlay-menu-primary);
+  cursor: pointer;
+}
+
+.price-kline-overlay-text-editor-size-value {
+  min-width: 28px;
+  padding: 4px 6px;
+  border: 1px solid var(--kline-overlay-menu-border);
+  border-radius: 6px;
+  font-size: 12px;
+  text-align: center;
+  color: var(--kline-overlay-menu-text);
+}
+
+.price-kline-overlay-text-editor-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.price-kline-overlay-text-editor-btn {
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid var(--kline-overlay-menu-border);
+  background: transparent;
+  color: var(--kline-overlay-menu-text);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.price-kline-overlay-text-editor-btn--ghost:hover {
+  background: var(--kline-overlay-menu-hover);
+}
+
+.price-kline-overlay-text-editor-btn--primary {
+  border-color: var(--kline-overlay-menu-primary);
+  background: var(--kline-overlay-menu-primary);
+  color: #ffffff;
+}
+
+.price-kline-overlay-text-editor-btn--primary:hover {
+  filter: brightness(1.05);
+}
+
+.price-kline-overlay-color-menu {
+  --kline-overlay-menu-bg: #ffffff;
+  --kline-overlay-menu-border: #ebedf1;
+  --kline-overlay-menu-text: #131722;
+  --kline-overlay-menu-muted: #787b86;
+  --kline-overlay-menu-hover: rgba(0, 0, 0, 0.06);
+
+  position: fixed;
+  z-index: 12101;
+  display: none;
+  width: 248px;
+  padding: 10px;
+  border: 1px solid var(--kline-overlay-menu-border);
+  border-radius: 8px;
+  background: var(--kline-overlay-menu-bg);
+  color: var(--kline-overlay-menu-text);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+  font-family: -apple-system, BlinkMacSystemFont, "Trebuchet MS", Roboto, Ubuntu, sans-serif;
+}
+
+.price-kline-overlay-color-menu[data-theme="dark"] {
+  --kline-overlay-menu-bg: #1e222d;
+  --kline-overlay-menu-border: #2a2e39;
+  --kline-overlay-menu-text: #d1d4dc;
+  --kline-overlay-menu-muted: #787b86;
+  --kline-overlay-menu-hover: rgba(255, 255, 255, 0.08);
+}
+
+.price-kline-overlay-color-menu.is-open {
+  display: block;
+}
+
+.price-kline-overlay-color-grid {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 4px;
+}
+
+.price-kline-overlay-color-swatch {
+  width: 100%;
+  aspect-ratio: 1;
+  min-width: 0;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 4px;
+  background: var(--swatch-color);
+  cursor: pointer;
+  transition: transform 0.1s ease, border-color 0.1s ease;
+}
+
+.price-kline-overlay-color-swatch:hover {
+  transform: scale(1.06);
+}
+
+.price-kline-overlay-color-swatch.is-active {
+  border-color: #d1d4dc;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.35);
+}
+
+.price-kline-overlay-color-menu[data-theme="light"] .price-kline-overlay-color-swatch.is-active {
+  border-color: #131722;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.15);
+}
+
+.price-kline-overlay-color-add-row {
+  position: relative;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--kline-overlay-menu-border);
+}
+
+.price-kline-overlay-color-add {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 34px;
+  padding: 0;
+  border: 1px dashed var(--kline-overlay-menu-border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--kline-overlay-menu-muted);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+.price-kline-overlay-color-add:hover {
+  background: var(--kline-overlay-menu-hover);
+  color: var(--kline-overlay-menu-text);
+}
+
+.price-kline-overlay-color-input {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.price-kline-overlay-color-opacity {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto auto;
+  gap: 8px 10px;
+  margin-top: 10px;
+  align-items: center;
+}
+
+.price-kline-overlay-color-opacity-label {
+  grid-column: 1 / -1;
+  font-size: 12px;
+  color: var(--kline-overlay-menu-muted);
+}
+
+.price-kline-overlay-color-opacity-track {
+  position: relative;
+  height: 10px;
+  border-radius: 999px;
+  background:
+    linear-gradient(90deg, transparent, var(--opacity-color, #fff)),
+    repeating-conic-gradient(#c9cdd5 0 25%, #eef0f4 0 50%) 0 0 / 8px 8px;
+  overflow: hidden;
+}
+
+.price-kline-overlay-color-opacity-range {
+  position: absolute;
+  inset: -6px 0;
+  width: 100%;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+  accent-color: var(--kline-overlay-menu-text);
+}
+
+.price-kline-overlay-color-opacity-value {
+  min-width: 40px;
+  padding: 4px 8px;
+  border: 1px solid var(--kline-overlay-menu-border);
+  border-radius: 6px;
+  font-size: 12px;
+  text-align: center;
+  color: var(--kline-overlay-menu-text);
+}
+
+/* Тип свечей уже в тулбаре — в настройках скрываем эту строку (label + control). */
+.price-kline-chart--pro .klinecharts-pro-setting-modal-content > :nth-child(1),
+.price-kline-chart--pro .klinecharts-pro-setting-modal-content > :nth-child(2) {
+  display: none !important;
+}
+
+/* Модалки Pro (настройки, таймзона, индикатор) — стиль окон графика Atlas. */
+.price-kline-chart--pro .klinecharts-pro-modal {
+  --kline-modal-bg: #ffffff;
+  --kline-modal-surface: #f7f8fa;
+  --kline-modal-text: #051441;
+  --kline-modal-text-second: #76808f;
+  --kline-modal-border: #ebedf1;
+  --kline-modal-hover: rgba(0, 0, 0, 0.04);
+  --kline-modal-primary: #1677ff;
+
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 80;
+}
+
+.price-kline-chart--pro[data-theme="dark"] .klinecharts-pro-modal {
+  --kline-modal-bg: #151517;
+  --kline-modal-surface: #1c1c1f;
+  --kline-modal-text: #f8f8f8;
+  --kline-modal-text-second: #929aa5;
+  --kline-modal-border: #292929;
+  --kline-modal-hover: rgba(255, 255, 255, 0.06);
+}
+
+.price-kline-chart--pro .klinecharts-pro-modal .inner {
+  width: min(420px, calc(100vw - 32px));
+  min-width: 0;
+  max-width: min(420px, calc(100vw - 32px));
+  border: 1px solid var(--kline-modal-border);
+  border-radius: 12px;
+  background: var(--kline-modal-bg);
+  color: var(--kline-modal-text);
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.28);
+  font-family: -apple-system, BlinkMacSystemFont, "Trebuchet MS", Roboto, Ubuntu, sans-serif;
+  /* visible — иначе выпадающий список часовых поясов обрезается */
+  overflow: visible;
+}
+
+.price-kline-chart--pro .klinecharts-pro-modal .inner .title-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  height: auto;
+  min-height: 48px;
+  padding: 12px 14px 10px;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--kline-modal-text);
+  border-bottom: 1px solid var(--kline-modal-border);
+  border-radius: 12px 12px 0 0;
+  background: var(--kline-modal-bg);
+}
+
+.price-kline-chart--pro .klinecharts-pro-modal .inner .title-container .close-icon {
+  width: 30px;
+  height: 30px;
+  padding: 7px;
+  box-sizing: border-box;
+  border-radius: 6px;
+  fill: var(--kline-modal-text-second);
+  transition: fill 0.12s ease, background-color 0.12s ease;
+}
+
+.price-kline-chart--pro .klinecharts-pro-modal .inner .title-container .close-icon:hover {
+  fill: var(--kline-modal-text);
+  background: var(--kline-modal-hover);
+}
+
+.price-kline-chart--pro .klinecharts-pro-modal .inner .content-container {
+  padding: 14px 14px 6px;
+  min-height: 0;
+  overflow: visible;
+}
+
+.price-kline-chart--pro .klinecharts-pro-modal .inner:has(.klinecharts-pro-setting-modal-content) .content-container,
+.price-kline-chart--pro .klinecharts-pro-modal .inner:has(.klinecharts-pro-indicator-setting-modal-content) .content-container {
+  max-height: min(60vh, 420px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.price-kline-chart--pro .klinecharts-pro-setting-modal-content {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 16px;
+  row-gap: 14px;
+  margin: 0;
+}
+
+.price-kline-chart--pro .klinecharts-pro-indicator-setting-modal-content {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(120px, 140px);
+  align-items: center;
+  column-gap: 12px;
+  row-gap: 12px;
+  margin: 0;
+}
+
+.price-kline-chart--pro .klinecharts-pro-setting-modal-content > span,
+.price-kline-chart--pro .klinecharts-pro-indicator-setting-modal-content > span {
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.35;
+  color: var(--kline-modal-text);
+}
+
+.price-kline-chart--pro .klinecharts-pro-modal .inner .button-container {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 14px 14px;
+  border-top: 1px solid var(--kline-modal-border);
+  border-radius: 0 0 12px 12px;
+  background: var(--kline-modal-bg);
+}
+
+.price-kline-chart--pro .klinecharts-pro-button {
+  width: auto;
+  min-width: 96px;
+  height: 36px;
+  margin-left: 0;
+  padding: 0 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  transition: background-color 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+
+.price-kline-chart--pro .klinecharts-pro-button.confirm {
+  background: var(--kline-modal-primary);
+  border-color: var(--kline-modal-primary);
+  color: #fff;
+}
+
+.price-kline-chart--pro .klinecharts-pro-button.confirm:hover {
+  filter: brightness(1.05);
+}
+
+.price-kline-chart--pro .klinecharts-pro-button.cancel {
+  color: var(--kline-modal-text);
+  border-color: var(--kline-modal-border);
+  background: transparent;
+}
+
+.price-kline-chart--pro .klinecharts-pro-button.cancel:hover {
+  background: var(--kline-modal-hover);
+}
+
+/* Кнопка «Сбросить» в настройках без класса confirm/cancel */
+.price-kline-chart--pro .klinecharts-pro-modal .inner .button-container .klinecharts-pro-button:not(.confirm):not(.cancel) {
+  color: var(--kline-modal-text);
+  border: 1px solid var(--kline-modal-border);
+  background: var(--kline-modal-surface);
+}
+
+.price-kline-chart--pro .klinecharts-pro-modal .inner .button-container .klinecharts-pro-button:not(.confirm):not(.cancel):hover {
+  background: var(--kline-modal-hover);
+}
+
+.price-kline-chart--pro .klinecharts-pro-select {
+  width: 148px;
+  height: 34px;
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--kline-modal-text);
+}
+
+/* В окне часового пояса селект на всю ширину */
+.price-kline-chart--pro .klinecharts-pro-modal .inner .content-container > .klinecharts-pro-select {
+  width: 100%;
+  margin-top: 4px !important;
+}
+
+.price-kline-chart--pro .klinecharts-pro-select .selector-container {
+  border: 1px solid var(--kline-modal-border);
+  border-radius: 8px;
+  background: var(--kline-modal-surface);
+  transition: border-color 0.12s ease, background-color 0.12s ease;
+}
+
+.price-kline-chart--pro .klinecharts-pro-select .selector-container:hover {
+  border-color: var(--kline-modal-primary);
+}
+
+.price-kline-chart--pro .klinecharts-pro-select .drop-down-container {
+  border: 1px solid var(--kline-modal-border);
+  border-radius: 8px;
+  background: var(--kline-modal-bg);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.22);
+  max-height: min(280px, 42vh);
+  overflow-x: hidden;
+  overflow-y: auto;
+  z-index: 90;
+  scrollbar-width: thin;
+}
+
+.price-kline-chart--pro .klinecharts-pro-select .drop-down-container ul {
+  overflow: visible;
+}
+
+.price-kline-chart--pro .klinecharts-pro-select .drop-down-container li {
+  font-size: 13px;
+  color: var(--kline-modal-text);
+}
+
+.price-kline-chart--pro .klinecharts-pro-select .drop-down-container li:hover {
+  background: var(--kline-modal-hover);
+}
+
+.price-kline-chart--pro .klinecharts-pro-switch {
+  width: 40px;
+  height: 22px;
+  border-radius: 11px;
+}
+
+.price-kline-chart--pro .klinecharts-pro-switch .thumb {
+  top: 3px;
+  width: 16px;
+  height: 16px;
+}
+
+.price-kline-chart--pro .klinecharts-pro-switch.turn-on .thumb {
+  left: 21px;
+}
+
+.price-kline-chart--pro .klinecharts-pro-input {
+  height: 34px;
+  min-width: 120px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid var(--kline-modal-border, var(--klinecharts-pro-border-color, #ebedf1));
+  background: var(--kline-modal-surface, var(--klinecharts-pro-background-color, #ffffff));
+  color: var(--kline-modal-text, var(--klinecharts-pro-text-color, #051441));
+  font-size: 13px;
+  transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+
+.price-kline-chart--pro .klinecharts-pro-input .value {
+  font-size: 13px;
+  color: inherit;
+}
+
+.price-kline-chart--pro .klinecharts-pro-input[data-status="focus"] {
+  border-color: var(--kline-modal-primary, var(--klinecharts-pro-primary-color, #1677ff));
+  box-shadow: 0 0 0 2px rgba(22, 119, 255, 0.12);
+}
+
+.price-kline-candle-type-trigger {
+  cursor: pointer;
+  user-select: none;
+}
+
+.price-kline-chart--pro .klinecharts-pro-period-bar > .item.tools.price-kline-period-icon-btn,
+.price-kline-chart--pro .klinecharts-pro-period-bar > .item.tools.price-kline-candle-type-toolbar {
+  min-width: 38px;
+  padding: 0 10px;
+  border-right: 0;
+  border-left: solid 1px var(--klinecharts-pro-border-color);
+}
+
+.price-kline-candle-type-toolbar {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  padding: 0 !important;
+  cursor: default;
+}
+
+.price-kline-candle-type-toolbar-pins {
+  display: inline-flex;
+  align-items: center;
+}
+
+.price-kline-candle-type-pin-btn,
+.price-kline-candle-type-more-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 28px;
+  padding: 0;
+  margin: 0 1px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--klinecharts-pro-text-color);
+  cursor: pointer;
+  transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+.price-kline-candle-type-pin-btn:hover,
+.price-kline-candle-type-more-btn:hover {
+  background: var(--price-kline-tv-hover, var(--klinecharts-pro-hover-background-color));
+}
+
+.price-kline-candle-type-pin-btn.is-active {
+  background: var(--price-kline-tv-pill, var(--klinecharts-pro-selected-color));
+  color: var(--klinecharts-pro-text-color);
+}
+
+.price-kline-candle-type-more-btn {
+  border-left: 0;
+}
+
+.price-kline-candle-type-more-icon {
+  width: 14px;
+  height: 14px;
+  display: block;
+  color: inherit;
+}
+
+.price-kline-chart--pro .klinecharts-pro-period-bar .item.tools.price-kline-timezone-btn {
+  margin-left: 0;
+}
+
+.price-kline-chart--pro .klinecharts-pro-period-bar.price-kline-period-bar--tv .item.tools.price-kline-timezone-btn {
+  margin-left: 0;
+}
+
+.price-kline-chart--pro .klinecharts-pro-period-bar .item.tools.price-kline-period-icon-btn svg,
+.price-kline-chart--pro .klinecharts-pro-period-bar .item.tools.price-kline-candle-type-toolbar svg {
+  width: 18px;
+  height: 18px;
+  margin-right: 0;
+  display: block;
+  flex-shrink: 0;
+  color: inherit;
+}
+
+.price-kline-chart--pro .klinecharts-pro-period-bar .item.tools.price-kline-period-icon-btn img {
+  width: 18px;
+  height: 18px;
+  margin-right: 0;
+  display: block;
+}
+
+.price-kline-chart--pro .klinecharts-pro-period-bar .item.tools.price-kline-candle-type-toolbar .price-kline-candle-type-icon {
+  width: 22px;
+  height: 22px;
+  margin-right: 0;
+  display: block;
+  color: inherit;
+}
+
+.price-kline-chart--pro .klinecharts-pro-period-bar .item.tools.price-kline-period-icon-btn span,
+.price-kline-chart--pro .klinecharts-pro-period-bar .item.tools.price-kline-candle-type-toolbar span {
+  display: none !important;
+}
+
+.price-kline-candle-type-row-label {
+  display: inline;
+  font-size: 13px;
+  font-weight: 400;
+  color: inherit;
+  white-space: nowrap;
+}
+
+.price-kline-candle-type-menu {
+  --kline-menu-bg: #ffffff;
+  --kline-menu-text: #051441;
+  --kline-menu-text-second: #76808f;
+  --kline-menu-border: #ebedf1;
+  --kline-menu-hover: rgba(0, 0, 0, 0.04);
+  --kline-menu-active-bg: #f0f3fa;
+  --kline-menu-active-text: #131722;
+  --kline-menu-star: #929aa5;
+  --kline-menu-star-active: #f0b90b;
+
+  position: fixed;
+  z-index: 60;
+  display: none;
+  width: min(220px, calc(100vw - 16px));
+  max-height: min(560px, 72vh);
+  padding: 4px 0;
+  border: 1px solid var(--kline-menu-border);
+  border-radius: 12px;
+  background: var(--kline-menu-bg);
+  color: var(--kline-menu-text);
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.28);
+  font-family: -apple-system, BlinkMacSystemFont, "Trebuchet MS", Roboto, Ubuntu, sans-serif;
+  font-size: 13px;
+  overflow: hidden;
+}
+
+.price-kline-candle-type-menu[data-theme="dark"] {
+  --kline-menu-bg: #151517;
+  --kline-menu-text: #f8f8f8;
+  --kline-menu-text-second: #929aa5;
+  --kline-menu-border: #292929;
+  --kline-menu-hover: rgba(255, 255, 255, 0.06);
+  --kline-menu-active-bg: #d1d4dc;
+  --kline-menu-active-text: #131722;
+  --kline-menu-star: #787b86;
+  --kline-menu-star-active: #f0b90b;
+}
+
+.price-kline-candle-type-menu.is-open {
+  display: flex;
+  flex-direction: column;
+}
+
+.price-kline-candle-type-menu-list {
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  padding: 0;
+}
+
+.price-kline-candle-type-menu-section + .price-kline-candle-type-menu-section {
+  border-top: 1px solid var(--kline-menu-border);
+  margin-top: 4px;
+  padding-top: 4px;
+}
+
+.price-kline-candle-type-row {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  min-height: 32px;
+  margin: 0 4px;
+  border-radius: 6px;
+  transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+.price-kline-candle-type-row.is-active {
+  background: var(--kline-menu-active-bg);
+  color: var(--kline-menu-active-text);
+}
+
+.price-kline-candle-type-row-main {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  height: 32px;
+  padding: 0 4px 0 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.12s ease;
+}
+
+.price-kline-candle-type-row:not(.is-active) .price-kline-candle-type-row-main:hover {
+  background: var(--kline-menu-hover);
+}
+
+.price-kline-candle-type-row.is-active .price-kline-candle-type-row-main {
+  background: transparent;
+  color: inherit;
+}
+
+.price-kline-candle-type-row.is-active .price-kline-candle-type-row-label {
+  color: inherit;
+}
+
+.price-kline-candle-type-row.is-active .price-kline-candle-type-icon,
+.price-kline-candle-type-menu[data-theme="dark"] .price-kline-candle-type-row.is-active .price-kline-candle-type-icon {
+  filter: none;
+}
+
+.price-kline-candle-type-star {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--kline-menu-star);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: color 0.12s ease, background-color 0.12s ease;
+}
+
+.price-kline-candle-type-row:not(.is-active) .price-kline-candle-type-star:hover {
+  background: var(--kline-menu-hover);
+}
+
+.price-kline-candle-type-row.is-active .price-kline-candle-type-star {
+  color: var(--kline-menu-active-text);
+}
+
+.price-kline-candle-type-star.is-pinned {
+  color: var(--kline-menu-star-active);
+}
+
+.price-kline-candle-type-star.is-disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.price-kline-candle-type-row.is-active .price-kline-candle-type-star.is-pinned {
+  color: #c99700;
+}
+
+.price-kline-candle-type-star-icon {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+.price-kline-candle-type-icon {
+  width: 24px;
+  height: 24px;
+  display: block;
+  flex-shrink: 0;
+}
+
+.price-kline-candle-type-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+.price-kline-chart--pro .klinecharts-pro-symbol-search-modal-input,
+.price-kline-chart--pro .klinecharts-pro-symbol-search-modal-list {
+  display: none !important;
+}
+
+.price-kline-chart--pro .klinecharts-pro-modal:has(.klinecharts-pro-indicator-modal-list) {
+  display: none !important;
+}
+
+.price-kline-chart--pro .klinecharts-pro-period-bar > .item.tools.price-kline-indicator-toolbar {
+  min-width: auto;
+  padding: 0 !important;
+  border-left: solid 1px var(--klinecharts-pro-border-color);
+}
+
+.price-kline-period-block .price-kline-indicator-toolbar {
+  border-left: 0 !important;
+}
+
+.price-kline-indicator-toolbar {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  cursor: default;
+}
+
+.price-kline-indicator-toolbar-favorites {
+  display: inline-flex;
+  align-items: center;
+}
+
+.price-kline-indicator-icon-btn,
+.price-kline-indicator-fav-btn,
+.price-kline-indicator-more-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  padding: 0;
+  margin: 0 1px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--klinecharts-pro-text-color);
+  cursor: pointer;
+  transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+.price-kline-indicator-icon-btn {
+  width: 32px;
+}
+
+.price-kline-indicator-icon-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+.price-kline-indicator-fav-btn {
+  min-width: 28px;
+  padding: 0 8px;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.price-kline-indicator-fav-btn.is-active {
+  background: var(--price-kline-tv-pill, var(--klinecharts-pro-selected-color));
+  color: var(--klinecharts-pro-text-color);
+}
+
+.price-kline-indicator-icon-btn:hover,
+.price-kline-indicator-fav-btn:hover,
+.price-kline-indicator-more-btn:hover {
+  background: var(--price-kline-tv-hover, var(--klinecharts-pro-hover-background-color));
+}
+
+.price-kline-indicator-more-btn {
+  width: 28px;
+  border-left: 0;
+  color: inherit;
+}
+
+.price-kline-indicator-more-btn .price-kline-candle-type-more-icon {
+  width: 14px;
+  height: 14px;
+  display: block;
+}
+
+.price-kline-indicator-menu {
+  width: min(360px, calc(100vw - 16px));
+}
+
+.price-kline-indicator-menu .price-kline-candle-type-row-main {
+  gap: 8px;
+  min-width: 0;
+}
+
+.price-kline-indicator-row-code {
+  flex: 0 0 auto;
+  font-size: 13px;
+  font-weight: 600;
+  color: inherit;
+  white-space: nowrap;
+}
+
+.price-kline-indicator-row-desc {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--kline-menu-text-second, #76808f);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.price-kline-indicator-menu .price-kline-candle-type-row.is-active .price-kline-indicator-row-desc {
+  color: inherit;
+  opacity: 0.78;
+}

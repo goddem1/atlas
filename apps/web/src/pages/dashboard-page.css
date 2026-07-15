@@ -145,7 +145,8 @@
   transition: background-color 0.15s ease, transform 0.12s ease;
 }
 
-.dashboard-quick-tabs-item--calendar {
+.dashboard-quick-tabs-item--calendar,
+.dashboard-quick-tabs-item--chart {
   min-height: 36px;
   height: 54px;
   display: inline-flex;
