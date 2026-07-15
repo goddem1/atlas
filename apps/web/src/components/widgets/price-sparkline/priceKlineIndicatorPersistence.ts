@@ -1,29 +1,22 @@
+import type { KlineStoredIndicatorEntry, KlineStoredIndicators } from "@atlas-v1/shared";
+import { normalizeKlineIndicators, normalizeKlinePairSymbol } from "@atlas-v1/shared";
 import {
   ActionType,
   type Chart,
   type Indicator,
 } from "klinecharts";
-import {
-  resolveKlineChartFromProContainer,
-} from "./priceKlineOverlayPersistence";
+import { createKlineIndicatorsPairStore } from "./priceKlineIndicatorsPairStore";
+import { resolveKlineChartFromProContainer } from "./priceKlineOverlayPersistence";
 
-const STORAGE_PREFIX = "atlas.price-kline-indicators.v1:";
 const CANDLE_PANE_ID = "candle_pane";
 const X_AXIS_PANE_ID = "x_axis_pane";
+const MAIN_INDICATOR_NAMES = new Set(["MA", "EMA", "SMA", "BOLL", "SAR", "BBI"]);
 
 export const DEFAULT_KLINE_MAIN_INDICATORS = ["MA"] as const;
 export const DEFAULT_KLINE_SUB_INDICATORS = ["VOL", "MACD"] as const;
 
-export type StoredKlineIndicatorEntry = {
-  name: string;
-  calcParams: number[];
-  visible: boolean;
-};
-
-export type StoredKlineIndicators = {
-  main: StoredKlineIndicatorEntry[];
-  sub: StoredKlineIndicatorEntry[];
-};
+export type StoredKlineIndicatorEntry = KlineStoredIndicatorEntry;
+export type StoredKlineIndicators = KlineStoredIndicators;
 
 type IndicatorStoreInternal = {
   addInstance: (...args: unknown[]) => Promise<unknown>;
@@ -39,9 +32,12 @@ type ChartInternal = Chart & {
   _drawPanes?: Array<{ getId: () => string }>;
 };
 
-function storageKey(pair: string): string {
-  return `${STORAGE_PREFIX}${pair.trim().toUpperCase()}`;
-}
+type ActivePersistence = {
+  pair: string;
+  saveNow: (options?: { immediate?: boolean }) => void;
+};
+
+let activePersistence: ActivePersistence | null = null;
 
 function getIndicatorStore(chart: Chart): IndicatorStoreInternal | null {
   return (chart as ChartInternal)._chartStore?.getIndicatorStore?.() ?? null;
@@ -51,40 +47,17 @@ function isChartReady(chart: Chart): boolean {
   return chart.getDataList().length > 0;
 }
 
-function normalizeCalcParams(params: unknown): number[] {
-  if (!Array.isArray(params)) return [];
-  return params
-    .map((value) => (typeof value === "number" ? value : Number(value)))
-    .filter((value) => Number.isFinite(value));
-}
-
 function serializeIndicator(indicator: Indicator): StoredKlineIndicatorEntry {
+  const calcParams = Array.isArray(indicator.calcParams)
+    ? indicator.calcParams
+        .map((value) => (typeof value === "number" ? value : Number(value)))
+        .filter((value) => Number.isFinite(value))
+    : [];
   return {
     name: indicator.name,
-    calcParams: normalizeCalcParams(indicator.calcParams),
+    calcParams,
     visible: indicator.visible,
   };
-}
-
-function isValidEntry(value: unknown): value is StoredKlineIndicatorEntry {
-  return (
-    typeof value === "object" &&
-    value != null &&
-    typeof (value as StoredKlineIndicatorEntry).name === "string" &&
-    Array.isArray((value as StoredKlineIndicatorEntry).calcParams) &&
-    typeof (value as StoredKlineIndicatorEntry).visible === "boolean"
-  );
-}
-
-function isValidStored(value: unknown): value is StoredKlineIndicators {
-  if (typeof value !== "object" || value == null) return false;
-  const record = value as StoredKlineIndicators;
-  return (
-    Array.isArray(record.main) &&
-    record.main.every(isValidEntry) &&
-    Array.isArray(record.sub) &&
-    record.sub.every(isValidEntry)
-  );
 }
 
 function getOrderedSubPaneIds(chart: Chart): string[] {
@@ -94,13 +67,58 @@ function getOrderedSubPaneIds(chart: Chart): string[] {
     .filter((paneId) => paneId !== CANDLE_PANE_ID && paneId !== X_AXIS_PANE_ID);
 }
 
+function findSubPaneId(chart: Chart, name: string): string | null {
+  const store = getIndicatorStore(chart);
+  if (!store) return null;
+  for (const paneId of getOrderedSubPaneIds(chart)) {
+    if (store.getInstances(paneId).some((item) => item.name === name)) return paneId;
+  }
+  return null;
+}
+
+function isMainIndicator(name: string): boolean {
+  return MAIN_INDICATOR_NAMES.has(name.toUpperCase());
+}
+
+function indicatorPaneOptions(name: string) {
+  if (name !== "VOL") return undefined;
+  return { gap: { bottom: 2 } };
+}
+
+async function createNamedIndicator(
+  chart: Chart,
+  entry: StoredKlineIndicatorEntry,
+): Promise<void> {
+  const paneOptions = indicatorPaneOptions(entry.name);
+  const payload = {
+    name: entry.name,
+    calcParams: entry.calcParams,
+    visible: entry.visible,
+  };
+  if (isMainIndicator(entry.name)) {
+    await chart.createIndicator(payload, true, { id: CANDLE_PANE_ID, ...paneOptions });
+    return;
+  }
+  await chart.createIndicator(payload, false, paneOptions);
+}
+
+function removeNamedIndicator(chart: Chart, name: string): void {
+  if (getIndicatorStore(chart)?.getInstances(CANDLE_PANE_ID).some((item) => item.name === name)) {
+    chart.removeIndicator(CANDLE_PANE_ID, name);
+    return;
+  }
+  const paneId = findSubPaneId(chart, name);
+  if (paneId) chart.removeIndicator(paneId, name);
+}
+
+/** Sync local-only read helper kept for toolbar active state before data loads. */
 export function loadStoredKlineIndicators(pair: string): StoredKlineIndicators | null {
   try {
-    const raw = localStorage.getItem(storageKey(pair));
+    const raw = localStorage.getItem(
+      `atlas.price-kline-indicators.v1:${normalizeKlinePairSymbol(pair)}`,
+    );
     if (!raw) return null;
-    const parsed = JSON.parse(raw) as unknown;
-    if (!isValidStored(parsed)) return null;
-    return parsed;
+    return normalizeKlineIndicators(JSON.parse(raw) as unknown);
   } catch {
     return null;
   }
@@ -108,10 +126,44 @@ export function loadStoredKlineIndicators(pair: string): StoredKlineIndicators |
 
 export function saveStoredKlineIndicators(pair: string, indicators: StoredKlineIndicators): void {
   try {
-    localStorage.setItem(storageKey(pair), JSON.stringify(indicators));
+    localStorage.setItem(
+      `atlas.price-kline-indicators.v1:${normalizeKlinePairSymbol(pair)}`,
+      JSON.stringify(normalizeKlineIndicators(indicators) ?? indicators),
+    );
   } catch {
-    // ignore quota / private mode
+    // ignore
   }
+}
+
+export function namesFromStoredIndicators(stored: StoredKlineIndicators | null): {
+  mainIndicators: string[];
+  subIndicators: string[];
+} {
+  if (!stored) {
+    return {
+      mainIndicators: [...DEFAULT_KLINE_MAIN_INDICATORS],
+      subIndicators: [...DEFAULT_KLINE_SUB_INDICATORS],
+    };
+  }
+  return {
+    mainIndicators: stored.main.map((entry) => entry.name),
+    subIndicators: stored.sub.map((entry) => entry.name),
+  };
+}
+
+export function getDefaultStoredKlineIndicators(): StoredKlineIndicators {
+  return {
+    main: DEFAULT_KLINE_MAIN_INDICATORS.map((name) => ({
+      name,
+      calcParams: [],
+      visible: true,
+    })),
+    sub: DEFAULT_KLINE_SUB_INDICATORS.map((name) => ({
+      name,
+      calcParams: [],
+      visible: true,
+    })),
+  };
 }
 
 export function getInitialKlineIndicatorNames(pair: string): {
@@ -120,22 +172,23 @@ export function getInitialKlineIndicatorNames(pair: string): {
   stored: StoredKlineIndicators | null;
 } {
   const stored = loadStoredKlineIndicators(pair);
-  if (!stored) {
-    return {
-      mainIndicators: [...DEFAULT_KLINE_MAIN_INDICATORS],
-      subIndicators: [...DEFAULT_KLINE_SUB_INDICATORS],
-      stored: null,
-    };
-  }
+  const names = namesFromStoredIndicators(stored);
+  return { ...names, stored };
+}
 
-  const mainIndicators = stored.main.map((entry) => entry.name);
-  const subIndicators = stored.sub.map((entry) => entry.name);
-
-  return {
-    mainIndicators,
-    subIndicators,
-    stored,
-  };
+export async function resolveInitialKlineIndicators(
+  pair: string,
+  isLoggedIn: boolean,
+): Promise<{
+  mainIndicators: string[];
+  subIndicators: string[];
+  stored: StoredKlineIndicators | null;
+}> {
+  const store = createKlineIndicatorsPairStore({ isLoggedIn, pair });
+  const stored = await store.load();
+  store.dispose();
+  const names = namesFromStoredIndicators(stored);
+  return { ...names, stored };
 }
 
 export function collectKlineIndicators(chart: Chart | null): StoredKlineIndicators | null {
@@ -156,31 +209,45 @@ export function collectKlineIndicators(chart: Chart | null): StoredKlineIndicato
   return { main, sub };
 }
 
-export function persistKlineIndicators(
-  chart: Chart | null,
-  pair: string,
-  options?: { allowClear?: boolean },
-): void {
-  if (!chart || !isChartReady(chart)) return;
-
-  const indicators = collectKlineIndicators(chart);
-  if (!indicators) return;
-
-  if (
-    indicators.main.length === 0 &&
-    indicators.sub.length === 0 &&
-    !options?.allowClear
-  ) {
-    return;
-  }
-
-  saveStoredKlineIndicators(pair, indicators);
+export function persistActiveKlineIndicators(options?: { immediate?: boolean }): void {
+  activePersistence?.saveNow(options);
 }
 
-export function applyStoredKlineIndicatorOverrides(
+export async function syncKlineIndicatorsFromStored(
   chart: Chart,
   stored: StoredKlineIndicators,
-): void {
+): Promise<void> {
+  const desiredMain = new Map(stored.main.map((entry) => [entry.name, entry] as const));
+  const desiredSub = new Map(stored.sub.map((entry) => [entry.name, entry] as const));
+
+  const currentMain = new Set(
+    (getIndicatorStore(chart)?.getInstances(CANDLE_PANE_ID) ?? []).map((item) => item.name),
+  );
+  const currentSub = new Set<string>();
+  for (const paneId of getOrderedSubPaneIds(chart)) {
+    for (const indicator of getIndicatorStore(chart)?.getInstances(paneId) ?? []) {
+      currentSub.add(indicator.name);
+    }
+  }
+
+  for (const name of currentMain) {
+    if (!desiredMain.has(name)) removeNamedIndicator(chart, name);
+  }
+  for (const name of currentSub) {
+    if (!desiredSub.has(name)) removeNamedIndicator(chart, name);
+  }
+
+  for (const entry of stored.main) {
+    if (!currentMain.has(entry.name)) {
+      await createNamedIndicator(chart, entry);
+    }
+  }
+  for (const entry of stored.sub) {
+    if (!currentSub.has(entry.name)) {
+      await createNamedIndicator(chart, entry);
+    }
+  }
+
   for (const entry of stored.main) {
     chart.overrideIndicator(
       {
@@ -191,11 +258,9 @@ export function applyStoredKlineIndicatorOverrides(
       CANDLE_PANE_ID,
     );
   }
-
-  const subPaneIds = getOrderedSubPaneIds(chart);
-  stored.sub.forEach((entry, index) => {
-    const paneId = subPaneIds[index];
-    if (!paneId) return;
+  for (const entry of stored.sub) {
+    const paneId = findSubPaneId(chart, entry.name);
+    if (!paneId) continue;
     chart.overrideIndicator(
       {
         name: entry.name,
@@ -204,7 +269,7 @@ export function applyStoredKlineIndicatorOverrides(
       },
       paneId,
     );
-  });
+  }
 }
 
 function hookIndicatorStore(
@@ -248,52 +313,63 @@ function hookIndicatorStore(
 export function attachKlineIndicatorPersistence(params: {
   container: HTMLElement;
   pair: string;
+  isLoggedIn: boolean;
   stored: StoredKlineIndicators | null;
 }): () => void {
-  const { container, pair, stored } = params;
+  const { container, isLoggedIn, stored } = params;
+  const pair = normalizeKlinePairSymbol(params.pair);
+  const storage = createKlineIndicatorsPairStore({ isLoggedIn, pair });
+
   let disposed = false;
   let chart: Chart | null = null;
   let restored = false;
-  let sawIndicatorsThisSession = stored != null;
+  let readyToSave = false;
+  let userMutated = false;
   let saveTimer: number | null = null;
   let pollTimer: number | null = null;
-  let restoreTimer: number | null = null;
   let unhookStore: (() => void) | null = null;
-  let lastSnapshot =
-    stored != null ? JSON.stringify(stored) : loadStoredKlineIndicators(pair) ? "__seed__" : "";
+  let lastSnapshot = stored != null ? JSON.stringify(stored) : "";
 
-  const scheduleSave = (allowClear = false) => {
-    if (saveTimer != null) window.clearTimeout(saveTimer);
-    saveTimer = window.setTimeout(() => {
-      if (!chart || !isChartReady(chart)) return;
-      const indicators = collectKlineIndicators(chart);
-      if (!indicators) return;
-      if (indicators.main.length > 0 || indicators.sub.length > 0) {
-        sawIndicatorsThisSession = true;
-      }
-      if (
-        indicators.main.length === 0 &&
-        indicators.sub.length === 0 &&
-        !allowClear &&
-        !sawIndicatorsThisSession
-      ) {
-        return;
-      }
-      const next = JSON.stringify(indicators);
-      if (next === lastSnapshot) return;
-      lastSnapshot = next;
-      saveStoredKlineIndicators(pair, indicators);
-    }, 250);
+  const saveNow = (options?: { immediate?: boolean }) => {
+    if (disposed || !chart || !isChartReady(chart)) return;
+    if (!readyToSave) {
+      if (!options?.immediate) return;
+      readyToSave = true;
+    }
+    if (options?.immediate) userMutated = true;
+    const indicators = collectKlineIndicators(chart);
+    if (!indicators) return;
+    const next = JSON.stringify(indicators);
+    if (next === lastSnapshot && !options?.immediate) return;
+    lastSnapshot = next;
+    storage.save(indicators, options);
   };
 
-  const tryRestore = () => {
-    if (disposed || restored || !chart || !isChartReady(chart) || !stored) return;
-    restored = true;
-    applyStoredKlineIndicatorOverrides(chart, stored);
+  const scheduleSave = () => {
+    if (saveTimer != null) window.clearTimeout(saveTimer);
+    saveTimer = window.setTimeout(() => saveNow(), 250);
+  };
+
+  const tryRestore = async () => {
+    if (disposed || restored || !chart) return;
+    if (stored && !userMutated) {
+      if (!isChartReady(chart)) return;
+      restored = true;
+      try {
+        await syncKlineIndicatorsFromStored(chart, stored);
+      } catch {
+        // keep going — still enable saves so user edits aren't lost
+      }
+    } else {
+      restored = true;
+    }
+    if (disposed) return;
+    readyToSave = true;
     const indicators = collectKlineIndicators(chart);
     if (indicators) {
-      sawIndicatorsThisSession = true;
       lastSnapshot = JSON.stringify(indicators);
+      // First visit: persist defaults so next reload has a concrete baseline.
+      if (!stored && !userMutated) storage.save(indicators);
     }
   };
 
@@ -304,8 +380,7 @@ export function attachKlineIndicatorPersistence(params: {
     chart = resolved;
 
     const onDataReady = () => {
-      tryRestore();
-      scheduleSave();
+      void tryRestore().then(() => scheduleSave());
     };
 
     const onTooltipIconClick = () => {
@@ -316,22 +391,32 @@ export function attachKlineIndicatorPersistence(params: {
     chart.subscribeAction(ActionType.OnTooltipIconClick, onTooltipIconClick);
     unhookStore = hookIndicatorStore(
       chart,
-      () => scheduleSave(),
       () => {
-        sawIndicatorsThisSession = true;
-        scheduleSave(true);
+        userMutated = true;
+        scheduleSave();
+      },
+      () => {
+        userMutated = true;
+        scheduleSave();
       },
     );
 
-    restoreTimer = window.setTimeout(tryRestore, 0);
-    window.setTimeout(tryRestore, 400);
-    window.setTimeout(tryRestore, 1200);
+    void tryRestore();
+    window.setTimeout(() => void tryRestore(), 400);
+    window.setTimeout(() => void tryRestore(), 1200);
 
-    pollTimer = window.setInterval(() => scheduleSave(), 800);
+    pollTimer = window.setInterval(() => {
+      if (readyToSave) scheduleSave();
+    }, 1000);
 
     detachChartListeners = () => {
       chart?.unsubscribeAction(ActionType.OnDataReady, onDataReady);
       chart?.unsubscribeAction(ActionType.OnTooltipIconClick, onTooltipIconClick);
+    };
+
+    activePersistence = {
+      pair,
+      saveNow,
     };
   };
 
@@ -351,11 +436,19 @@ export function attachKlineIndicatorPersistence(params: {
     disposed = true;
     if (rafId) window.cancelAnimationFrame(rafId);
     if (pollTimer != null) window.clearInterval(pollTimer);
-    if (restoreTimer != null) window.clearTimeout(restoreTimer);
     if (saveTimer != null) window.clearTimeout(saveTimer);
     detachChartListeners?.();
     unhookStore?.();
-    persistKlineIndicators(chart, pair, { allowClear: sawIndicatorsThisSession });
+    if (readyToSave && chart && isChartReady(chart)) {
+      const indicators = collectKlineIndicators(chart);
+      if (indicators) {
+        void storage.flush(indicators);
+      }
+    }
+    storage.dispose();
+    if (activePersistence?.pair === pair) {
+      activePersistence = null;
+    }
     chart = null;
   };
 }

@@ -20,6 +20,7 @@ model User {
   portfolioAssets PortfolioAsset[]
   klineChartPrefs UserKlineChartPrefs?
   klineChartOverlays UserKlineChartOverlays[]
+  klineChartIndicators UserKlineChartIndicators[]
   sessions        Session[]
   accounts        Account[]
 }
@@ -46,6 +47,20 @@ model UserKlineChartOverlays {
   @@unique([userId, pair])
   @@index([userId])
   @@map("UserKlineChartOverlays")
+}
+
+model UserKlineChartIndicators {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pair       String
+  indicators Json     @default("{\"main\":[],\"sub\":[]}")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([userId, pair])
+  @@index([userId])
+  @@map("UserKlineChartIndicators")
 }
 
 model Session {

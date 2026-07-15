@@ -19,7 +19,9 @@ import {
 import { attachKlineOverlayContextMenu } from "./priceKlineOverlayContextMenu";
 import {
   attachKlineIndicatorPersistence,
-  getInitialKlineIndicatorNames,
+  getDefaultStoredKlineIndicators,
+  resolveInitialKlineIndicators,
+  syncKlineIndicatorsFromStored,
 } from "./priceKlineIndicatorPersistence";
 import {
   applyKlineCandleType,
@@ -200,126 +202,146 @@ export function PriceSparklineKlineModal({
       setLoading(true);
       setError(null);
 
-      const dark = isDashboardDarkTheme();
-      const symbolInfo = buildKlineSymbolInfo({ symbol, iconUrl });
-      const { mainIndicators, subIndicators } = getInitialKlineIndicatorNames(pair);
-      let activePair = pair;
+      void (async () => {
+        if (cancelled) return;
 
-      const attachPersistenceForPair = (nextPair: string) => {
-        detachOverlayPersistence?.();
-        detachIndicatorPersistence?.();
-        const { stored } = getInitialKlineIndicatorNames(nextPair);
-        detachOverlayPersistence = attachKlineOverlayPersistence({
-          container: el,
-          pair: nextPair,
-          isLoggedIn,
-        });
-        detachIndicatorPersistence = attachKlineIndicatorPersistence({
-          container: el,
-          pair: nextPair,
-          stored,
-        });
-      };
+        const dark = isDashboardDarkTheme();
+        const symbolInfo = buildKlineSymbolInfo({ symbol, iconUrl });
+        const initialIndicators = await resolveInitialKlineIndicators(pair, isLoggedIn);
+        if (cancelled) return;
 
-      try {
-        ensureKlineRuLocale();
-        ensureKlineHorizontalPriceTagsAlwaysVisible();
-        const chart = new KLineChartPro({
-          container: el,
-          theme: dark ? "dark" : "light",
-          locale: KLINE_PRO_LOCALE,
-          timezone: "Europe/Moscow",
-          drawingBarVisible: true,
-          watermark: "",
-          styles: buildKlineChartStyles(dark),
-          symbol: symbolInfo,
-          period: KLINE_DAILY_PERIOD,
-          periods: KLINE_DAILY_PERIODS,
-          mainIndicators,
-          subIndicators,
-          datafeed: createAtlasCryptoDatafeed({
-            cryptocurrencies: cryptocurrenciesRef.current,
-            initial: { symbol, pair, iconUrl },
-            onActiveSymbolChange: (active) => {
-              if (cancelled) return;
-              setActiveSymbol(active.symbol);
-              if (active.pair === activePair) return;
-              activePair = active.pair;
-              attachPersistenceForPair(active.pair);
+        const { mainIndicators, subIndicators } = initialIndicators;
+        let activePair = pair;
+
+        const attachPersistenceForPair = async (nextPair: string) => {
+          detachOverlayPersistence?.();
+          detachIndicatorPersistence?.();
+          const nextInitial = await resolveInitialKlineIndicators(nextPair, isLoggedIn);
+          if (cancelled) return;
+          const storedForPair = nextInitial.stored ?? getDefaultStoredKlineIndicators();
+          const liveChart = resolveKlineChartFromProContainer(el);
+          if (liveChart) {
+            try {
+              await syncKlineIndicatorsFromStored(liveChart, storedForPair);
+            } catch {
+              // ignore sync errors; persistence hook still attaches
+            }
+          }
+          detachOverlayPersistence = attachKlineOverlayPersistence({
+            container: el,
+            pair: nextPair,
+            isLoggedIn,
+          });
+          detachIndicatorPersistence = attachKlineIndicatorPersistence({
+            container: el,
+            pair: nextPair,
+            isLoggedIn,
+            stored: nextInitial.stored,
+          });
+        };
+
+        try {
+          ensureKlineRuLocale();
+          ensureKlineHorizontalPriceTagsAlwaysVisible();
+          const chart = new KLineChartPro({
+            container: el,
+            theme: dark ? "dark" : "light",
+            locale: KLINE_PRO_LOCALE,
+            timezone: "Europe/Moscow",
+            drawingBarVisible: true,
+            watermark: "",
+            styles: buildKlineChartStyles(dark),
+            symbol: symbolInfo,
+            period: KLINE_DAILY_PERIOD,
+            periods: KLINE_DAILY_PERIODS,
+            mainIndicators,
+            subIndicators,
+            datafeed: createAtlasCryptoDatafeed({
+              cryptocurrencies: cryptocurrenciesRef.current,
+              initial: { symbol, pair, iconUrl },
+              onActiveSymbolChange: (active) => {
+                if (cancelled) return;
+                setActiveSymbol(active.symbol);
+                if (active.pair === activePair) return;
+                activePair = active.pair;
+                void attachPersistenceForPair(active.pair);
+              },
+            }),
+          });
+          chartRef.current = chart;
+
+          window.requestAnimationFrame(() => {
+            if (!cancelled) {
+              chart.setStyles(buildKlineChartStyles(dark));
+            }
+          });
+
+          const storedCandleType = loadStoredKlineCandleType();
+          if (storedCandleType) {
+            applyKlineCandleType(chart, storedCandleType);
+          }
+
+          // Toolbar icons must appear with the chart — attach before deferred overlays.
+          detachIndicatorControl = attachKlineIndicatorControl({
+            container: el,
+            chart,
+          });
+          detachCandleTypeControl = attachKlineCandleTypeControl({
+            container: el,
+            chart,
+          });
+          detachScreenshotToolbar = attachKlineScreenshotToolbar({
+            container: el,
+            onClose: requestClose,
+            onToggleCoinList: () => toggleCoinListRef.current(),
+            coinListOpen: true,
+            handleRef: screenshotToolbarHandleRef,
+          });
+          detachPeriodBarBlocks = attachKlinePeriodBarBlocks({ container: el });
+          detachSymbolSearch = attachKlineSymbolSearch({
+            container: el,
+            onOpen: () => {
+              if (!cancelled) setSymbolSearchOpen(true);
             },
-          }),
-        });
-        chartRef.current = chart;
+          });
 
-        window.requestAnimationFrame(() => {
+          overlayAttachRaf = window.requestAnimationFrame(() => {
+            if (!cancelled) {
+              detachOverlayContextMenu = attachKlineOverlayContextMenu({
+                container: el,
+              });
+              detachDrawingToolControl = attachKlineDrawingToolControl({
+                container: el,
+                chart,
+                isLoggedIn,
+              });
+              void attachPersistenceForPair(activePair);
+              detachIndicatorTooltipHover = attachKlineIndicatorTooltipHover({
+                container: el,
+                getChart: () => resolveKlineChartFromProContainer(el),
+              });
+            }
+          });
+          if (!cancelled) setLoading(false);
+        } catch (e: unknown) {
           if (!cancelled) {
-            chart.setStyles(buildKlineChartStyles(dark));
+            setError(e instanceof Error ? e.message : "Не удалось инициализировать график");
+            setLoading(false);
           }
-        });
-
-        const storedCandleType = loadStoredKlineCandleType();
-        if (storedCandleType) {
-          applyKlineCandleType(chart, storedCandleType);
         }
 
-        // Toolbar icons must appear with the chart — attach before deferred overlays.
-        detachIndicatorControl = attachKlineIndicatorControl({
-          container: el,
-          chart,
-        });
-        detachCandleTypeControl = attachKlineCandleTypeControl({
-          container: el,
-          chart,
-        });
-        detachScreenshotToolbar = attachKlineScreenshotToolbar({
-          container: el,
-          onClose: requestClose,
-          onToggleCoinList: () => toggleCoinListRef.current(),
-          coinListOpen: true,
-          handleRef: screenshotToolbarHandleRef,
-        });
-        detachPeriodBarBlocks = attachKlinePeriodBarBlocks({ container: el });
-        detachSymbolSearch = attachKlineSymbolSearch({
-          container: el,
-          onOpen: () => {
-            if (!cancelled) setSymbolSearchOpen(true);
-          },
-        });
+        if (cancelled) return;
 
-        overlayAttachRaf = window.requestAnimationFrame(() => {
-          if (!cancelled) {
-            detachOverlayContextMenu = attachKlineOverlayContextMenu({
-              container: el,
-            });
-            detachDrawingToolControl = attachKlineDrawingToolControl({
-              container: el,
-              chart,
-              isLoggedIn,
-            });
-            attachPersistenceForPair(activePair);
-            detachIndicatorTooltipHover = attachKlineIndicatorTooltipHover({
-              container: el,
-              getChart: () => resolveKlineChartFromProContainer(el),
-            });
-          }
+        themeObserver = new MutationObserver(() => {
+          const nextDark = isDashboardDarkTheme();
+          chartRef.current?.setTheme(nextDark ? "dark" : "light");
+          chartRef.current?.setStyles(buildKlineChartStyles(nextDark));
         });
-        if (!cancelled) setLoading(false);
-      } catch (e: unknown) {
-        if (!cancelled) {
-          setError(e instanceof Error ? e.message : "Не удалось инициализировать график");
-          setLoading(false);
-        }
-      }
-
-      themeObserver = new MutationObserver(() => {
-        const nextDark = isDashboardDarkTheme();
-        chartRef.current?.setTheme(nextDark ? "dark" : "light");
-        chartRef.current?.setStyles(buildKlineChartStyles(nextDark));
-      });
-      themeObserver.observe(document.documentElement, {
-        attributes: true,
-        attributeFilter: ["data-dashboard-theme"],
-      });
+        themeObserver.observe(document.documentElement, {
+          attributes: true,
+          attributeFilter: ["data-dashboard-theme"],
+        });
+      })();
     };
 
     mountChart();
@@ -352,7 +374,7 @@ export function PriceSparklineKlineModal({
       chartRef.current = null;
       if (containerEl) clearProContainer(containerEl);
     };
-  }, [open, pair, symbol, iconUrl, requestClose]);
+  }, [open, pair, symbol, iconUrl, requestClose, isLoggedIn]);
 
   if (!open) return null;
 
