@@ -115,7 +115,7 @@ const DEFAULT_AREA_STYLE = {
     animation: true,
     animationDuration: 1000,
   },
-} as const;
+};
 
 function isVisualType(value: unknown): value is KlineChartVisualType {
   return typeof value === "string" && CHART_TYPE_OPTIONS.some((option) => option.id === value);

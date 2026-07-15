@@ -36,9 +36,12 @@ function wrapNodes(bar: HTMLElement, className: string, nodes: HTMLElement[]): B
   const live = nodes.filter((node) => node.parentElement === bar);
   if (live.length === 0) return null;
 
+  const first = live[0];
+  if (!first) return null;
+
   const block = document.createElement("div");
   block.className = `price-kline-period-block ${className}`;
-  bar.insertBefore(block, live[0]);
+  bar.insertBefore(block, first);
   for (const node of live) {
     block.appendChild(node);
   }
@@ -50,7 +53,7 @@ function unwrapBlock(bar: HTMLElement, state: BlockState): void {
   let insertBefore: ChildNode | null = block.nextSibling;
   for (let index = nodes.length - 1; index >= 0; index -= 1) {
     const node = nodes[index];
-    if (node.parentElement !== block) continue;
+    if (!node || node.parentElement !== block) continue;
     bar.insertBefore(node, insertBefore);
     insertBefore = node;
   }
