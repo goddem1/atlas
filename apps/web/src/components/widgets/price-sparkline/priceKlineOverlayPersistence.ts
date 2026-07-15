@@ -1,3 +1,5 @@
+import type { KlineStoredOverlay, KlineStoredOverlayPoint } from "@atlas-v1/shared";
+import { normalizeKlineOverlayLabelData, normalizeKlineOverlays } from "@atlas-v1/shared";
 import {
   ActionType,
   init,
@@ -6,8 +8,6 @@ import {
   type OverlayStyle,
   type Point,
 } from "klinecharts";
-import type { KlineStoredOverlay } from "@atlas-v1/shared";
-import { normalizeKlineOverlayLabelData, normalizeKlineOverlays } from "@atlas-v1/shared";
 import {
   attachKlineCtrlMagnetShortcut,
   attachKlineOverlayDrawModeSync,
@@ -74,7 +74,54 @@ function isCompleteOverlay(overlay: OverlayInstance): boolean {
   return overlay.points.some((point) => Number.isFinite(point.value));
 }
 
-function serializeOverlay(overlay: OverlayInstance): StoredKlineOverlay {
+/** Resolve overlay point to a stable timestamp+value pair for persist/restore. */
+function canonicalizeOverlayPoint(
+  chart: Chart,
+  point: Partial<Point> | KlineStoredOverlayPoint,
+): KlineStoredOverlayPoint | null {
+  if (!Number.isFinite(point.value)) return null;
+  const value = Number(point.value);
+  const dataList = chart.getDataList();
+
+  let timestamp =
+    typeof point.timestamp === "number" && Number.isFinite(point.timestamp)
+      ? point.timestamp
+      : undefined;
+
+  if (timestamp == null && typeof point.dataIndex === "number" && Number.isFinite(point.dataIndex)) {
+    const bar = dataList[Math.round(point.dataIndex)];
+    if (bar && Number.isFinite(bar.timestamp)) {
+      timestamp = bar.timestamp;
+    }
+  }
+
+  // No time anchor → cannot safely restore after reopen.
+  if (timestamp == null) return null;
+
+  return { timestamp, value };
+}
+
+function prepareOverlayPointsForRestore(
+  chart: Chart,
+  points: KlineStoredOverlayPoint[],
+): Array<Pick<KlineStoredOverlayPoint, "timestamp" | "value">> | null {
+  const prepared: Array<Pick<KlineStoredOverlayPoint, "timestamp" | "value">> = [];
+  for (const point of points) {
+    const canonical = canonicalizeOverlayPoint(chart, point);
+    if (!canonical || canonical.timestamp == null) return null;
+    // Pass only timestamp+value so klinecharts never prefers a stale dataIndex.
+    prepared.push({ timestamp: canonical.timestamp, value: canonical.value });
+  }
+  return prepared.length > 0 ? prepared : null;
+}
+
+function serializeOverlay(chart: Chart, overlay: OverlayInstance): StoredKlineOverlay | null {
+  const points = overlay.points
+    .map((point) => canonicalizeOverlayPoint(chart, point))
+    .filter((point): point is KlineStoredOverlayPoint => point != null);
+
+  if (points.length === 0) return null;
+
   const stored: StoredKlineOverlay = {
     id: overlay.id,
     groupId: overlay.groupId,
@@ -83,13 +130,7 @@ function serializeOverlay(overlay: OverlayInstance): StoredKlineOverlay {
     lock: overlay.lock,
     visible: overlay.visible,
     mode: getKlineOverlayDrawMode(),
-    points: overlay.points
-      .filter((point) => Number.isFinite(point.value))
-      .map((point) => ({
-        timestamp: point.timestamp,
-        value: point.value,
-        dataIndex: point.dataIndex,
-      })),
+    points,
   };
   if (overlay.styles) {
     stored.styles = JSON.parse(JSON.stringify(overlay.styles)) as Partial<OverlayStyle>;
@@ -129,7 +170,10 @@ export function saveStoredKlineOverlays(_pair: string, _overlays: StoredKlineOve
 
 export function collectKlineOverlays(chart: Chart | null): StoredKlineOverlay[] {
   if (!chart || !isChartReady(chart)) return [];
-  return listOverlays(chart).filter(isCompleteOverlay).map(serializeOverlay);
+  return listOverlays(chart)
+    .filter(isCompleteOverlay)
+    .map((overlay) => serializeOverlay(chart, overlay))
+    .filter((overlay): overlay is StoredKlineOverlay => overlay != null);
 }
 
 export function clearAllKlineOverlays(chart: Chart): void {
@@ -146,13 +190,25 @@ export function persistKlineOverlays(
   // Persistence is handled per authenticated user via API.
 }
 
-export function restoreKlineOverlaysFromStored(chart: Chart, stored: StoredKlineOverlay[]): void {
-  if (stored.length === 0) return;
+export function restoreKlineOverlaysFromStored(chart: Chart, stored: StoredKlineOverlay[]): boolean {
+  if (stored.length === 0) return true;
 
   const existingIds = new Set(listOverlays(chart).map((overlay) => overlay.id));
+  let restoredCount = 0;
+  let deferred = false;
 
   for (const overlay of stored) {
-    if (existingIds.has(overlay.id)) continue;
+    if (existingIds.has(overlay.id)) {
+      restoredCount += 1;
+      continue;
+    }
+
+    const points = prepareOverlayPointsForRestore(chart, overlay.points);
+    if (!points) {
+      deferred = true;
+      continue;
+    }
+
     chart.createOverlay(
       {
         id: overlay.id,
@@ -161,13 +217,17 @@ export function restoreKlineOverlaysFromStored(chart: Chart, stored: StoredKline
         lock: overlay.lock,
         visible: overlay.visible,
         mode: getKlineOverlayDrawModeForNewOverlay(),
-        points: overlay.points,
+        points,
         ...(overlay.styles ? { styles: overlay.styles as Partial<OverlayStyle> } : {}),
         ...(overlay.extendData ? { extendData: overlay.extendData } : {}),
       },
       overlay.paneId || CANDLE_PANE_ID,
     );
+    restoredCount += 1;
   }
+
+  // All overlays placed (or already present) — nothing left to wait for.
+  return !deferred && restoredCount >= stored.length;
 }
 
 export function restoreKlineOverlays(chart: Chart, pair: string): void {
@@ -241,7 +301,8 @@ export function attachKlineOverlayPersistence(params: {
   let disposed = false;
   let chart: Chart | null = null;
   let restored = false;
-  let restoreStarted = false;
+  let pendingStored: StoredKlineOverlay[] | null = null;
+  let loadStarted = false;
   let sawOverlaysThisSession = false;
   let saveTimer: number | null = null;
   let pollTimer: number | null = null;
@@ -269,22 +330,43 @@ export function attachKlineOverlayPersistence(params: {
     }, 250);
   };
 
+  const applyPendingRestore = () => {
+    if (disposed || restored || !chart || !isChartReady(chart) || pendingStored == null) return;
+    const ok = restoreKlineOverlaysFromStored(chart, pendingStored);
+    if (!ok) return;
+
+    restored = true;
+    pendingStored = null;
+    syncGlobalOverlayDrawMode(chart);
+    if (isKlineOverlaysLocked()) {
+      syncKlineOverlaysLock(chart);
+    }
+    const overlays = collectKlineOverlays(chart);
+    if (overlays.length > 0) {
+      sawOverlaysThisSession = true;
+      lastSnapshot = JSON.stringify(overlays);
+    }
+  };
+
   const tryRestore = () => {
-    if (disposed || restored || restoreStarted || !chart || !isChartReady(chart)) return;
-    restoreStarted = true;
+    if (disposed || restored || !chart || !isChartReady(chart)) return;
+
+    if (pendingStored != null) {
+      applyPendingRestore();
+      return;
+    }
+
+    if (loadStarted) return;
+    loadStarted = true;
     void storage.load().then((stored) => {
-      if (disposed || restored || !chart || !isChartReady(chart)) return;
-      restored = true;
-      restoreKlineOverlaysFromStored(chart, normalizeStoredOverlays(stored));
-      syncGlobalOverlayDrawMode(chart);
-      if (isKlineOverlaysLocked()) {
-        syncKlineOverlaysLock(chart);
+      if (disposed || restored || !chart) return;
+      pendingStored = normalizeStoredOverlays(stored);
+      if (pendingStored.length === 0) {
+        restored = true;
+        pendingStored = null;
+        return;
       }
-      const overlays = collectKlineOverlays(chart);
-      if (overlays.length > 0) {
-        sawOverlaysThisSession = true;
-        lastSnapshot = JSON.stringify(overlays);
-      }
+      applyPendingRestore();
     });
   };
 
@@ -307,8 +389,12 @@ export function attachKlineOverlayPersistence(params: {
     restoreTimer = window.setTimeout(tryRestore, 0);
     window.setTimeout(tryRestore, 400);
     window.setTimeout(tryRestore, 1200);
+    window.setTimeout(tryRestore, 3000);
 
-    pollTimer = window.setInterval(() => scheduleSave(), 800);
+    pollTimer = window.setInterval(() => {
+      tryRestore();
+      scheduleSave();
+    }, 800);
 
     const onPointerUp = () => scheduleSave();
     container.addEventListener("pointerup", onPointerUp);
