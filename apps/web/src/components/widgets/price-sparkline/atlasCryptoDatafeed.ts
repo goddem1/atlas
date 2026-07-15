@@ -15,12 +15,6 @@ export function pairForCryptocurrency(c: Pick<CryptocurrencyListItem, "symbol" |
   return (c.pairSymbol?.trim() || `${c.symbol}USDT`).toUpperCase();
 }
 
-function filterBarsByRange(bars: KLineData[], from: number, to: number): KLineData[] {
-  const minTs = Math.min(from, to);
-  const maxTs = Math.max(from, to);
-  return bars.filter((bar) => bar.timestamp >= minTs && bar.timestamp <= maxTs);
-}
-
 type CatalogEntry = {
   crypto: CryptocurrencyListItem;
   pair: string;
@@ -180,9 +174,11 @@ export function createAtlasCryptoDatafeed(options: {
       const bars = await loadBars(pair);
       if (bars.length === 0) return bars;
 
-      const filtered = filterBarsByRange(bars, from, to);
-      if (filtered.length > 0) return filtered;
-
+      // Always prefer the full loaded history for the symbol.
+      // Filtering to Pro's initial ~500-bar window drops older timestamps that
+      // overlays (segments/rays) still reference after reopen → drawings jump.
+      void from;
+      void to;
       return bars;
     },
 
