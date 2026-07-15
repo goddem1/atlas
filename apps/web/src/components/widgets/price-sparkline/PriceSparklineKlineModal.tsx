@@ -165,7 +165,6 @@ export function PriceSparklineKlineModal({
         ? resolveKlineChartFromProContainer(containerRef.current)
         : null;
       chart?.resize();
-      chartRef.current?.resize?.();
     }, 300);
     return () => window.clearTimeout(timer);
   }, [coinListOpen, open]);

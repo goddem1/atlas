@@ -411,7 +411,8 @@ export function attachKlineIndicatorControl(params: {
 
   const attachToolbar = () => {
     if (disposed || toolbarGroup) return;
-    const bar = container.querySelector(".klinecharts-pro-period-bar");
+    const barEl = container.querySelector(".klinecharts-pro-period-bar");
+    const bar = barEl instanceof HTMLElement ? barEl : null;
     const sourceItem = bar ? findIndicatorToolbarItem(bar) : null;
     if (!bar || !sourceItem) {
       rafId = window.requestAnimationFrame(attachToolbar);

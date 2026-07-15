@@ -296,16 +296,14 @@ export function createKlineIndicatorTooltipDataSource(
 ): IndicatorCreateTooltipDataSourceCallback {
   return ({ indicator, defaultStyles }) => {
     const hovered = getIndicatorHoverKey(chart) === indicatorKey(paneId, indicator.name);
-    if (!hovered) {
-      return { icons: [] };
-    }
     const icons =
       defaultStyles.tooltip.icons.length >= 4
         ? defaultStyles.tooltip.icons
         : chart.getStyles().indicator.tooltip.icons;
+    // Только icons: name/values оставляем дефолтным getIndicatorTooltipData (см. isValid merge).
     return {
-      icons: pickIndicatorTooltipIcons(indicator.visible, icons),
-    };
+      icons: hovered ? pickIndicatorTooltipIcons(indicator.visible, icons) : [],
+    } as ReturnType<IndicatorCreateTooltipDataSourceCallback>;
   };
 }
 

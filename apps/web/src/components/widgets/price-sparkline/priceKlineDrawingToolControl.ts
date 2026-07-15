@@ -379,7 +379,6 @@ export function attachKlineDrawingToolControl(params: {
   let drawingBarLock = isKlineOverlaysLocked();
   let drawingBarVisible = true;
   let openAnchor: HTMLElement | null = null;
-  let openMagnetMenu = false;
 
   const iconCache = new Map<string, SVGElement>();
   const rowByTool = new Map<string, HTMLDivElement>();
@@ -495,7 +494,6 @@ export function attachKlineDrawingToolControl(params: {
     openAnchor?.classList.remove("price-kline-drawing-menu-open");
     openAnchor?.querySelector(".icon-arrow")?.classList.remove("rotate");
     openAnchor = null;
-    openMagnetMenu = false;
   };
 
   const updateStarStates = (group: DrawingToolGroup) => {
@@ -674,7 +672,6 @@ export function attachKlineDrawingToolControl(params: {
 
     hideMenu();
     openAnchor = anchor;
-    openMagnetMenu = magnet;
     anchor.classList.add("price-kline-drawing-menu-open");
     anchor.querySelector(".icon-arrow")?.classList.add("rotate");
 
@@ -796,7 +793,7 @@ export function attachKlineDrawingToolControl(params: {
     bindingInFlight = true;
     try {
       const sections = getDrawingBarSections(drawingBar);
-      const { toolItems, magnetItem, lockItem, visibleItem, removeItem } = sections;
+      const { toolItems, magnetItem } = sections;
       if (toolItems.length < DRAWING_TOOL_GROUPS.length || !magnetItem) return;
 
       const content = container.querySelector<HTMLElement>(".klinecharts-pro-content");

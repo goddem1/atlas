@@ -275,7 +275,7 @@ export function attachKlineOverlayPersistence(params: {
     void storage.load().then((stored) => {
       if (disposed || restored || !chart || !isChartReady(chart)) return;
       restored = true;
-      restoreKlineOverlaysFromStored(chart, stored);
+      restoreKlineOverlaysFromStored(chart, normalizeStoredOverlays(stored));
       syncGlobalOverlayDrawMode(chart);
       if (isKlineOverlaysLocked()) {
         syncKlineOverlaysLock(chart);

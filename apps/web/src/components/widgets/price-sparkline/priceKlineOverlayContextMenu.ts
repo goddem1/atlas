@@ -3,7 +3,7 @@ import type {
   KlineOverlayLabelData,
   KlineOverlayLabelSide,
 } from "@atlas-v1/shared";
-import type { Chart, OverlayStyle } from "klinecharts";
+import type { Chart, DeepPartial, OverlayStyle } from "klinecharts";
 import { isDashboardDarkTheme } from "./candleKlineUtils";
 import {
   getKlineOverlayLabelData,
@@ -11,13 +11,9 @@ import {
 } from "./priceKlineHorizontalPriceTags";
 import { resolveKlineChartFromProContainer } from "./priceKlineOverlayPersistence";
 import {
-  isKlineOverlaysLocked,
-  setKlineOverlaysLocked,
   shouldBlockOverlayInteraction,
-  syncKlineOverlaysLock,
   toBlockedClickInfo,
   toBlockedHoverInfo,
-  updateKlineOverlayLockButtonUi,
 } from "./priceKlineOverlayLock";
 
 const OVERLAY_DRAW_STEP_FINISHED = -1;
@@ -143,7 +139,7 @@ function parseColorWithAlpha(color: string): { hex: string; alpha: number } {
   return { hex: normalizeHex(color), alpha: 1 };
 }
 
-function buildOverlayColorStyles(color: string, alpha = 1): Partial<OverlayStyle> {
+function buildOverlayColorStyles(color: string, alpha = 1): DeepPartial<OverlayStyle> {
   const rgba = color.startsWith("rgba") ? color : hexToRgba(color, alpha);
   return {
     line: { color: rgba },
@@ -694,12 +690,6 @@ export function attachKlineOverlayContextMenu(params: {
   const readActiveOverlay = (): OverlayClickInstance | null => {
     if (!chart || !activeOverlayId) return null;
     return (chart.getOverlayById?.(activeOverlayId) as OverlayClickInstance | null) ?? null;
-  };
-
-  const readActiveOverlayLabel = (): KlineOverlayLabelData | undefined => {
-    const overlay = readActiveOverlay();
-    if (!overlay) return undefined;
-    return getKlineOverlayLabelData(overlay.extendData);
   };
 
   const applyOverlayLabel = (raw: string) => {
