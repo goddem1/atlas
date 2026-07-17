@@ -8,7 +8,14 @@ import {
   BONDS_YIELD_TENOR_SOURCES,
 } from "./bondsYieldConfig.js";
 import { closeTimeForRequestDate, formatBondsYieldClose } from "./bondsYieldDate.js";
-import { pickBondsRapidApiKey, recordBondsRapidApiRequest } from "./rapidApiBondsQuota.js";
+import {
+  isBondsRapidApiQuotaOrAuthError,
+  markBondsRapidApiSlotExhausted,
+  pickBondsRapidApiKey,
+  recordBondsRapidApiRequest,
+  resolveBondsRapidApiKeys,
+  type BondsRapidApiKeySlot,
+} from "./rapidApiBondsQuota.js";
 
 type LoggerLike = {
   info: (msg: string) => void;
@@ -95,6 +102,40 @@ async function upsertBondsPrice(
   });
 }
 
+/** Запрос close с fallback primary→secondary при 401/403/429. */
+async function fetchTvCloseWithKeyFallback(
+  prisma: PrismaClient,
+  logger: LoggerLike,
+  symbol: string,
+  tvTicker: string,
+  now: Date,
+): Promise<{ rawClose: number | null; slot: BondsRapidApiKeySlot; quotaCount: number | null }> {
+  const { secondary } = resolveBondsRapidApiKeys();
+  const pick = await pickBondsRapidApiKey(prisma, now);
+
+  try {
+    const rawClose = await fetchTvClose(tvTicker, pick.apiKey);
+    const quotaCount = await recordBondsRapidApiRequest(prisma, pick.slot, now);
+    return { rawClose, slot: pick.slot, quotaCount };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (
+      pick.slot === "primary" &&
+      secondary &&
+      isBondsRapidApiQuotaOrAuthError(msg)
+    ) {
+      logger.warn(
+        `[bonds-tv] ${symbol}: primary ${msg.includes("HTTP 429") ? "quota" : "auth"} error — switching to secondary`,
+      );
+      await markBondsRapidApiSlotExhausted(prisma, "primary", now);
+      const rawClose = await fetchTvClose(tvTicker, secondary);
+      const quotaCount = await recordBondsRapidApiRequest(prisma, "secondary", now);
+      return { rawClose, slot: "secondary", quotaCount };
+    }
+    throw err;
+  }
+}
+
 export type BondsTvRefreshResult = {
   closeTime: string;
   updated: number;
@@ -138,9 +179,13 @@ export async function refreshBondsYieldFromTradingView(
         continue;
       }
 
-      const { apiKey, slot } = await pickBondsRapidApiKey(prisma, now);
-      const rawClose = await fetchTvClose(tvTicker, apiKey);
-      const quotaCount = await recordBondsRapidApiRequest(prisma, slot, now);
+      const { rawClose, slot, quotaCount } = await fetchTvCloseWithKeyFallback(
+        prisma,
+        logger,
+        symbol,
+        tvTicker,
+        now,
+      );
       if (quotaCount === null && i === 0) {
         logger.warn("[bonds-tv] RapidApiBondsUsage table missing or unavailable — quota not tracked");
       }
@@ -154,7 +199,7 @@ export async function refreshBondsYieldFromTradingView(
       const close = formatBondsYieldClose(rawClose);
       await upsertBondsPrice(prisma, symbol, closeTime, close);
       updated += 1;
-      logger.info(`[bonds-tv] ${symbol} ${tvTicker} close=${close}`);
+      logger.info(`[bonds-tv] ${symbol} ${tvTicker} close=${close} key=${slot}`);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       errors.push(`${symbol}: ${msg}`);

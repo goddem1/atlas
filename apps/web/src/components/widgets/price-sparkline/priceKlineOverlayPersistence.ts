@@ -375,6 +375,8 @@ export function attachKlineOverlayPersistence(params: {
 
   const attachToChart = (resolved: Chart) => {
     chart = resolved;
+    // Каждая пара — своё поле: не оставляем линии от предыдущего символа.
+    clearAllKlineOverlays(resolved);
     detachDrawModeSync = attachKlineOverlayDrawModeSync(resolved, container);
     detachCtrlMagnetShortcut = attachKlineCtrlMagnetShortcut(resolved, container);
 

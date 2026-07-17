@@ -108,3 +108,31 @@ export async function recordBondsRapidApiRequest(
     return null;
   }
 }
+
+/** Синхронизировать локальный счётчик с реальностью RapidAPI (429/исчерпание). */
+export async function markBondsRapidApiSlotExhausted(
+  prisma: PrismaClient,
+  slot: BondsRapidApiKeySlot,
+  now = new Date(),
+): Promise<void> {
+  const monthKey = bondsMonthKeyMsk(now);
+  const provider = providerForBondsKeySlot(slot);
+  const limit = monthlyLimit();
+  try {
+    const row = await prisma.rapidApiBondsUsage.findUnique({
+      where: { provider_monthKey: { provider, monthKey } },
+    });
+    const next = Math.max(row?.requestCount ?? 0, limit);
+    await prisma.rapidApiBondsUsage.upsert({
+      where: { provider_monthKey: { provider, monthKey } },
+      create: { provider, monthKey, requestCount: next },
+      update: { requestCount: next },
+    });
+  } catch {
+    // таблица может отсутствовать — ротация всё равно попробует secondary в том же запросе
+  }
+}
+
+export function isBondsRapidApiQuotaOrAuthError(message: string): boolean {
+  return /HTTP (401|403|429)\b/.test(message);
+}
