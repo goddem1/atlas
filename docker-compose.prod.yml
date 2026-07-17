@@ -44,7 +44,8 @@ services:
       PORT: 3001
       # Один origin с фронтом (браузер бьёт в /api на том же хосте) — можно оставить true
       CORS_ORIGIN: ${CORS_ORIGIN:-true}
-      TRADING_DAY_SYMBOLS: ${TRADING_DAY_SYMBOLS:-BTCUSDT,ETHUSDT}
+      # ALL / * / пусто → весь CryptocurrencyList; иначе CSV whitelist
+      TRADING_DAY_SYMBOLS: ${TRADING_DAY_SYMBOLS:-ALL}
       TRADING_DAY_CRON_DISABLED: ${TRADING_DAY_CRON_DISABLED:-false}
       # Node 20: global WebSocket нет; стрим Binance через пакет ws (или true = только REST/cron)
       BINANCE_WS_DISABLED: ${BINANCE_WS_DISABLED:-false}

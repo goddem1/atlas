@@ -14,6 +14,7 @@ import {
 } from "./atlasCryptoDatafeed";
 import {
   attachKlineOverlayPersistence,
+  clearAllKlineOverlays,
   resolveKlineChartFromProContainer,
 } from "./priceKlineOverlayPersistence";
 import { attachKlineOverlayContextMenu } from "./priceKlineOverlayContextMenu";
@@ -214,13 +215,22 @@ export function PriceSparklineKlineModal({
         let activePair = pair;
 
         const attachPersistenceForPair = async (nextPair: string) => {
+          // Сначала flush текущей пары, затем сразу чистим поле —
+          // иначе линии прошлой монеты остаются на том же chart instance.
           detachOverlayPersistence?.();
           detachIndicatorPersistence?.();
+          const liveChartBefore = resolveKlineChartFromProContainer(el);
+          if (liveChartBefore) {
+            clearAllKlineOverlays(liveChartBefore);
+          }
+
           const nextInitial = await resolveInitialKlineIndicators(nextPair, isLoggedIn);
           if (cancelled) return;
           const storedForPair = nextInitial.stored ?? getDefaultStoredKlineIndicators();
           const liveChart = resolveKlineChartFromProContainer(el);
           if (liveChart) {
+            // На случай, если за время await снова появились чужие линии.
+            clearAllKlineOverlays(liveChart);
             try {
               await syncKlineIndicatorsFromStored(liveChart, storedForPair);
             } catch {

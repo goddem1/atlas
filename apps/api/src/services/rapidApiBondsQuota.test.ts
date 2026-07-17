@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { pickBondsRapidApiKeySlot } from "./rapidApiBondsQuota.js";
+import { isBondsRapidApiQuotaOrAuthError, pickBondsRapidApiKeySlot } from "./rapidApiBondsQuota.js";
 
 test("pickBondsRapidApiKeySlot uses primary while under limit", () => {
   assert.equal(pickBondsRapidApiKeySlot(119, 0, false, 120), "primary");
@@ -20,4 +20,12 @@ test("pickBondsRapidApiKeySlot throws when all keys exhausted", () => {
     () => pickBondsRapidApiKeySlot(120, 0, false, 120),
     /monthly limit \(120\) exceeded/,
   );
+});
+
+test("isBondsRapidApiQuotaOrAuthError detects RapidAPI hard failures", () => {
+  assert.equal(isBondsRapidApiQuotaOrAuthError("TradingView US10Y HTTP 429: quota"), true);
+  assert.equal(isBondsRapidApiQuotaOrAuthError("TradingView US10Y HTTP 403: forbidden"), true);
+  assert.equal(isBondsRapidApiQuotaOrAuthError("TradingView US10Y HTTP 401: unauthorized"), true);
+  assert.equal(isBondsRapidApiQuotaOrAuthError("TradingView US10Y HTTP 500: boom"), false);
+  assert.equal(isBondsRapidApiQuotaOrAuthError("timeout"), false);
 });
