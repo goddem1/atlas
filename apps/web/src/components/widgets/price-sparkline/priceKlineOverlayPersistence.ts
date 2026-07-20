@@ -46,6 +46,7 @@ type OverlayStoreInternal = {
   removeInstance: (...args: unknown[]) => unknown;
   override: (...args: unknown[]) => unknown;
   getInstances: (paneId?: string) => OverlayInstance[];
+  getProgressInstanceInfo: () => { instance: OverlayInstance; paneId: string } | null;
 };
 
 type ChartInternal = Chart & {
@@ -66,12 +67,32 @@ function isChartReady(chart: Chart): boolean {
   return chart.getDataList().length > 0;
 }
 
+/** Инструменты, которым достаточно одной точки (totalStep === 2 в klinecharts). */
+const SINGLE_POINT_OVERLAY_NAMES = new Set([
+  "horizontalStraightLine",
+  "verticalStraightLine",
+  "priceLine",
+]);
+
+function minPointsForOverlayName(name: string): number {
+  return SINGLE_POINT_OVERLAY_NAMES.has(name) ? 1 : 2;
+}
+
 function isCompleteOverlay(overlay: OverlayInstance): boolean {
   if (overlay.currentStep !== undefined && overlay.currentStep !== OVERLAY_DRAW_STEP_FINISHED) {
     return false;
   }
   if (!overlay.points?.length) return false;
+  if (overlay.points.length < minPointsForOverlayName(overlay.name)) return false;
   return overlay.points.some((point) => Number.isFinite(point.value));
+}
+
+/** Сбрасывает незавершённую отрисовку (конец фигуры «липнет» к курсору). */
+export function cancelInProgressKlineOverlay(chart: Chart): void {
+  const store = getOverlayStore(chart);
+  const progress = store?.getProgressInstanceInfo?.() ?? null;
+  if (!progress?.instance?.id) return;
+  chart.removeOverlay({ id: progress.instance.id });
 }
 
 /** Resolve overlay point to a stable timestamp+value pair for persist/restore. */
@@ -160,7 +181,7 @@ function serializeOverlay(chart: Chart, overlay: OverlayInstance): StoredKlineOv
     .map((point) => canonicalizeOverlayPoint(chart, point))
     .filter((point): point is KlineStoredOverlayPoint => point != null);
 
-  if (points.length === 0) return null;
+  if (points.length < minPointsForOverlayName(overlay.name)) return null;
 
   const stored: StoredKlineOverlay = {
     id: overlay.id,
@@ -230,11 +251,15 @@ export function persistKlineOverlays(
 }
 
 export function restoreKlineOverlaysFromStored(chart: Chart, stored: StoredKlineOverlay[]): boolean {
-  if (stored.length === 0) return true;
+  if (stored.length === 0) {
+    cancelInProgressKlineOverlay(chart);
+    return true;
+  }
 
   const existingIds = new Set(listOverlays(chart).map((overlay) => overlay.id));
   let restoredCount = 0;
   let deferred = false;
+  const store = getOverlayStore(chart);
 
   for (const overlay of stored) {
     if (existingIds.has(overlay.id)) {
@@ -245,6 +270,12 @@ export function restoreKlineOverlaysFromStored(chart: Chart, stored: StoredKline
     const points = prepareOverlayPointsForRestore(chart, overlay.points);
     if (!points) {
       deferred = true;
+      continue;
+    }
+
+    // Неполный набор точек → createOverlay оставит progress-drawing (конец на курсоре).
+    if (points.length < minPointsForOverlayName(overlay.name)) {
+      restoredCount += 1;
       continue;
     }
 
@@ -262,8 +293,18 @@ export function restoreKlineOverlaysFromStored(chart: Chart, stored: StoredKline
       },
       overlay.paneId || CANDLE_PANE_ID,
     );
+
+    // Если klinecharts всё же оставил фигуру в режиме рисования — убираем.
+    const progress = store?.getProgressInstanceInfo?.() ?? null;
+    if (progress?.instance?.id === overlay.id) {
+      chart.removeOverlay({ id: overlay.id });
+    } else {
+      existingIds.add(overlay.id);
+    }
     restoredCount += 1;
   }
+
+  cancelInProgressKlineOverlay(chart);
 
   // All overlays placed (or already present) — nothing left to wait for.
   return !deferred && restoredCount >= stored.length;
@@ -375,9 +416,12 @@ export function attachKlineOverlayPersistence(params: {
     restored = true;
     pendingStored = null;
     readyToPersist = true;
-    syncGlobalOverlayDrawMode(chart!);
-    if (isKlineOverlaysLocked()) {
-      syncKlineOverlaysLock(chart!);
+    if (chart) {
+      cancelInProgressKlineOverlay(chart);
+      syncGlobalOverlayDrawMode(chart);
+      if (isKlineOverlaysLocked()) {
+        syncKlineOverlaysLock(chart);
+      }
     }
     if (overlays.length > 0) {
       sawOverlaysThisSession = true;
@@ -388,14 +432,17 @@ export function attachKlineOverlayPersistence(params: {
   const applyPendingRestore = () => {
     if (disposed || restored || !chart || !isChartReady(chart) || pendingStored == null) return;
 
-    const filtered = filterOverlaysForChart(chart, pendingStored);
-    const droppedForeign = filtered.length !== pendingStored.length;
+    const scaleFiltered = filterOverlaysForChart(chart, pendingStored);
+    const filtered = scaleFiltered.filter(
+      (overlay) => overlay.points.length >= minPointsForOverlayName(overlay.name),
+    );
+    const droppedJunk = filtered.length !== pendingStored.length;
     const ok = restoreKlineOverlaysFromStored(chart, filtered);
     if (!ok) return;
 
     markRestored(filtered);
-    // Перезаписать API, если раньше сюда утекли линии с другой монеты.
-    if (droppedForeign) {
+    // Убрать из API чужие/битые фигуры, из‑за которых конец «липнет» к мыши.
+    if (droppedJunk) {
       storage.save(filtered, { immediate: true });
     }
   };
