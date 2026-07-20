@@ -286,6 +286,11 @@ export function PriceSparklineKlineModal({
                 activePair = active.pair;
                 void attachPersistenceForPair(active.pair);
               },
+              onPricePrecision: (precision) => {
+                if (cancelled) return;
+                const liveChart = resolveKlineChartFromProContainer(el);
+                liveChart?.setPriceVolumePrecision(precision, 0);
+              },
             }),
           });
           chartRef.current = chart;

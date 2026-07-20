@@ -7,7 +7,7 @@ import {
   isBtcTestKlinePair,
   tickBtcTestCandleRow,
 } from "./btcKlineTestSeries";
-import { KLINE_CHART_HISTORY_DAYS, candleRowsToKlineBars } from "./candleKlineUtils";
+import { KLINE_CHART_HISTORY_DAYS, candleRowsToKlineBars, inferPricePrecisionFromBars } from "./candleKlineUtils";
 
 const CANDLES_POLL_MS = 30 * 1000;
 
@@ -98,6 +98,7 @@ export function createAtlasCryptoDatafeed(options: {
   cryptocurrencies: CryptocurrencyListItem[];
   initial: KlineActiveSymbol;
   onActiveSymbolChange?: (active: KlineActiveSymbol) => void;
+  onPricePrecision?: (precision: number) => void;
 }): Datafeed {
   const catalog = buildKlineCatalog(options.cryptocurrencies, options.initial);
   const barsCache = new Map<string, KLineData[]>();
@@ -106,6 +107,15 @@ export function createAtlasCryptoDatafeed(options: {
   const historyFullyServed = new Set<string>();
   let pollId: number | null = null;
   let lastNotifiedPair = "";
+  let lastPrecision = -1;
+
+  const notifyPricePrecision = (bars: KLineData[]) => {
+    if (!options.onPricePrecision || bars.length === 0) return;
+    const precision = inferPricePrecisionFromBars(bars);
+    if (precision === lastPrecision) return;
+    lastPrecision = precision;
+    options.onPricePrecision(precision);
+  };
 
   const notifyActiveSymbol = (symbol: SymbolInfo) => {
     const entry = resolveCatalogEntry(symbol, catalog);
@@ -114,6 +124,7 @@ export function createAtlasCryptoDatafeed(options: {
     // Смена символа → Pro пересоздаёт серию; разрешаем снова отдать полный history.
     historyFullyServed.delete(entry.pair);
     lastNotifiedPair = entry.pair;
+    lastPrecision = -1;
     options.onActiveSymbolChange?.({
       symbol: entry.crypto.symbol,
       pair: entry.pair,
@@ -123,7 +134,10 @@ export function createAtlasCryptoDatafeed(options: {
 
   const loadBars = async (pair: string): Promise<KLineData[]> => {
     const cached = barsCache.get(pair);
-    if (cached) return cached;
+    if (cached) {
+      notifyPricePrecision(cached);
+      return cached;
+    }
 
     const pending = barsPromises.get(pair);
     if (pending) return pending;
@@ -132,12 +146,14 @@ export function createAtlasCryptoDatafeed(options: {
       if (isBtcTestKlinePair(pair)) {
         const bars = candleRowsToKlineBars(generateBtcTestCandleRows(KLINE_CHART_HISTORY_DAYS));
         barsCache.set(pair, bars);
+        notifyPricePrecision(bars);
         return bars;
       }
 
       const rows = await fetchCandles(pair, KLINE_CHART_HISTORY_DAYS);
       const bars = candleRowsToKlineBars(rows);
       barsCache.set(pair, bars);
+      notifyPricePrecision(bars);
       return bars;
     })().finally(() => {
       barsPromises.delete(pair);
