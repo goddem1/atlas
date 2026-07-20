@@ -487,7 +487,6 @@ export function attachKlineOverlayPersistence(params: {
   let restored = false;
   let pendingStored: StoredKlineOverlay[] | null = null;
   let loadStarted = false;
-  let sawOverlaysThisSession = false;
   let readyToPersist = false;
   let suppressSave = false;
   let saveTimer: number | null = null;
@@ -501,7 +500,9 @@ export function attachKlineOverlayPersistence(params: {
   const readLastSnapshot = (): StoredKlineOverlay[] => {
     if (!lastSnapshot) return [];
     try {
-      return normalizeStoredOverlays(JSON.parse(lastSnapshot) as unknown);
+      const parsed: unknown = JSON.parse(lastSnapshot);
+      if (!Array.isArray(parsed)) return [];
+      return normalizeStoredOverlays(parsed as KlineStoredOverlay[]);
     } catch {
       return [];
     }
@@ -513,9 +514,6 @@ export function attachKlineOverlayPersistence(params: {
     saveTimer = window.setTimeout(() => {
       if (!readyToPersist || suppressSave || !chart || !isChartReady(chart)) return;
       const overlays = collectKlineOverlays(chart);
-      if (overlays.length > 0) {
-        sawOverlaysThisSession = true;
-      }
       // Пустой collect при смене монеты/clearAll не должен затирать API.
       if (overlays.length === 0 && !allowClear) {
         return;
@@ -546,9 +544,6 @@ export function attachKlineOverlayPersistence(params: {
       if (isKlineOverlaysLocked()) {
         syncKlineOverlaysLock(chart);
       }
-    }
-    if (overlays.length > 0) {
-      sawOverlaysThisSession = true;
     }
     lastSnapshot = JSON.stringify(overlays);
   };
