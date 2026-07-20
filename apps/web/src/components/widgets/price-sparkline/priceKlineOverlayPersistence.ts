@@ -83,16 +83,32 @@ function isCompleteOverlay(overlay: OverlayInstance): boolean {
     return false;
   }
   if (!overlay.points?.length) return false;
-  if (overlay.points.length < minPointsForOverlayName(overlay.name)) return false;
-  return overlay.points.some((point) => Number.isFinite(point.value));
+  const valued = overlay.points.filter((point) => Number.isFinite(point.value));
+  if (valued.length < minPointsForOverlayName(overlay.name)) return false;
+  return true;
 }
 
-/** Сбрасывает незавершённую отрисовку (конец фигуры «липнет» к курсору). */
+/**
+ * Сбрасывает только реально незавершённую отрисовку (мало точек).
+ * Готовые фигуры с достаточным числом точек не трогаем — иначе отрезок «пропадает».
+ */
 export function cancelInProgressKlineOverlay(chart: Chart): void {
   const store = getOverlayStore(chart);
   const progress = store?.getProgressInstanceInfo?.() ?? null;
-  if (!progress?.instance?.id) return;
-  chart.removeOverlay({ id: progress.instance.id });
+  const instance = progress?.instance;
+  if (!instance?.id) return;
+
+  const pointCount = instance.points?.filter((point) => Number.isFinite(point.value)).length ?? 0;
+  if (pointCount >= minPointsForOverlayName(instance.name)) {
+    const forceComplete = (instance as OverlayInstance & { forceComplete?: () => void }).forceComplete;
+    if (typeof forceComplete === "function") {
+      forceComplete.call(instance);
+      store?.progressInstanceComplete?.();
+      return;
+    }
+  }
+
+  chart.removeOverlay({ id: instance.id });
 }
 
 /** Resolve overlay point to a stable timestamp+value pair for persist/restore. */
@@ -100,19 +116,29 @@ function canonicalizeOverlayPoint(
   chart: Chart,
   point: Partial<Point> | KlineStoredOverlayPoint,
 ): KlineStoredOverlayPoint | null {
-  if (!Number.isFinite(point.value)) return null;
-  const value = Number(point.value);
+  const valueRaw = typeof point.value === "number" ? point.value : Number(point.value);
+  if (!Number.isFinite(valueRaw)) return null;
+  const value = valueRaw;
   const dataList = chart.getDataList();
 
-  let timestamp =
-    typeof point.timestamp === "number" && Number.isFinite(point.timestamp)
-      ? point.timestamp
-      : undefined;
+  let timestamp: number | undefined;
+  const tsRaw = point.timestamp;
+  if (typeof tsRaw === "number" && Number.isFinite(tsRaw)) {
+    timestamp = tsRaw;
+  } else if (tsRaw != null && tsRaw !== "") {
+    const parsed = Number(tsRaw);
+    if (Number.isFinite(parsed)) timestamp = parsed;
+  }
 
-  if (timestamp == null && typeof point.dataIndex === "number" && Number.isFinite(point.dataIndex)) {
-    const bar = dataList[Math.round(point.dataIndex)];
-    if (bar && Number.isFinite(bar.timestamp)) {
-      timestamp = bar.timestamp;
+  if (timestamp == null) {
+    const indexRaw =
+      typeof point.dataIndex === "number" ? point.dataIndex : Number(point.dataIndex);
+    if (Number.isFinite(indexRaw) && dataList.length > 0) {
+      const idx = Math.max(0, Math.min(dataList.length - 1, Math.round(indexRaw)));
+      const bar = dataList[idx];
+      if (bar && Number.isFinite(bar.timestamp)) {
+        timestamp = bar.timestamp;
+      }
     }
   }
 
@@ -122,17 +148,40 @@ function canonicalizeOverlayPoint(
   return { timestamp, value };
 }
 
+function canonicalizeOverlayPoints(
+  chart: Chart,
+  points: Array<Partial<Point> | KlineStoredOverlayPoint>,
+): KlineStoredOverlayPoint[] {
+  const result: KlineStoredOverlayPoint[] = [];
+  for (let i = 0; i < points.length; i++) {
+    const canonical = canonicalizeOverlayPoint(chart, points[i]!);
+    if (canonical) {
+      result.push(canonical);
+      continue;
+    }
+
+    // Fallback: точка с ценой, но без времени — якорим к соседней/ближайшей свече.
+    const valueRaw = Number(points[i]?.value);
+    if (!Number.isFinite(valueRaw)) continue;
+    const neighbor = result[result.length - 1];
+    const dataList = chart.getDataList();
+    const fallbackTs =
+      neighbor?.timestamp ??
+      (dataList.length > 0 ? dataList[Math.min(i, dataList.length - 1)]!.timestamp : undefined);
+    if (fallbackTs == null || !Number.isFinite(fallbackTs)) continue;
+    result.push({ timestamp: fallbackTs, value: valueRaw });
+  }
+  return result;
+}
+
 function prepareOverlayPointsForRestore(
   chart: Chart,
   points: KlineStoredOverlayPoint[],
 ): Array<Pick<KlineStoredOverlayPoint, "timestamp" | "value">> | null {
-  const prepared: Array<Pick<KlineStoredOverlayPoint, "timestamp" | "value">> = [];
-  for (const point of points) {
-    const canonical = canonicalizeOverlayPoint(chart, point);
-    if (!canonical || canonical.timestamp == null) return null;
-    // Pass only timestamp+value so klinecharts never prefers a stale dataIndex.
-    prepared.push({ timestamp: canonical.timestamp, value: canonical.value });
-  }
+  const prepared = canonicalizeOverlayPoints(chart, points).map((point) => ({
+    timestamp: point.timestamp!,
+    value: point.value!,
+  }));
   return prepared.length > 0 ? prepared : null;
 }
 
@@ -177,9 +226,7 @@ function filterOverlaysForChart(chart: Chart, stored: StoredKlineOverlay[]): Sto
 }
 
 function serializeOverlay(chart: Chart, overlay: OverlayInstance): StoredKlineOverlay | null {
-  const points = overlay.points
-    .map((point) => canonicalizeOverlayPoint(chart, point))
-    .filter((point): point is KlineStoredOverlayPoint => point != null);
+  const points = canonicalizeOverlayPoints(chart, overlay.points);
 
   if (points.length < minPointsForOverlayName(overlay.name)) return null;
 
@@ -294,13 +341,23 @@ export function restoreKlineOverlaysFromStored(chart: Chart, stored: StoredKline
       overlay.paneId || CANDLE_PANE_ID,
     );
 
-    // Если klinecharts всё же оставил фигуру в режиме рисования — убираем.
+    // Если фигура всё ещё в progress — дожимаем, а не удаляем (иначе отрезок пропадает).
     const progress = store?.getProgressInstanceInfo?.() ?? null;
     if (progress?.instance?.id === overlay.id) {
-      chart.removeOverlay({ id: overlay.id });
-    } else {
-      existingIds.add(overlay.id);
+      const forceComplete = (
+        progress.instance as OverlayInstance & { forceComplete?: () => void }
+      ).forceComplete;
+      if (typeof forceComplete === "function") {
+        forceComplete.call(progress.instance);
+        store?.progressInstanceComplete?.();
+      } else {
+        chart.removeOverlay({ id: overlay.id });
+        restoredCount += 1;
+        continue;
+      }
     }
+
+    existingIds.add(overlay.id);
     restoredCount += 1;
   }
 
