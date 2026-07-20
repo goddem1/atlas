@@ -149,13 +149,8 @@ export function PriceSparklineKlineModal({
 
   const selectCoin = useCallback((crypto: CryptocurrencyListItem) => {
     setActiveSymbol(crypto.symbol);
-    const el = containerRef.current;
-    const liveChart = el ? resolveKlineChartFromProContainer(el) : null;
-    // Сразу чистим поле до setSymbol — иначе линии прошлой монеты
-    // остаются на экране, пока datafeed не сообщит о смене пары.
-    if (liveChart) {
-      clearAllKlineOverlays(liveChart);
-    }
+    // Не чистим оверлеи здесь: flush текущей пары делает attachPersistenceForPair
+    // до clear. Иначе пустой collect уходит в API и затирает линии.
     chartRef.current?.setSymbol(
       buildKlineSymbolInfo({
         symbol: crypto.symbol,
@@ -185,7 +180,7 @@ export function PriceSparklineKlineModal({
     let cancelled = false;
     let rafId = 0;
     let themeObserver: MutationObserver | null = null;
-    let detachOverlayPersistence: (() => void) | null = null;
+    let detachOverlayPersistence: (() => void | Promise<void>) | null = null;
     let detachOverlayContextMenu: (() => void) | null = null;
     let detachIndicatorPersistence: (() => void) | null = null;
     let detachCandleTypeControl: (() => void) | null = null;
@@ -226,8 +221,13 @@ export function PriceSparklineKlineModal({
           const generation = ++persistenceGeneration;
           // Сначала flush текущей пары, затем сразу чистим поле —
           // иначе линии прошлой монеты остаются на том же chart instance.
-          detachOverlayPersistence?.();
+          const prevDetach = detachOverlayPersistence;
+          detachOverlayPersistence = null;
+          if (prevDetach) {
+            await Promise.resolve(prevDetach());
+          }
           detachIndicatorPersistence?.();
+          detachIndicatorPersistence = null;
           const liveChartBefore = resolveKlineChartFromProContainer(el);
           if (liveChartBefore) {
             clearAllKlineOverlays(liveChartBefore);
