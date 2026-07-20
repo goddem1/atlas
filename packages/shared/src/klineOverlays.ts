@@ -2,6 +2,12 @@ export interface KlineStoredOverlayPoint {
   timestamp?: number;
   value?: number;
   dataIndex?: number;
+  /**
+   * Смещение вправо от последнего бара (dataIndex - lastIndex).
+   * Нужно для точек в пустой зоне справа: timestamp там нет,
+   * а timestampToDataIndex иначе притянет к последнему бару.
+   */
+  beyondEnd?: number;
 }
 
 export type KlineOverlayLabelAlong = "start" | "center" | "end";
@@ -52,7 +58,13 @@ function isOverlayPoint(value: unknown): value is KlineStoredOverlayPoint {
   if (point.timestamp !== undefined && !Number.isFinite(point.timestamp)) return false;
   if (point.value !== undefined && !Number.isFinite(point.value)) return false;
   if (point.dataIndex !== undefined && !Number.isFinite(point.dataIndex)) return false;
-  return point.value !== undefined || point.timestamp !== undefined || point.dataIndex !== undefined;
+  if (point.beyondEnd !== undefined && !Number.isFinite(point.beyondEnd)) return false;
+  return (
+    point.value !== undefined ||
+    point.timestamp !== undefined ||
+    point.dataIndex !== undefined ||
+    point.beyondEnd !== undefined
+  );
 }
 
 function isLabelAlong(value: unknown): value is KlineOverlayLabelAlong {

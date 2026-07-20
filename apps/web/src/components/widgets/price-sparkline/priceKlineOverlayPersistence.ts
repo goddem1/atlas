@@ -111,7 +111,7 @@ export function cancelInProgressKlineOverlay(chart: Chart): void {
   chart.removeOverlay({ id: instance.id });
 }
 
-/** Resolve overlay point to a stable timestamp+value pair for persist/restore. */
+/** Resolve overlay point for persist — keeps points in the empty right area. */
 function canonicalizeOverlayPoint(
   chart: Chart,
   point: Partial<Point> | KlineStoredOverlayPoint,
@@ -120,6 +120,19 @@ function canonicalizeOverlayPoint(
   if (!Number.isFinite(valueRaw)) return null;
   const value = valueRaw;
   const dataList = chart.getDataList();
+  const lastIndex = dataList.length - 1;
+
+  const beyondEndRaw = (point as KlineStoredOverlayPoint).beyondEnd;
+  if (typeof beyondEndRaw === "number" && Number.isFinite(beyondEndRaw) && beyondEndRaw > 0) {
+    return { value, beyondEnd: beyondEndRaw };
+  }
+
+  let dataIndex: number | undefined;
+  const indexRaw =
+    typeof point.dataIndex === "number" ? point.dataIndex : Number(point.dataIndex);
+  if (Number.isFinite(indexRaw)) {
+    dataIndex = indexRaw;
+  }
 
   let timestamp: number | undefined;
   const tsRaw = point.timestamp as unknown;
@@ -130,22 +143,31 @@ function canonicalizeOverlayPoint(
     if (Number.isFinite(parsed)) timestamp = parsed;
   }
 
-  if (timestamp == null) {
-    const indexRaw =
-      typeof point.dataIndex === "number" ? point.dataIndex : Number(point.dataIndex);
-    if (Number.isFinite(indexRaw) && dataList.length > 0) {
-      const idx = Math.max(0, Math.min(dataList.length - 1, Math.round(indexRaw)));
-      const bar = dataList[idx];
+  // Точка справа от последнего бара: timestamp нет, dataIndex > lastIndex.
+  // Нельзя clamp'ить к последнему бару — иначе отрезок «съезжает».
+  if (dataList.length > 0 && dataIndex != null && dataIndex > lastIndex) {
+    return { value, beyondEnd: dataIndex - lastIndex };
+  }
+
+  if (timestamp == null && dataIndex != null && dataList.length > 0) {
+    if (dataIndex >= 0 && dataIndex <= lastIndex) {
+      const bar = dataList[Math.round(dataIndex)];
       if (bar && Number.isFinite(bar.timestamp)) {
         timestamp = bar.timestamp;
       }
     }
   }
 
-  // No time anchor → cannot safely restore after reopen.
-  if (timestamp == null) return null;
+  if (timestamp != null) {
+    return { timestamp, value };
+  }
 
-  return { timestamp, value };
+  // Уже сохранённый beyondEnd / dataIndex без value-path выше
+  if (dataIndex != null && Number.isFinite(dataIndex)) {
+    return { value, dataIndex };
+  }
+
+  return null;
 }
 
 function canonicalizeOverlayPoints(
@@ -153,35 +175,53 @@ function canonicalizeOverlayPoints(
   points: Array<Partial<Point> | KlineStoredOverlayPoint>,
 ): KlineStoredOverlayPoint[] {
   const result: KlineStoredOverlayPoint[] = [];
-  for (let i = 0; i < points.length; i++) {
-    const canonical = canonicalizeOverlayPoint(chart, points[i]!);
-    if (canonical) {
-      result.push(canonical);
-      continue;
-    }
-
-    // Fallback: точка с ценой, но без времени — якорим к соседней/ближайшей свече.
-    const valueRaw = Number(points[i]?.value);
-    if (!Number.isFinite(valueRaw)) continue;
-    const neighbor = result[result.length - 1];
-    const dataList = chart.getDataList();
-    const fallbackTs =
-      neighbor?.timestamp ??
-      (dataList.length > 0 ? dataList[Math.min(i, dataList.length - 1)]!.timestamp : undefined);
-    if (fallbackTs == null || !Number.isFinite(fallbackTs)) continue;
-    result.push({ timestamp: fallbackTs, value: valueRaw });
+  for (const point of points) {
+    const canonical = canonicalizeOverlayPoint(chart, point);
+    if (canonical) result.push(canonical);
   }
   return result;
 }
 
+type RestoreOverlayPoint = {
+  value: number;
+  timestamp?: number;
+  dataIndex?: number;
+};
+
 function prepareOverlayPointsForRestore(
   chart: Chart,
   points: KlineStoredOverlayPoint[],
-): Array<Pick<KlineStoredOverlayPoint, "timestamp" | "value">> | null {
-  const prepared = canonicalizeOverlayPoints(chart, points).map((point) => ({
-    timestamp: point.timestamp!,
-    value: point.value!,
-  }));
+): RestoreOverlayPoint[] | null {
+  const dataList = chart.getDataList();
+  const lastIndex = dataList.length - 1;
+  const prepared: RestoreOverlayPoint[] = [];
+
+  for (const point of points) {
+    const value = point.value;
+    if (typeof value !== "number" || !Number.isFinite(value)) continue;
+
+    const beyondEnd =
+      typeof point.beyondEnd === "number" && Number.isFinite(point.beyondEnd)
+        ? point.beyondEnd
+        : undefined;
+
+    if (beyondEnd != null && beyondEnd > 0 && lastIndex >= 0) {
+      // Только dataIndex — если передать timestamp, klinecharts притянет к последнему бару.
+      prepared.push({ value, dataIndex: lastIndex + beyondEnd });
+      continue;
+    }
+
+    if (typeof point.timestamp === "number" && Number.isFinite(point.timestamp)) {
+      prepared.push({ value, timestamp: point.timestamp });
+      continue;
+    }
+
+    if (typeof point.dataIndex === "number" && Number.isFinite(point.dataIndex)) {
+      prepared.push({ value, dataIndex: point.dataIndex });
+      continue;
+    }
+  }
+
   return prepared.length > 0 ? prepared : null;
 }
 
