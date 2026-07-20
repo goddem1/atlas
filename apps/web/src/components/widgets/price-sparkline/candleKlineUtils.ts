@@ -10,20 +10,26 @@ export const KLINE_CHART_HISTORY_DAYS = Math.min(
 );
 
 export function candleRowsToKlineBars(rows: CandleApiRow[]): KLineData[] {
-  return rows
-    .map((row) => ({
-      timestamp: new Date(row.openTime).getTime(),
-      open: Number.parseFloat(row.open),
-      high: Number.parseFloat(row.high),
-      low: Number.parseFloat(row.low),
-      close: Number.parseFloat(row.close),
-      volume: Number.parseFloat(row.volume),
-    }))
-    .filter(
-      (bar) =>
-        Number.isFinite(bar.timestamp) &&
-        [bar.open, bar.high, bar.low, bar.close].every(Number.isFinite),
-    );
+  const byTimestamp = new Map<number, KLineData>();
+
+  for (const row of rows) {
+    const timestamp = new Date(row.openTime).getTime();
+    const open = Number.parseFloat(row.open);
+    const high = Number.parseFloat(row.high);
+    const low = Number.parseFloat(row.low);
+    const close = Number.parseFloat(row.close);
+    const volume = Number.parseFloat(row.volume);
+    if (
+      !Number.isFinite(timestamp) ||
+      ![open, high, low, close].every(Number.isFinite)
+    ) {
+      continue;
+    }
+    // Последняя строка с тем же openTime побеждает (live поверх history).
+    byTimestamp.set(timestamp, { timestamp, open, high, low, close, volume });
+  }
+
+  return [...byTimestamp.values()].sort((a, b) => a.timestamp - b.timestamp);
 }
 
 export function inferPricePrecision(price: number): number {

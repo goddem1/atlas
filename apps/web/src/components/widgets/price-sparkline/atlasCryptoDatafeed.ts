@@ -102,6 +102,8 @@ export function createAtlasCryptoDatafeed(options: {
   const catalog = buildKlineCatalog(options.cryptocurrencies, options.initial);
   const barsCache = new Map<string, KLineData[]>();
   const barsPromises = new Map<string, Promise<KLineData[]>>();
+  /** Пары, для которых полная история уже отдана в chart (повтор = дубли на шкале). */
+  const historyFullyServed = new Set<string>();
   let pollId: number | null = null;
   let lastNotifiedPair = "";
 
@@ -109,6 +111,8 @@ export function createAtlasCryptoDatafeed(options: {
     const entry = resolveCatalogEntry(symbol, catalog);
     if (!entry) return;
     if (entry.pair === lastNotifiedPair) return;
+    // Смена символа → Pro пересоздаёт серию; разрешаем снова отдать полный history.
+    historyFullyServed.delete(entry.pair);
     lastNotifiedPair = entry.pair;
     options.onActiveSymbolChange?.({
       symbol: entry.crypto.symbol,
@@ -171,14 +175,20 @@ export function createAtlasCryptoDatafeed(options: {
     async getHistoryKLineData(symbol, _period, from, to) {
       notifyActiveSymbol(symbol);
       const pair = pairForSymbol(symbol, catalog);
-      const bars = await loadBars(pair);
-      if (bars.length === 0) return bars;
 
-      // Always prefer the full loaded history for the symbol.
-      // Filtering to Pro's initial ~500-bar window drops older timestamps that
-      // overlays (segments/rays) still reference after reopen → drawings jump.
+      // Помечаем до await, иначе параллельные вызовы Pro успеют оба отдать полную серию.
+      if (historyFullyServed.has(pair)) {
+        return [];
+      }
+      historyFullyServed.add(pair);
+
+      const bars = await loadBars(pair);
       void from;
       void to;
+      if (bars.length === 0) {
+        historyFullyServed.delete(pair);
+        return bars;
+      }
       return bars;
     },
 
