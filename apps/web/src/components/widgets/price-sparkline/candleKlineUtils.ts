@@ -36,9 +36,23 @@ export function inferPricePrecision(price: number): number {
   if (!Number.isFinite(price) || price <= 0) return 2;
   if (price >= 1000) return 2;
   if (price >= 1) return 2;
-  if (price >= 0.01) return 4;
-  if (price >= 0.0001) return 6;
-  return 8;
+
+  // Держим ~4–5 значащих цифр для мелких монет (PEPE и т.п.).
+  const order = Math.floor(Math.log10(Math.abs(price)));
+  return Math.max(2, Math.min(12, 4 - order));
+}
+
+/** Точность по последним барам серии (берём минимум close/low/high). */
+export function inferPricePrecisionFromBars(bars: Array<{ close: number; high: number; low: number }>): number {
+  if (bars.length === 0) return 2;
+  const sample = bars.slice(-40);
+  let precision = 2;
+  for (const bar of sample) {
+    for (const price of [bar.close, bar.high, bar.low]) {
+      precision = Math.max(precision, inferPricePrecision(price));
+    }
+  }
+  return precision;
 }
 
 export function mergeLastKlineBar(bars: KLineData[], last: KLineData): KLineData[] {
