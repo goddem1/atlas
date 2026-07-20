@@ -122,10 +122,10 @@ function canonicalizeOverlayPoint(
   const dataList = chart.getDataList();
 
   let timestamp: number | undefined;
-  const tsRaw = point.timestamp;
+  const tsRaw = point.timestamp as unknown;
   if (typeof tsRaw === "number" && Number.isFinite(tsRaw)) {
     timestamp = tsRaw;
-  } else if (tsRaw != null && tsRaw !== "") {
+  } else if (typeof tsRaw === "string" && tsRaw.trim() !== "") {
     const parsed = Number(tsRaw);
     if (Number.isFinite(parsed)) timestamp = parsed;
   }
