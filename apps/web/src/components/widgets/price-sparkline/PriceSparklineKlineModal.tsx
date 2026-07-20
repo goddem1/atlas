@@ -149,6 +149,13 @@ export function PriceSparklineKlineModal({
 
   const selectCoin = useCallback((crypto: CryptocurrencyListItem) => {
     setActiveSymbol(crypto.symbol);
+    const el = containerRef.current;
+    const liveChart = el ? resolveKlineChartFromProContainer(el) : null;
+    // Сразу чистим поле до setSymbol — иначе линии прошлой монеты
+    // остаются на экране, пока datafeed не сообщит о смене пары.
+    if (liveChart) {
+      clearAllKlineOverlays(liveChart);
+    }
     chartRef.current?.setSymbol(
       buildKlineSymbolInfo({
         symbol: crypto.symbol,
@@ -213,8 +220,10 @@ export function PriceSparklineKlineModal({
 
         const { mainIndicators, subIndicators } = initialIndicators;
         let activePair = pair;
+        let persistenceGeneration = 0;
 
         const attachPersistenceForPair = async (nextPair: string) => {
+          const generation = ++persistenceGeneration;
           // Сначала flush текущей пары, затем сразу чистим поле —
           // иначе линии прошлой монеты остаются на том же chart instance.
           detachOverlayPersistence?.();
@@ -225,7 +234,7 @@ export function PriceSparklineKlineModal({
           }
 
           const nextInitial = await resolveInitialKlineIndicators(nextPair, isLoggedIn);
-          if (cancelled) return;
+          if (cancelled || generation !== persistenceGeneration) return;
           const storedForPair = nextInitial.stored ?? getDefaultStoredKlineIndicators();
           const liveChart = resolveKlineChartFromProContainer(el);
           if (liveChart) {
@@ -237,6 +246,7 @@ export function PriceSparklineKlineModal({
               // ignore sync errors; persistence hook still attaches
             }
           }
+          if (cancelled || generation !== persistenceGeneration) return;
           detachOverlayPersistence = attachKlineOverlayPersistence({
             container: el,
             pair: nextPair,

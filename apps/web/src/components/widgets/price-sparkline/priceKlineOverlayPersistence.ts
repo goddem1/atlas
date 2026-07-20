@@ -115,6 +115,46 @@ function prepareOverlayPointsForRestore(
   return prepared.length > 0 ? prepared : null;
 }
 
+/** Отсекает линии с чужой шкалы цен (например BTC 74k на PEPE). */
+export function overlayFitsSymbolPriceScale(
+  points: Array<Pick<KlineStoredOverlayPoint, "value">>,
+  closes: number[],
+): boolean {
+  if (closes.length === 0) return true;
+
+  let histMin = Infinity;
+  let histMax = -Infinity;
+  for (const close of closes) {
+    if (!Number.isFinite(close)) continue;
+    if (close < histMin) histMin = close;
+    if (close > histMax) histMax = close;
+  }
+  if (!Number.isFinite(histMin) || !Number.isFinite(histMax) || histMin <= 0) {
+    return true;
+  }
+
+  const lo = histMin / 100;
+  const hi = histMax * 100;
+
+  for (const point of points) {
+    const value = point.value;
+    if (typeof value !== "number" || !Number.isFinite(value)) continue;
+    if (value < lo || value > hi) return false;
+  }
+  return true;
+}
+
+function filterOverlaysForChart(chart: Chart, stored: StoredKlineOverlay[]): StoredKlineOverlay[] {
+  const closes = chart
+    .getDataList()
+    .map((bar) => bar.close)
+    .filter((close): close is number => typeof close === "number" && Number.isFinite(close));
+
+  if (closes.length === 0) return stored;
+
+  return stored.filter((overlay) => overlayFitsSymbolPriceScale(overlay.points, closes));
+}
+
 function serializeOverlay(chart: Chart, overlay: OverlayInstance): StoredKlineOverlay | null {
   const points = overlay.points
     .map((point) => canonicalizeOverlayPoint(chart, point))
@@ -177,9 +217,8 @@ export function collectKlineOverlays(chart: Chart | null): StoredKlineOverlay[] 
 }
 
 export function clearAllKlineOverlays(chart: Chart): void {
-  for (const overlay of listOverlays(chart)) {
-    chart.removeOverlay({ id: overlay.id });
-  }
+  // Без аргументов klinecharts удаляет все инстансы и progress-drawing.
+  chart.removeOverlay();
 }
 
 export function persistKlineOverlays(
@@ -304,6 +343,7 @@ export function attachKlineOverlayPersistence(params: {
   let pendingStored: StoredKlineOverlay[] | null = null;
   let loadStarted = false;
   let sawOverlaysThisSession = false;
+  let readyToPersist = false;
   let saveTimer: number | null = null;
   let pollTimer: number | null = null;
   let restoreTimer: number | null = null;
@@ -313,9 +353,10 @@ export function attachKlineOverlayPersistence(params: {
   let lastSnapshot = "";
 
   const scheduleSave = (allowClear = false) => {
+    if (!readyToPersist) return;
     if (saveTimer != null) window.clearTimeout(saveTimer);
     saveTimer = window.setTimeout(() => {
-      if (!chart || !isChartReady(chart)) return;
+      if (!readyToPersist || !chart || !isChartReady(chart)) return;
       const overlays = collectKlineOverlays(chart);
       if (overlays.length > 0) {
         sawOverlaysThisSession = true;
@@ -330,21 +371,32 @@ export function attachKlineOverlayPersistence(params: {
     }, 250);
   };
 
-  const applyPendingRestore = () => {
-    if (disposed || restored || !chart || !isChartReady(chart) || pendingStored == null) return;
-    const ok = restoreKlineOverlaysFromStored(chart, pendingStored);
-    if (!ok) return;
-
+  const markRestored = (overlays: StoredKlineOverlay[]) => {
     restored = true;
     pendingStored = null;
-    syncGlobalOverlayDrawMode(chart);
+    readyToPersist = true;
+    syncGlobalOverlayDrawMode(chart!);
     if (isKlineOverlaysLocked()) {
-      syncKlineOverlaysLock(chart);
+      syncKlineOverlaysLock(chart!);
     }
-    const overlays = collectKlineOverlays(chart);
     if (overlays.length > 0) {
       sawOverlaysThisSession = true;
-      lastSnapshot = JSON.stringify(overlays);
+    }
+    lastSnapshot = JSON.stringify(overlays);
+  };
+
+  const applyPendingRestore = () => {
+    if (disposed || restored || !chart || !isChartReady(chart) || pendingStored == null) return;
+
+    const filtered = filterOverlaysForChart(chart, pendingStored);
+    const droppedForeign = filtered.length !== pendingStored.length;
+    const ok = restoreKlineOverlaysFromStored(chart, filtered);
+    if (!ok) return;
+
+    markRestored(filtered);
+    // Перезаписать API, если раньше сюда утекли линии с другой монеты.
+    if (droppedForeign) {
+      storage.save(filtered, { immediate: true });
     }
   };
 
@@ -362,8 +414,7 @@ export function attachKlineOverlayPersistence(params: {
       if (disposed || restored || !chart) return;
       pendingStored = normalizeStoredOverlays(stored);
       if (pendingStored.length === 0) {
-        restored = true;
-        pendingStored = null;
+        markRestored([]);
         return;
       }
       applyPendingRestore();
@@ -431,7 +482,7 @@ export function attachKlineOverlayPersistence(params: {
     unhookStore?.();
     detachDrawModeSync?.();
     detachCtrlMagnetShortcut?.();
-    if (chart && isChartReady(chart)) {
+    if (chart && isChartReady(chart) && readyToPersist) {
       const overlays = collectKlineOverlays(chart);
       if (overlays.length > 0 || sawOverlaysThisSession) {
         void storage.flush(overlays);
