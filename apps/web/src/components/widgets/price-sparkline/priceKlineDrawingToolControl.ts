@@ -7,7 +7,11 @@ import {
   getKlineOverlayDrawModeForNewOverlay,
   setKlineOverlayDrawMode,
 } from "./priceKlineOverlayDrawMode";
-import { resolveKlineChartFromProContainer, clearAllKlineOverlays } from "./priceKlineOverlayPersistence";
+import {
+  resolveKlineChartFromProContainer,
+  clearAllKlineOverlays,
+  requestKlineOverlaysClearSave,
+} from "./priceKlineOverlayPersistence";
 import {
   isKlineOverlaysLocked,
   setKlineOverlaysLocked,
@@ -893,6 +897,7 @@ export function attachKlineDrawingToolControl(params: {
         const klineChart = resolveDrawingChart(container);
         if (!klineChart) return;
         clearAllKlineOverlays(klineChart);
+        requestKlineOverlaysClearSave(container);
       };
 
       liveLock?.addEventListener("click", onLockClick, true);

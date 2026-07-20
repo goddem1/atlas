@@ -329,6 +329,13 @@ export function clearAllKlineOverlays(chart: Chart): void {
   chart.removeOverlay();
 }
 
+/** Явное «удалить все» → persistence должен сохранить [] в API. */
+export const KLINE_OVERLAYS_CLEAR_SAVE_EVENT = "atlas-kline-overlays-clear-save";
+
+export function requestKlineOverlaysClearSave(container: HTMLElement): void {
+  container.dispatchEvent(new CustomEvent(KLINE_OVERLAYS_CLEAR_SAVE_EVENT));
+}
+
 export function persistKlineOverlays(
   _chart: Chart | null,
   _pair: string,
@@ -468,7 +475,7 @@ export function attachKlineOverlayPersistence(params: {
   container: HTMLElement;
   pair: string;
   isLoggedIn: boolean;
-}): () => void {
+}): () => void | Promise<void> {
   const { container, pair, isLoggedIn } = params;
   const storage = createKlineOverlaysPairStore({
     isLoggedIn,
@@ -482,6 +489,7 @@ export function attachKlineOverlayPersistence(params: {
   let loadStarted = false;
   let sawOverlaysThisSession = false;
   let readyToPersist = false;
+  let suppressSave = false;
   let saveTimer: number | null = null;
   let pollTimer: number | null = null;
   let restoreTimer: number | null = null;
@@ -490,16 +498,26 @@ export function attachKlineOverlayPersistence(params: {
   let detachCtrlMagnetShortcut: (() => void) | null = null;
   let lastSnapshot = "";
 
+  const readLastSnapshot = (): StoredKlineOverlay[] => {
+    if (!lastSnapshot) return [];
+    try {
+      return normalizeStoredOverlays(JSON.parse(lastSnapshot) as unknown);
+    } catch {
+      return [];
+    }
+  };
+
   const scheduleSave = (allowClear = false) => {
-    if (!readyToPersist) return;
+    if (!readyToPersist || suppressSave) return;
     if (saveTimer != null) window.clearTimeout(saveTimer);
     saveTimer = window.setTimeout(() => {
-      if (!readyToPersist || !chart || !isChartReady(chart)) return;
+      if (!readyToPersist || suppressSave || !chart || !isChartReady(chart)) return;
       const overlays = collectKlineOverlays(chart);
       if (overlays.length > 0) {
         sawOverlaysThisSession = true;
       }
-      if (overlays.length === 0 && !allowClear && !sawOverlaysThisSession) {
+      // Пустой collect при смене монеты/clearAll не должен затирать API.
+      if (overlays.length === 0 && !allowClear) {
         return;
       }
       const next = JSON.stringify(overlays);
@@ -507,6 +525,15 @@ export function attachKlineOverlayPersistence(params: {
       lastSnapshot = next;
       storage.save(overlays);
     }, 250);
+  };
+
+  const clearChartSilently = (target: Chart) => {
+    suppressSave = true;
+    try {
+      clearAllKlineOverlays(target);
+    } finally {
+      suppressSave = false;
+    }
   };
 
   const markRestored = (overlays: StoredKlineOverlay[]) => {
@@ -571,7 +598,7 @@ export function attachKlineOverlayPersistence(params: {
   const attachToChart = (resolved: Chart) => {
     chart = resolved;
     // Каждая пара — своё поле: не оставляем линии от предыдущего символа.
-    clearAllKlineOverlays(resolved);
+    clearChartSilently(resolved);
     detachDrawModeSync = attachKlineOverlayDrawModeSync(resolved, container);
     detachCtrlMagnetShortcut = attachKlineCtrlMagnetShortcut(resolved, container);
 
@@ -594,13 +621,16 @@ export function attachKlineOverlayPersistence(params: {
     }, 800);
 
     const onPointerUp = () => scheduleSave();
+    const onExplicitClearSave = () => scheduleSave(true);
     container.addEventListener("pointerup", onPointerUp);
     container.addEventListener("mouseup", onPointerUp);
+    container.addEventListener(KLINE_OVERLAYS_CLEAR_SAVE_EVENT, onExplicitClearSave);
 
     detachChartListeners = () => {
       chart?.unsubscribeAction(ActionType.OnDataReady, onDataReady);
       container.removeEventListener("pointerup", onPointerUp);
       container.removeEventListener("mouseup", onPointerUp);
+      container.removeEventListener(KLINE_OVERLAYS_CLEAR_SAVE_EVENT, onExplicitClearSave);
     };
   };
 
@@ -626,13 +656,22 @@ export function attachKlineOverlayPersistence(params: {
     unhookStore?.();
     detachDrawModeSync?.();
     detachCtrlMagnetShortcut?.();
-    if (chart && isChartReady(chart) && readyToPersist) {
-      const overlays = collectKlineOverlays(chart);
-      if (overlays.length > 0 || sawOverlaysThisSession) {
-        void storage.flush(overlays);
+
+    // Flush только непустого снимка. Пустой collect после clearAll не должен
+    // затирать линии текущей пары в API.
+    let flushPromise: Promise<void> = Promise.resolve();
+    if (readyToPersist) {
+      let overlays =
+        chart && isChartReady(chart) ? collectKlineOverlays(chart) : ([] as StoredKlineOverlay[]);
+      if (overlays.length === 0) {
+        overlays = readLastSnapshot();
+      }
+      if (overlays.length > 0) {
+        flushPromise = storage.flush(overlays);
       }
     }
     storage.dispose();
     chart = null;
+    return flushPromise;
   };
 }
