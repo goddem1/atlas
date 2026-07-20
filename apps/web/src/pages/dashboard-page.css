@@ -1,5 +1,8 @@
 /* Цвет текста: --atlas-fg-primary (atlas-glass.css, тема на html). */
 .dashboard-page-root {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
   color: var(--atlas-fg-primary);
 }
 

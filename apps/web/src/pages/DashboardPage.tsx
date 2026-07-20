@@ -102,14 +102,16 @@ const DraggableWidget = memo(function DraggableWidget({
   const handleWatchlistSettingsOpenChange = useCallback((open: boolean) => {
     setWatchlistSettingsOpen(open);
   }, []);
+  // Не использовать 100vw: вместе с вертикальным скроллбаром он даёт
+  // горизонтальный overflow на весь документ.
   const widthClass =
     widget.type === "portfolio"
-      ? "w-[min(500px,calc(100vw-40px))]"
+      ? "w-[min(500px,100%)]"
       : widget.type === "macro-calendar"
-        ? "h-[300px] w-[min(550px,calc(100vw-40px))]"
+        ? "h-[300px] w-[min(550px,100%)]"
         : widget.type === "watchlist"
-          ? "h-[530px] w-[min(350px,calc(100vw-40px))]"
-          : "w-[min(350px,calc(100vw-40px))]";
+          ? "h-[530px] w-[min(350px,100%)]"
+          : "w-[min(350px,100%)]";
 
   return (
     <Draggable
@@ -525,7 +527,7 @@ export function DashboardPage() {
   }, [prefs.gridOpacity, prefs.theme]);
 
   return (
-    <div className="dashboard-page-root relative min-h-[100dvh]" data-dashboard-theme={prefs.theme}>
+    <div className="dashboard-page-root" data-dashboard-theme={prefs.theme}>
       <div className="dashboard-quick-tabs" aria-label="Быстрый доступ к вкладкам">
         <div className="dashboard-quick-tabs-dim" aria-hidden="true" />
         <div className="dashboard-quick-tabs-hitbox" aria-hidden="true" />
