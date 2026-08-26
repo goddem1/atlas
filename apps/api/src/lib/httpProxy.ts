@@ -127,9 +127,10 @@ export function listTelegramSocksProxyCandidates(): TelegramSocksProxy[] {
   const portCandidates = [
     ...(Number.isFinite(socksPortOverride ?? NaN) ? [socksPortOverride!] : []),
     ...(shared.protocol === "socks4" || shared.protocol === "socks5" ? [shared.port] : []),
-    shared.port,
     1080,
     1081,
+    8001,
+    shared.port,
   ];
   const seen = new Set<number>();
   const out: TelegramSocksProxy[] = [];
