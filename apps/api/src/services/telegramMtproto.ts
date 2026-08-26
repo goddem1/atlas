@@ -6,6 +6,10 @@ import type {
 import { TELEGRAM_CHANNELS_MAX, normalizeTelegramUsername } from "@atlas-v1/shared";
 import { Api, TelegramClient } from "telegram";
 import { StringSession } from "telegram/sessions/index.js";
+import {
+  listTelegramSocksProxyCandidates,
+  type TelegramSocksProxy,
+} from "../lib/httpProxy.js";
 
 export class TelegramMtprotoUnavailableError extends Error {
   constructor(message: string) {
@@ -13,14 +17,6 @@ export class TelegramMtprotoUnavailableError extends Error {
     this.name = "TelegramMtprotoUnavailableError";
   }
 }
-
-type SocksProxy = {
-  ip: string;
-  port: number;
-  socksType: 4 | 5;
-  username?: string;
-  password?: string;
-};
 
 function parseChannelsEnv(): string[] {
   const raw = process.env.TELEGRAM_CHANNELS?.trim() ?? "cryptoattack24,markettwits";
@@ -53,49 +49,18 @@ function readApiCredentials(): { apiId: number; apiHash: string; session: string
   return { apiId, apiHash, session };
 }
 
-function readProxy(): SocksProxy | undefined {
-  const urlRaw = process.env.TELEGRAM_PROXY_URL?.trim();
-  if (urlRaw) {
-    try {
-      const u = new URL(urlRaw);
-      const host = u.hostname;
-      const port = u.port ? Number.parseInt(u.port, 10) : u.protocol === "socks4:" ? 1080 : 1080;
-      if (!host || !Number.isFinite(port)) return undefined;
-      const proto = u.protocol.replace(":", "").toLowerCase();
-      if (proto === "socks4" || proto === "socks5") {
-        return {
-          ip: host,
-          port,
-          socksType: proto === "socks4" ? 4 : 5,
-          username: decodeURIComponent(u.username) || undefined,
-          password: decodeURIComponent(u.password) || undefined,
-        };
-      }
-    } catch {
-      // fall through to host/port vars
-    }
-  }
-
-  const host = process.env.TELEGRAM_PROXY_HOST?.trim();
-  const portRaw = process.env.TELEGRAM_PROXY_PORT?.trim();
-  if (!host || !portRaw) return undefined;
-  const port = Number.parseInt(portRaw, 10);
-  if (!Number.isFinite(port)) return undefined;
-  const type = (process.env.TELEGRAM_PROXY_TYPE ?? "socks5").toLowerCase();
-  if (type !== "socks4" && type !== "socks5") return undefined;
-  return {
-    ip: host,
-    port,
-    socksType: type === "socks4" ? 4 : 5,
-    username: process.env.TELEGRAM_PROXY_USERNAME?.trim() || undefined,
-    password: process.env.TELEGRAM_PROXY_PASSWORD?.trim() || undefined,
-  };
-}
-
 const TELEGRAM_CONNECT_TIMEOUT_MS = Math.min(
   60_000,
   Math.max(5_000, Number.parseInt(process.env.TELEGRAM_CONNECT_TIMEOUT_MS ?? "20000", 10) || 20_000),
 );
+
+function proxyTimeoutError(hasProxy: boolean): TelegramMtprotoUnavailableError {
+  return new TelegramMtprotoUnavailableError(
+    hasProxy
+      ? "Не удалось подключиться к Telegram через прокси (таймаут). Проверьте RAPIDAPI_PROXY_URL / TELEGRAM_PROXY_*."
+      : "Не удалось подключиться к Telegram (таймаут). Задайте RAPIDAPI_PROXY_URL или TELEGRAM_PROXY_*.",
+  );
+}
 
 async function connectClient(client: TelegramClient): Promise<void> {
   let timer: ReturnType<typeof setTimeout> | undefined;
@@ -104,19 +69,50 @@ async function connectClient(client: TelegramClient): Promise<void> {
       client.connect(),
       new Promise<never>((_, reject) => {
         timer = setTimeout(() => {
-          reject(
-            new TelegramMtprotoUnavailableError(
-              readProxy()
-                ? "Не удалось подключиться к Telegram через прокси (таймаут). Проверьте TELEGRAM_PROXY_*."
-                : "Не удалось подключиться к Telegram (таймаут). На сервере в РФ обычно нужен SOCKS5-прокси: TELEGRAM_PROXY_URL или TELEGRAM_PROXY_HOST/PORT.",
-            ),
-          );
+          reject(proxyTimeoutError(listTelegramSocksProxyCandidates().length > 0));
         }, TELEGRAM_CONNECT_TIMEOUT_MS);
       }),
     ]);
   } finally {
     if (timer) clearTimeout(timer);
   }
+}
+
+async function createConnectedClient(): Promise<TelegramClient> {
+  const { apiId, apiHash, session } = readApiCredentials();
+  const proxies = listTelegramSocksProxyCandidates();
+  const attempts: Array<TelegramSocksProxy | undefined> =
+    proxies.length > 0 ? proxies : [undefined];
+  let lastErr: unknown;
+
+  for (const proxy of attempts) {
+    const client = new TelegramClient(new StringSession(session), apiId, apiHash, {
+      connectionRetries: 2,
+      ...(proxy ? { proxy } : {}),
+    });
+    try {
+      await connectClient(client);
+      if (!(await client.isUserAuthorized())) {
+        await client.disconnect();
+        throw new TelegramMtprotoUnavailableError(
+          "Telegram session не авторизована. Запустите pnpm telegram:auth и обновите TELEGRAM_SESSION.",
+        );
+      }
+      return client;
+    } catch (err) {
+      lastErr = err;
+      try {
+        await client.disconnect();
+      } catch {
+        // ignore
+      }
+      if (attempts.length === 1) break;
+    }
+  }
+
+  throw lastErr instanceof Error
+    ? lastErr
+    : new TelegramMtprotoUnavailableError("Не удалось подключиться к Telegram.");
 }
 
 function detectMediaType(message: Api.Message): TelegramNewsMessage["mediaType"] {
@@ -260,23 +256,7 @@ let clientPromise: Promise<TelegramClient> | null = null;
 
 async function getClient(): Promise<TelegramClient> {
   if (!clientPromise) {
-    clientPromise = (async () => {
-      const { apiId, apiHash, session } = readApiCredentials();
-      const stringSession = new StringSession(session);
-      const proxy = readProxy();
-      const client = new TelegramClient(stringSession, apiId, apiHash, {
-        connectionRetries: 2,
-        ...(proxy ? { proxy } : {}),
-      });
-      await connectClient(client);
-      if (!(await client.isUserAuthorized())) {
-        await client.disconnect();
-        throw new TelegramMtprotoUnavailableError(
-          "Telegram session не авторизована. Запустите pnpm telegram:auth и обновите TELEGRAM_SESSION.",
-        );
-      }
-      return client;
-    })().catch((err) => {
+    clientPromise = createConnectedClient().catch((err) => {
       clientPromise = null;
       throw err;
     });
