@@ -12,6 +12,7 @@
   "dependencies": {
     "@atlas-v1/shared": "workspace:*",
     "@klinecharts/pro": "^0.1.1",
+    "@twemoji/api": "^17.0.3",
     "better-auth": "^1.2.8",
     "klinecharts": "9.8.12",
     "react": "^18.3.1",

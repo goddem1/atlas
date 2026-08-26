@@ -15,6 +15,10 @@ import type {
   PortfolioSummaryResponse,
   PortfolioTimeframe,
   PortfolioTransactionUpsertInput,
+  TelegramNewsChannel,
+  TelegramNewsMessage,
+  TelegramNewsWidgetResponse,
+  TelegramNewsDailyIndexResponse,
   UserDashboardState,
 } from "@atlas-v1/shared";
 
@@ -374,3 +378,202 @@ export async function saveKlineIndicators(
   const body = await parseJson<KlineIndicatorsResponse>(res);
   return body.indicators ?? { main: [], sub: [] };
 }
+
+export async function fetchTelegramNewsChannels(
+  usernames?: string[],
+): Promise<TelegramNewsChannel[]> {
+  const q = new URLSearchParams();
+  if (usernames !== undefined) q.set("usernames", usernames.join(","));
+  const suffix = q.size > 0 ? `?${q}` : "";
+  const res = await fetch(`${apiBase()}/telegram/channels${suffix}`, { cache: "no-store" });
+  const body = await parseJson<{ channels: TelegramNewsChannel[] }>(res);
+  return body.channels ?? [];
+}
+
+export async function fetchTelegramNewsMessages(
+  username: string,
+  options?: { limit?: number; offsetId?: number; refresh?: boolean },
+): Promise<TelegramNewsMessage[]> {
+  const q = new URLSearchParams();
+  if (options?.limit != null) q.set("limit", String(options.limit));
+  if (options?.offsetId != null && options.offsetId > 0) q.set("offsetId", String(options.offsetId));
+  if (options?.refresh) q.set("refresh", "1");
+  const suffix = q.size > 0 ? `?${q}` : "";
+  const res = await fetch(
+    `${apiBase()}/telegram/channels/${encodeURIComponent(username)}/messages${suffix}`,
+    { cache: "no-store" },
+  );
+  const body = await parseJson<{ messages: TelegramNewsMessage[] }>(res);
+  return body.messages ?? [];
+}
+
+export async function fetchTelegramNewsFeed(
+  usernames: string[],
+  options?: { limit?: number; before?: string; refresh?: boolean },
+): Promise<TelegramNewsMessage[]> {
+  const q = new URLSearchParams();
+  if (usernames.length > 0) q.set("usernames", usernames.join(","));
+  if (options?.limit != null) q.set("limit", String(options.limit));
+  if (options?.before) q.set("before", options.before);
+  if (options?.refresh) q.set("refresh", "1");
+  const suffix = q.size > 0 ? `?${q}` : "";
+  const res = await fetch(`${apiBase()}/telegram/feed${suffix}`, { cache: "no-store" });
+  const body = await parseJson<{ messages: TelegramNewsMessage[] }>(res);
+  return body.messages ?? [];
+}
+
+export async function fetchTelegramNewsWidget(
+  usernames: string[],
+  filters: string[] = [],
+): Promise<TelegramNewsWidgetResponse> {
+  const q = new URLSearchParams();
+  if (usernames.length > 0) q.set("usernames", usernames.join(","));
+  if (filters.length > 0) q.set("filters", filters.join(","));
+  const suffix = q.size > 0 ? `?${q}` : "";
+  const res = await fetch(`${apiBase()}/telegram/news-widget${suffix}`, { cache: "no-store" });
+  return parseJson<TelegramNewsWidgetResponse>(res);
+}
+
+export async function fetchTelegramNewsDailyIndex(options?: {
+  from?: string;
+  to?: string;
+  limit?: number;
+}): Promise<TelegramNewsDailyIndexResponse> {
+  const q = new URLSearchParams();
+  if (options?.from) q.set("from", options.from);
+  if (options?.to) q.set("to", options.to);
+  if (options?.limit != null) q.set("limit", String(options.limit));
+  const suffix = q.size > 0 ? `?${q}` : "";
+  const res = await fetch(`${apiBase()}/telegram/news-index${suffix}`, { cache: "no-store" });
+  return parseJson<TelegramNewsDailyIndexResponse>(res);
+}
+
+export function telegramNewsChannelPhotoUrl(username: string): string {
+  return `${apiBase()}/telegram/channels/${encodeURIComponent(username)}/photo`;
+}
+
+export function telegramNewsMessageMediaUrl(username: string, messageId: number): string {
+  return `${apiBase()}/telegram/channels/${encodeURIComponent(username)}/messages/${messageId}/media`;
+}
+
+export function telegramNewsMessageVideoUrl(username: string, messageId: number): string {
+  return `${apiBase()}/telegram/channels/${encodeURIComponent(username)}/messages/${messageId}/video`;
+}
+
+export function telegramNewsMessageVideoThumbUrl(username: string, messageId: number): string {
+  return `${apiBase()}/telegram/channels/${encodeURIComponent(username)}/messages/${messageId}/video-thumb`;
+}
+
+export type NewsFeedbackCandidate = {
+  postKey: string;
+  channelUsername: string;
+  messageId: number;
+  date: string;
+  text: string;
+  url: string;
+  source: "top5" | "candidate";
+  llmWeight: number | null;
+  llmPolarity: number | null;
+  llmType: string | null;
+  llmCategory: string | null;
+  llmHeadline: string | null;
+  llmWhy: string | null;
+  llmImpact: string | null;
+  hasFeedback: boolean;
+  feedback: {
+    humanNote: string;
+    humanWeight: number | null;
+    humanPolarity: number | null;
+    humanType: string | null;
+    humanCorrect: boolean | null;
+    priceMoveBtc: number | null;
+    priceMoveEth: number | null;
+    priceMoveWindowHours: number | null;
+  } | null;
+};
+
+export type NewsFeedbackCandidatesResponse = {
+  day: string;
+  sentiment: number | null;
+  formula: string | null;
+  candidateCount: number;
+  top5: NewsFeedbackCandidate[];
+  candidates: NewsFeedbackCandidate[];
+};
+
+export type NewsFeedbackPriceHintResponse = {
+  priceMoveBtc: number | null;
+  priceMoveEth: number | null;
+  priceMoveWindowHours: number;
+};
+
+export type SaveNewsFeedbackInput = {
+  postKey: string;
+  day: string;
+  postText: string;
+  postTimestamp: string;
+  source: "top5" | "candidate";
+  llmWeight?: number;
+  llmPolarity?: number;
+  llmType?: string;
+  llmCategory?: string;
+  llmHeadline?: string;
+  humanWeight?: number;
+  humanPolarity?: number;
+  humanType?: string;
+  humanCorrect?: boolean;
+  humanNote: string;
+};
+
+export async function fetchNewsFeedbackCandidates(day: string): Promise<NewsFeedbackCandidatesResponse> {
+  const q = new URLSearchParams({ day });
+  const res = await fetch(`${apiBase()}/telegram/news-feedback/candidates?${q}`, {
+    ...authFetchInit,
+    cache: "no-store",
+  });
+  return parseJson<NewsFeedbackCandidatesResponse>(res);
+}
+
+export async function fetchNewsFeedbackPriceHint(
+  postTimestamp: string,
+): Promise<NewsFeedbackPriceHintResponse> {
+  const q = new URLSearchParams({ timestamp: postTimestamp });
+  const res = await fetch(`${apiBase()}/telegram/news-feedback/price-hint?${q}`, {
+    ...authFetchInit,
+    cache: "no-store",
+  });
+  return parseJson<NewsFeedbackPriceHintResponse>(res);
+}
+
+export async function saveNewsFeedback(input: SaveNewsFeedbackInput): Promise<{ ok: true }> {
+  const res = await fetch(`${apiBase()}/telegram/news-feedback`, {
+    ...authFetchInit,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  return parseJson<{ ok: true }>(res);
+}
+
+/** Завершённый МСК-день для разметки (как в newsWidgetLlm). */
+export function resolveNewsFeedbackMskDay(now = new Date()): string {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Moscow",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    hour12: false,
+  }).formatToParts(now);
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
+  const y = Number(get("year"));
+  const m = Number(get("month"));
+  const d = Number(get("day"));
+  const hour = Number(get("hour"));
+  const today = `${String(y).padStart(4, "0")}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+  if (hour >= 23) return today;
+  const utc = Date.UTC(y, m - 1, d);
+  const prev = new Date(utc - 24 * 60 * 60 * 1000);
+  return `${String(prev.getUTCFullYear()).padStart(4, "0")}-${String(prev.getUTCMonth() + 1).padStart(2, "0")}-${String(prev.getUTCDate()).padStart(2, "0")}`;
+}
+

@@ -1,0 +1,212 @@
+.news-feedback-page {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  box-sizing: border-box;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 24px 20px 40px;
+  color: var(--atlas-fg-primary);
+  background: var(--atlas-invert-primary, #f2f2f7);
+}
+.news-feedback-shell {
+  max-width: 920px;
+  margin: 0 auto;
+}
+
+.news-feedback-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 16px;
+  margin: 0 0 20px;
+}
+
+.news-feedback-title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.news-feedback-day-input {
+  border: var(--atlas-input-border);
+  border-radius: 12px;
+  padding: 8px 12px;
+  background: var(--atlas-input-bg);
+  color: var(--atlas-input-fg);
+  font: inherit;
+}
+
+.news-feedback-meta {
+  margin: 0 0 16px;
+  font-size: 14px;
+  color: var(--atlas-second-color, #808080);
+}
+
+.news-feedback-meta strong {
+  color: inherit;
+}
+
+.news-feedback-section-title {
+  margin: 0 0 10px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.news-feedback-card {
+  margin: 0 0 12px;
+  padding: 14px 16px;
+  border-radius: 16px;
+}
+
+.news-feedback-card-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0 0 10px;
+}
+
+.news-feedback-tag {
+  flex-shrink: 0;
+  width: 22px;
+  align-self: stretch;
+  min-height: 52px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 11px;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  letter-spacing: 0.08em;
+}
+
+.news-feedback-card-main {
+  min-width: 0;
+  flex: 1;
+}
+
+.news-feedback-channel {
+  font-size: 12px;
+  color: var(--atlas-second-color, #808080);
+  margin: 0 0 4px;
+}
+
+.news-feedback-text {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+.news-feedback-llm {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: var(--atlas-second-color, #808080);
+}
+
+.news-feedback-form {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.news-feedback-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.news-feedback-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 160px;
+  flex: 1 1 160px;
+  max-width: 220px;
+}
+
+.news-feedback-field label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--atlas-fg-primary);
+}
+
+.news-feedback-field-hint {
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--atlas-second-color, #808080);
+}
+
+.news-feedback-field input,
+.news-feedback-field select,
+.news-feedback-field textarea {
+  border: var(--atlas-input-border);
+  border-radius: 10px;
+  padding: 8px 10px;
+  background: var(--atlas-input-bg);
+  color: var(--atlas-input-fg);
+  font: inherit;
+}
+
+.news-feedback-field textarea {
+  min-height: 72px;
+  resize: vertical;
+}
+
+.news-feedback-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.news-feedback-btn {
+  border: var(--atlas-glass-border);
+  border-radius: 999px;
+  padding: 8px 14px;
+  background: var(--atlas-glass-bg-light);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.news-feedback-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.news-feedback-btn.is-primary {
+  background: var(--atlas-primary-btn-bg);
+  color: #fff;
+  border-color: transparent;
+}
+
+.news-feedback-price-hint {
+  font-size: 13px;
+  color: var(--atlas-second-color, #808080);
+}
+
+.news-feedback-toggle {
+  margin: 16px 0 10px;
+}
+
+.news-feedback-msg {
+  margin: 12px 0;
+  font-size: 14px;
+}
+
+.news-feedback-msg--err {
+  color: #ff383c;
+}
+
+.news-feedback-badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(52, 198, 89, 0.18);
+  color: #34c759;
+  font-size: 11px;
+}

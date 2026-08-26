@@ -38,6 +38,11 @@ import { attachKlineSymbolSearch } from "./priceKlineSymbolSearch";
 import { ensureKlineRuLocale, KLINE_PRO_LOCALE } from "./priceKlineLocaleRu";
 import { ensureKlineHorizontalPriceTagsAlwaysVisible } from "./priceKlineHorizontalPriceTags";
 import { PriceKlineCoinList } from "./PriceKlineCoinList";
+import {
+  NEWS_INDEX_CHART_SYMBOL,
+  buildNewsIndexSymbolInfo,
+  isNewsIndexPair,
+} from "./newsIndexChartSymbol";
 import "./price-sparkline-kline-modal.css";
 
 const loadSymbolSearchModal = () =>
@@ -151,12 +156,22 @@ export function PriceSparklineKlineModal({
     setActiveSymbol(crypto.symbol);
     // Не чистим оверлеи здесь: flush текущей пары делает attachPersistenceForPair
     // до clear. Иначе пустой collect уходит в API и затирает линии.
-    chartRef.current?.setSymbol(
+    const chart = chartRef.current;
+    chart?.setSymbol(
       buildKlineSymbolInfo({
         symbol: crypto.symbol,
         iconUrl: crypto.iconUrl,
       }),
     );
+    const stored = loadStoredKlineCandleType();
+    if (chart && stored) applyKlineCandleType(chart, stored, { persist: false });
+  }, []);
+
+  const selectNewsIndex = useCallback(() => {
+    setActiveSymbol(NEWS_INDEX_CHART_SYMBOL);
+    const chart = chartRef.current;
+    chart?.setSymbol(buildNewsIndexSymbolInfo());
+    if (chart) applyKlineCandleType(chart, "line", { persist: false });
   }, []);
 
   useEffect(() => {
@@ -282,6 +297,16 @@ export function PriceSparklineKlineModal({
               onActiveSymbolChange: (active) => {
                 if (cancelled) return;
                 setActiveSymbol(active.symbol);
+                const liveChart = resolveKlineChartFromProContainer(el);
+                if (liveChart) {
+                  const chartPro = liveChart as unknown as ChartPro;
+                  if (isNewsIndexPair(active.pair)) {
+                    applyKlineCandleType(chartPro, "line", { persist: false });
+                  } else {
+                    const stored = loadStoredKlineCandleType();
+                    if (stored) applyKlineCandleType(chartPro, stored, { persist: false });
+                  }
+                }
                 if (active.pair === activePair) return;
                 activePair = active.pair;
                 void attachPersistenceForPair(active.pair);
@@ -448,6 +473,10 @@ export function PriceSparklineKlineModal({
             watchlistLists={watchlistLists}
             onWatchlistListsChange={onWatchlistListsChange}
             onClose={() => setSymbolSearchOpen(false)}
+            onSelectNewsIndex={() => {
+              selectNewsIndex();
+              setSymbolSearchOpen(false);
+            }}
             onSelect={(crypto) => {
               selectCoin(crypto);
               setSymbolSearchOpen(false);

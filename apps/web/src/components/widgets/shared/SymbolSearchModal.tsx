@@ -2,8 +2,10 @@ import { useEffect, useMemo, useRef, useState, type ReactNode, type UIEvent } fr
 import { createPortal } from "react-dom";
 import type { CryptocurrencyListItem, WatchlistListData } from "@atlas-v1/shared";
 import { normalizeSymbolList, WATCHLIST_MAX_SYMBOLS } from "@atlas-v1/shared";
+import { fetchTelegramNewsDailyIndex } from "../../../services/api";
 import { pairForCryptocurrency } from "../price-sparkline/atlasCryptoDatafeed";
 import { isDashboardDarkTheme } from "../price-sparkline/candleKlineUtils";
+import { NEWS_INDEX_CHART_SYMBOL } from "../price-sparkline/newsIndexChartSymbol";
 import { useBackdropBlurPause } from "../../../lib/useBackdropBlurPause";
 import "./symbol-search-modal.css";
 
@@ -12,6 +14,8 @@ const EXCHANGE_LOGO = "https://s3-symbol-logo.tradingview.com/source/BINANCE.svg
 const MARKET_TYPE = "spot crypto";
 /** Сколько строк рендерить сразу — полный каталог слишком тяжёлый для первого кадра. */
 const LIST_PAGE_SIZE = 48;
+
+type SearchCategory = "index" | "crypto";
 
 type Props = {
   open: boolean;
@@ -22,6 +26,8 @@ type Props = {
   embedded?: boolean;
   watchlistLists?: WatchlistListData[];
   onWatchlistListsChange?: (lists: WatchlistListData[]) => void;
+  /** Если задан — в поиске появляются вкладки «Индекс» / «Крипто». */
+  onSelectNewsIndex?: () => void;
   onClose: () => void;
   onSelect: (c: CryptocurrencyListItem) => void;
 };
@@ -97,6 +103,7 @@ export function SymbolSearchModal({
   embedded = false,
   watchlistLists = [],
   onWatchlistListsChange,
+  onSelectNewsIndex,
   onClose,
   onSelect,
 }: Props) {
@@ -105,11 +112,14 @@ export function SymbolSearchModal({
   const [activeIndex, setActiveIndex] = useState(0);
   const [visibleCount, setVisibleCount] = useState(LIST_PAGE_SIZE);
   const [bookmarkMenuSymbol, setBookmarkMenuSymbol] = useState<string | null>(null);
+  const [category, setCategory] = useState<SearchCategory>("crypto");
+  const [newsSentiment, setNewsSentiment] = useState<number | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
   const bookmarkMenuRef = useRef<HTMLDivElement>(null);
 
   const bookmarksEnabled = watchlistLists.length > 0 && Boolean(onWatchlistListsChange);
+  const categoriesEnabled = Boolean(onSelectNewsIndex);
 
   useEffect(() => {
     if (!open) {
@@ -117,8 +127,29 @@ export function SymbolSearchModal({
       setActiveIndex(0);
       setVisibleCount(LIST_PAGE_SIZE);
       setBookmarkMenuSymbol(null);
+      return;
     }
-  }, [open]);
+    const active = activeSymbol?.trim().toUpperCase() ?? "";
+    setCategory(active === NEWS_INDEX_CHART_SYMBOL ? "index" : "crypto");
+  }, [open, activeSymbol]);
+
+  useEffect(() => {
+    if (!open || !categoriesEnabled) return;
+    let cancelled = false;
+    void fetchTelegramNewsDailyIndex({ limit: 2 })
+      .then((data) => {
+        if (cancelled) return;
+        const points = data.points ?? [];
+        const last = points[points.length - 1];
+        setNewsSentiment(last && Number.isFinite(last.sentiment) ? last.sentiment : null);
+      })
+      .catch(() => {
+        if (!cancelled) setNewsSentiment(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [open, categoriesEnabled]);
 
   useEffect(() => {
     if (!open) return;
@@ -166,6 +197,7 @@ export function SymbolSearchModal({
   }, [items]);
 
   const filtered = useMemo(() => {
+    if (categoriesEnabled && category === "index") return [];
     const s = query.trim().toLowerCase();
     if (!s) return rows;
     return rows.filter(
@@ -175,7 +207,14 @@ export function SymbolSearchModal({
         pair.toLowerCase().includes(s) ||
         description.toLowerCase().includes(s),
     );
-  }, [rows, query]);
+  }, [rows, query, categoriesEnabled, category]);
+
+  const indexMatchesQuery = useMemo(() => {
+    const s = query.trim().toLowerCase();
+    if (!s) return true;
+    const labels = ["news", "newsidx", "индекс", "новости", "sentiment", "сентимент"];
+    return labels.some((label) => label.includes(s) || s.includes(label));
+  }, [query]);
 
   const membershipBySymbol = useMemo(() => {
     const map = new Map<string, string[]>();
@@ -193,7 +232,7 @@ export function SymbolSearchModal({
   useEffect(() => {
     setActiveIndex(0);
     setVisibleCount(LIST_PAGE_SIZE);
-  }, [query, filtered.length]);
+  }, [query, filtered.length, category]);
 
   useEffect(() => {
     if (activeIndex + 8 < visibleCount) return;
@@ -216,6 +255,15 @@ export function SymbolSearchModal({
   };
 
   const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (categoriesEnabled && category === "index") {
+      if (e.key === "Enter" && indexMatchesQuery && onSelectNewsIndex) {
+        e.preventDefault();
+        onSelectNewsIndex();
+        onClose();
+      }
+      return;
+    }
+
     if (filtered.length === 0) return;
 
     if (e.key === "ArrowDown") {
@@ -320,7 +368,11 @@ export function SymbolSearchModal({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={handleInputKeyDown}
-              placeholder="Введите название или тикера актива"
+              placeholder={
+                categoriesEnabled && category === "index"
+                  ? "Поиск индекса"
+                  : "Введите название или тикера актива"
+              }
               className="symbol-search-input"
             />
             <div className="symbol-search-input-actions">
@@ -348,6 +400,29 @@ export function SymbolSearchModal({
           </div>
         </div>
 
+        {categoriesEnabled ? (
+          <div className="symbol-search-categories" role="tablist" aria-label="Категория">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={category === "index"}
+              className={`symbol-search-category${category === "index" ? " is-active" : ""}`}
+              onClick={() => setCategory("index")}
+            >
+              Индекс
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={category === "crypto"}
+              className={`symbol-search-category${category === "crypto" ? " is-active" : ""}`}
+              onClick={() => setCategory("crypto")}
+            >
+              Крипто
+            </button>
+          </div>
+        ) : null}
+
         <div className="symbol-search-list-wrap">
           <ul
             ref={listRef}
@@ -356,7 +431,79 @@ export function SymbolSearchModal({
             aria-label="Результаты поиска"
             onScroll={handleListScroll}
           >
-            {loadError ? (
+            {categoriesEnabled && category === "index" ? (
+              !indexMatchesQuery ? (
+                <li className="symbol-search-message">Ничего не найдено</li>
+              ) : (
+                <li role="presentation" className="symbol-search-row-wrap">
+                  <div
+                    className={`symbol-search-row is-focused${activeTicker === NEWS_INDEX_CHART_SYMBOL ? " is-current" : ""}`}
+                    data-index={0}
+                  >
+                    <div className="symbol-search-row-main">
+                      <span className="symbol-search-marker" aria-hidden="true">
+                        <svg viewBox="0 0 14 14" width="14" height="14" fill="none">
+                          <path
+                            d="M7 2.5v9M2.5 7h9"
+                            stroke="currentColor"
+                            strokeWidth="1.8"
+                            strokeLinecap="round"
+                          />
+                        </svg>
+                      </span>
+                      <button
+                        type="button"
+                        role="option"
+                        aria-selected
+                        className="symbol-search-row-select"
+                        onClick={() => {
+                          onSelectNewsIndex?.();
+                          onClose();
+                        }}
+                      >
+                        <span className="symbol-search-logo-fallback symbol-search-logo-fallback--news">
+                          N
+                        </span>
+                        <span className="symbol-search-ticker">
+                          {highlightMatch("NEWS", query)}
+                        </span>
+                      </button>
+                    </div>
+                    <button
+                      type="button"
+                      className="symbol-search-row-select symbol-search-row-select--desc"
+                      tabIndex={-1}
+                      onClick={() => {
+                        onSelectNewsIndex?.();
+                        onClose();
+                      }}
+                    >
+                      <span className="symbol-search-desc">
+                        {highlightMatch("Индекс новостей · дневной сентимент", query)}
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      className="symbol-search-row-select symbol-search-row-select--exchange"
+                      tabIndex={-1}
+                      onClick={() => {
+                        onSelectNewsIndex?.();
+                        onClose();
+                      }}
+                    >
+                      <div className="symbol-search-exchange">
+                        <div className="symbol-search-exchange-text">
+                          <div className="symbol-search-market-type">news index</div>
+                          <div className="symbol-search-exchange-name">
+                            {newsSentiment != null ? `${newsSentiment}` : "Atlas"}
+                          </div>
+                        </div>
+                      </div>
+                    </button>
+                  </div>
+                </li>
+              )
+            ) : loadError ? (
               <li className="symbol-search-message symbol-search-message-error">
                 Не удалось загрузить активы: {loadError}
               </li>

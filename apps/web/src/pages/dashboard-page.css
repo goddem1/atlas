@@ -149,7 +149,8 @@
 }
 
 .dashboard-quick-tabs-item--calendar,
-.dashboard-quick-tabs-item--chart {
+.dashboard-quick-tabs-item--chart,
+.dashboard-quick-tabs-item--chat {
   min-height: 36px;
   height: 54px;
   display: inline-flex;
@@ -725,6 +726,10 @@ html[data-dashboard-theme="dark"] .dashboard-theme-toggle--panel .dashboard-them
 
 .dashboard-widget-slot--watchlist {
   contain-intrinsic-size: 350px 530px;
+}
+
+.dashboard-widget-slot--news {
+  contain-intrinsic-size: 350px 494px;
 }
 
 .dashboard-widget-slot--watchlist-settings-open {

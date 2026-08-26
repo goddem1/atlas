@@ -9,6 +9,8 @@ import Draggable from "react-draggable";
 import { DashboardSettings } from "../components/dashboard/DashboardSettings";
 import { authClient } from "../lib/auth-client";
 import { MacroCalendarWidget } from "../components/widgets/macro-calendar/MacroCalendarWidget";
+import { NewsWidget, type NewsWidgetExplainPayload } from "../components/widgets/news/NewsWidget";
+import { NewsWidgetExplainModal } from "../components/widgets/news/NewsWidgetExplainModal";
 import { PortfolioWidget } from "../components/widgets/portfolio/PortfolioWidget";
 import { FedCurveWidget } from "../components/widgets/fed-curve/FedCurveWidget";
 import { PriceSparklineWidget } from "../components/widgets/price-sparkline/PriceSparklineWidget";
@@ -45,6 +47,11 @@ const WidgetGalleryModal = lazy(() =>
 const MacroEventsModal = lazy(() =>
   import("../components/dashboard/MacroEventsModal").then((m) => ({ default: m.MacroEventsModal })),
 );
+const TelegramNewsModal = lazy(() =>
+  import("../components/telegram-news/TelegramNewsModal").then((m) => ({
+    default: m.TelegramNewsModal,
+  })),
+);
 const PriceSparklineKlineModal = lazy(() =>
   import("../components/widgets/price-sparkline/PriceSparklineKlineModal").then((m) => ({
     default: m.PriceSparklineKlineModal,
@@ -61,6 +68,8 @@ type DraggableWidgetProps = {
   onPriceSymbol: (id: string, symbol: string) => void;
   onRemove: (id: string) => void;
   onOpenMacroCalendar?: () => void;
+  onOpenNews?: () => void;
+  onOpenNewsExplain?: (payload: NewsWidgetExplainPayload) => void;
   onFedCurveCompareDays?: (id: string, days: FedCurveCompareDays) => void;
   onWatchlistChange?: (id: string, state: WatchlistWidgetState) => void;
 };
@@ -80,6 +89,8 @@ const DraggableWidget = memo(function DraggableWidget({
   onPriceSymbol,
   onRemove,
   onOpenMacroCalendar,
+  onOpenNews,
+  onOpenNewsExplain,
   onFedCurveCompareDays,
   onWatchlistChange,
 }: DraggableWidgetProps) {
@@ -111,14 +122,16 @@ const DraggableWidget = memo(function DraggableWidget({
         ? "h-[300px] w-[min(550px,100%)]"
         : widget.type === "watchlist"
           ? "h-[530px] w-[min(350px,100%)]"
-          : "w-[min(350px,100%)]";
+          : widget.type === "news"
+            ? "h-[494px] w-[min(350px,100%)]"
+            : "w-[min(350px,100%)]";
 
   return (
     <Draggable
       nodeRef={nodeRef}
       handle=".drag-handle"
       disabled={widget.type === "watchlist" && watchlistSettingsOpen}
-      cancel=".price-widget-icon-button,.portfolio-menu-trigger,.btn-on-glass,.macro-cal-expand,.fed-curve-settings-popover,.fed-curve-settings-period-btn,.watchlist-list-header-select"
+      cancel=".price-widget-icon-button,.portfolio-menu-trigger,.btn-on-glass,.macro-cal-expand,.fed-curve-settings-popover,.fed-curve-settings-period-btn,.watchlist-list-header-select,.news-widget-row,.news-widget-inline-link"
       bounds="parent"
       grid={[gridSize, gridSize]}
       position={isDragging ? undefined : { x: widget.x, y: widget.y }}
@@ -170,6 +183,13 @@ const DraggableWidget = memo(function DraggableWidget({
             onDeleteWidget={handleDelete}
             onSettingsOpenChange={handleWatchlistSettingsOpenChange}
           />
+        ) : widget.type === "news" ? (
+          <NewsWidget
+            dragHandleClassName="drag-handle"
+            onDeleteWidget={handleDelete}
+            onOpenNews={onOpenNews}
+            onOpenExplain={onOpenNewsExplain}
+          />
         ) : (
           <PortfolioWidget onDeleteWidget={handleDelete} />
         )}
@@ -202,6 +222,8 @@ export function DashboardPage() {
   const [widgets, setWidgets] = useState<DashboardWidget[]>(() => guestSnapshot.widgets);
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [macroOpen, setMacroOpen] = useState(false);
+  const [telegramNewsOpen, setTelegramNewsOpen] = useState(false);
+  const [newsExplain, setNewsExplain] = useState<NewsWidgetExplainPayload | null>(null);
   const [klineOpen, setKlineOpen] = useState(false);
   const [klineCryptoList, setKlineCryptoList] = useState<CryptocurrencyListItem[]>([]);
   const [authOpen, setAuthOpen] = useState(false);
@@ -549,6 +571,14 @@ export function DashboardPage() {
           >
             <img src="/assets/portfolio-ui/chart_bar.svg" alt="" aria-hidden="true" className="dashboard-quick-tabs-item-icon" />
           </button>
+          <button
+            type="button"
+            className="dashboard-quick-tabs-item dashboard-quick-tabs-item--chat"
+            aria-label="Открыть Telegram-новости"
+            onClick={() => setTelegramNewsOpen(true)}
+          >
+            <img src="/assets/portfolio-ui/chat.svg" alt="" aria-hidden="true" className="dashboard-quick-tabs-item-icon" />
+          </button>
         </div>
       </div>
 
@@ -560,7 +590,8 @@ export function DashboardPage() {
             w.type === "portfolio" ||
             w.type === "macro-calendar" ||
             w.type === "fed-curve" ||
-            w.type === "watchlist" ? (
+            w.type === "watchlist" ||
+            w.type === "news" ? (
               <DraggableWidget
                 key={w.id}
                 widget={w}
@@ -569,6 +600,8 @@ export function DashboardPage() {
                 onPriceSymbol={setPriceWidgetSymbol}
                 onRemove={removeWidget}
                 onOpenMacroCalendar={openMacroCalendar}
+                onOpenNews={() => setTelegramNewsOpen(true)}
+                onOpenNewsExplain={setNewsExplain}
                 onFedCurveCompareDays={setFedCurveCompareDays}
                 onWatchlistChange={setWatchlistState}
               />
@@ -618,6 +651,22 @@ export function DashboardPage() {
         <Suspense fallback={null}>
           <MacroEventsModal open onClose={() => setMacroOpen(false)} />
         </Suspense>
+      ) : null}
+      {telegramNewsOpen ? (
+        <Suspense fallback={null}>
+          <TelegramNewsModal open onClose={() => setTelegramNewsOpen(false)} />
+        </Suspense>
+      ) : null}
+      {newsExplain ? (
+        <NewsWidgetExplainModal
+          open
+          onClose={() => setNewsExplain(null)}
+          sentiment={newsExplain.sentiment}
+          explanation={newsExplain.explanation}
+          items={newsExplain.items}
+          day={newsExplain.day}
+          candidateCount={newsExplain.candidateCount}
+        />
       ) : null}
       {klineOpen && klineTarget ? (
         <Suspense fallback={null}>

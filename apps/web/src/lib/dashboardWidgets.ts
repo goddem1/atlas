@@ -19,7 +19,13 @@ export const DASHBOARD_EDGE_INSET = 20;
 /** Минимальный зазор между прямоугольниками виджетов (px). */
 export const DASHBOARD_WIDGET_GAP = 20;
 
-export type DashboardWidgetType = "price-sparkline" | "portfolio" | "macro-calendar" | "fed-curve" | "watchlist";
+export type DashboardWidgetType =
+  | "price-sparkline"
+  | "portfolio"
+  | "macro-calendar"
+  | "fed-curve"
+  | "watchlist"
+  | "news";
 
 export type DashboardWidget = {
   id: string;
@@ -72,6 +78,11 @@ export const WIDGET_CATALOG: {
     title: "Список",
     description: "Цены криптовалют и дневное изменение",
   },
+  {
+    type: "news",
+    title: "Новости",
+    description: "Лента Telegram с тегами и настроением",
+  },
 ];
 
 const PRICE_WIDGET_H = 200;
@@ -79,6 +90,8 @@ const WATCHLIST_WIDGET_H = 530;
 const PORTFOLIO_WIDGET_H = 250;
 const MACRO_CALENDAR_WIDGET_W = 550;
 const MACRO_CALENDAR_WIDGET_H = 300;
+const NEWS_WIDGET_W = 350;
+const NEWS_WIDGET_H = 494;
 /** ~3rem — согласовано с `calc(100vw - 3rem)` в виджетах. */
 const VIEWPORT_WIDGET_GUTTER = 48;
 
@@ -98,6 +111,10 @@ export function dashboardWidgetOuterSize(
     const w = Math.min(MACRO_CALENDAR_WIDGET_W, Math.max(280, viewportWidth - VIEWPORT_WIDGET_GUTTER));
     return { w, h: MACRO_CALENDAR_WIDGET_H };
   }
+  if (type === "news") {
+    const w = Math.min(NEWS_WIDGET_W, Math.max(260, viewportWidth - VIEWPORT_WIDGET_GUTTER));
+    return { w, h: NEWS_WIDGET_H };
+  }
   if (type === "watchlist") {
     const w = Math.min(350, Math.max(200, viewportWidth - VIEWPORT_WIDGET_GUTTER));
     return { w, h: WATCHLIST_WIDGET_H };
@@ -114,7 +131,8 @@ function isWidgetType(v: unknown): v is DashboardWidgetType {
     v === "portfolio" ||
     v === "macro-calendar" ||
     v === "fed-curve" ||
-    v === "watchlist"
+    v === "watchlist" ||
+    v === "news"
   );
 }
 

@@ -831,6 +831,17 @@
   font-weight: 600;
 }
 
+.price-kline-coin-icon--news {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #007aff 0%, #64d2ff 100%);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
 .price-kline-coin-symbol {
   font-size: 18px;
   font-weight: 500;

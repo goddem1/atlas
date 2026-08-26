@@ -1,4 +1,11 @@
-import "dotenv/config";
+import dotenv from "dotenv";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+dotenv.config({
+  path: path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../.env"),
+});
+
 import cookie from "@fastify/cookie";
 import cors from "@fastify/cors";
 import Fastify from "fastify";
@@ -9,6 +16,7 @@ import { startMacroReleaseActualsScheduler, stopMacroReleaseActualsScheduler } f
 import { runBondsYieldFredJob, runBondsYieldTradingViewJob } from "./jobs/bondsYieldDailyJob.js";
 import { logBondsYieldCronStatus } from "./services/bondsYieldCronStatus.js";
 import { runTradingDayJob } from "./jobs/tradingDayJob.js";
+import { runTelegramNewsDailyIndexJob } from "./jobs/telegramNewsDailyIndexJob.js";
 import { registerAuthRoutes } from "./routes/authHandler.js";
 import { registerMarketRoutes } from "./routes/market.js";
 import { registerMacroRoutes } from "./routes/macro.js";
@@ -16,7 +24,9 @@ import { registerDashboardRoutes } from "./routes/dashboard.js";
 import { registerKlineChartPrefsRoutes } from "./routes/klineChartPrefs.js";
 import { registerPortfolioRoutes } from "./routes/portfolio.js";
 import { registerProfileRoutes } from "./routes/profile.js";
+import { registerTelegramNewsRoutes } from "./routes/telegramNews.js";
 import { startBinanceCandleStream, stopBinanceCandleStream } from "./services/binanceCandleStream.js";
+import { startTelegramNewsAutoSync } from "./services/telegramNewsSync.js";
 
 const prisma = new PrismaClient();
 
@@ -25,6 +35,8 @@ let macroMonthEndCron: ReturnType<typeof cron.schedule> | null = null;
 let macroReleaseSchedulerStop: (() => void) | null = null;
 let bondsYieldTvCron: ReturnType<typeof cron.schedule> | null = null;
 let bondsYieldFredCron: ReturnType<typeof cron.schedule> | null = null;
+let telegramNewsIndexCron: ReturnType<typeof cron.schedule> | null = null;
+let stopTelegramNewsAutoSync: (() => void) | null = null;
 
 const app = Fastify({
   logger: true,
@@ -50,6 +62,7 @@ registerPortfolioRoutes(app, prisma);
 registerProfileRoutes(app, prisma);
 registerDashboardRoutes(app, prisma);
 registerKlineChartPrefsRoutes(app, prisma);
+registerTelegramNewsRoutes(app, prisma);
 
 const port = Number(process.env.PORT ?? 3001);
 const host = process.env.HOST ?? "0.0.0.0";
@@ -113,6 +126,19 @@ try {
       { timezone: "Europe/Moscow" },
     );
   }
+
+  stopTelegramNewsAutoSync = await startTelegramNewsAutoSync(prisma, app.log);
+
+  if (process.env.NEWS_WIDGET_LLM_CRON_DISABLED !== "true") {
+    telegramNewsIndexCron = cron.schedule(
+      "0 23 * * *",
+      () => {
+        void runTelegramNewsDailyIndexJob(app.log, prisma);
+      },
+      { timezone: "Europe/Moscow" },
+    );
+    app.log.info("Cron: telegram news daily index at 23:00 Europe/Moscow (one LLM call/day)");
+  }
 } catch (err) {
   app.log.error(err);
   await prisma.$disconnect();
@@ -130,6 +156,10 @@ const shutdown = async () => {
   bondsYieldTvCron = null;
   bondsYieldFredCron?.stop();
   bondsYieldFredCron = null;
+  telegramNewsIndexCron?.stop();
+  telegramNewsIndexCron = null;
+  stopTelegramNewsAutoSync?.();
+  stopTelegramNewsAutoSync = null;
   stopMacroReleaseActualsScheduler();
   stopBinanceCandleStream();
   await app.close();

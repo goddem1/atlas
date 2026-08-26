@@ -273,3 +273,101 @@ enum TransactionType {
   BUY
   SELL
 }
+
+/// Каналы, которые сервер слушает / синкает для новостного ридера.
+model TelegramWatchedChannel {
+  username   String    @id
+  title      String?
+  hasPhoto   Boolean   @default(false)
+  lastSyncAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  posts      TelegramNewsPost[]
+
+  @@map("TelegramWatchedChannel")
+}
+
+/// Текст постов Telegram (медиа — по запросу через MTProto, не в БД).
+model TelegramNewsPost {
+  id              String   @id @default(cuid())
+  channelUsername String
+  channel         TelegramWatchedChannel @relation(fields: [channelUsername], references: [username], onDelete: Cascade)
+  messageId       Int
+  date            DateTime
+  text            String   @db.Text
+  entities        Json     @default("[]")
+  views           Int?
+  forwards        Int?
+  isForwarded     Boolean  @default(false)
+  hasMedia        Boolean  @default(false)
+  hasImage        Boolean  @default(false)
+  hasVideo        Boolean  @default(false)
+  hasVideoThumb   Boolean  @default(false)
+  videoSize       Int?
+  mediaType       String?
+  url             String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([channelUsername, messageId])
+  @@index([channelUsername, date(sort: Desc)])
+  @@index([channelUsername, messageId(sort: Desc)])
+  @@map("TelegramNewsPost")
+}
+
+/// Дневной индекс сентимента новостей (МСК-день) — для графика истории.
+model TelegramNewsDailyIndex {
+  /// Календарный день Europe/Moscow, YYYY-MM-DD
+  day            String   @id
+  /// Индекс 0–100
+  sentiment      Int
+  formula        String   @db.Text
+  candidateCount Int      @default(0)
+  /// Каналы, по которым считали
+  usernames      Json     @default("[]")
+  /// Топ-5: [{ id, why, impact, kind? }]
+  topItems       Json     @default("[]")
+  /// llm | heuristic
+  source         String
+  model          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([day(sort: Desc)])
+  @@map("TelegramNewsDailyIndex")
+}
+
+/// Обратная связь автора по отбору новостей (few-shot калибровка для LLM).
+model NewsPickFeedback {
+  id                   String   @id @default(cuid())
+  postKey              String   @unique
+  day                  String
+  postText             String   @db.Text
+  postTimestamp        DateTime
+  source               String
+
+  llmWeight            Int?
+  llmPolarity          Int?
+  llmType              String?
+  llmCategory          String?
+  llmHeadline          String?
+
+  humanWeight          Int?
+  humanPolarity        Int?
+  humanType            String?
+  humanCorrect         Boolean?
+  humanNote            String   @db.Text
+
+  priceMoveBtc         Float?
+  priceMoveEth         Float?
+  priceMoveWindowHours Int?
+
+  embedding            Float[]
+  embeddingModel       String?
+
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@index([day])
+  @@map("NewsPickFeedback")
+}

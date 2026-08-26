@@ -72,6 +72,13 @@ export const WIDGET_GALLERY_ITEMS: WidgetGalleryItem[] = [
     description: "Стоимость портфеля, P&L и структура активов",
     widgetType: "portfolio",
   },
+  {
+    id: "news",
+    categoryId: "news",
+    title: "Новости",
+    description: "Лента Telegram с тегами и настроением",
+    widgetType: "news",
+  },
 ];
 
 export function filterWidgetGalleryItems(

@@ -16,3 +16,13 @@ body {
   font-family: "Rubik", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
   overscroll-behavior: none;
 }
+
+img.atlas-twemoji {
+  width: 1.15em;
+  height: 1.15em;
+  margin: 0 0.04em;
+  vertical-align: -0.15em;
+  display: inline;
+  pointer-events: none;
+  user-select: none;
+}

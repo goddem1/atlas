@@ -20,7 +20,8 @@ export type DashboardCanvasWidgetType =
   | "portfolio"
   | "macro-calendar"
   | "fed-curve"
-  | "watchlist";
+  | "watchlist"
+  | "news";
 
 export interface DashboardCanvasWidget {
   id: string;
@@ -291,3 +292,23 @@ export {
   roundPortfolioUsdForDisplay,
   sumPortfolioPnlUsd,
 } from "./portfolioPnl.js";
+export type {
+  TelegramNewsChannel,
+  TelegramNewsChannelsResponse,
+  TelegramNewsDailyIndexPoint,
+  TelegramNewsDailyIndexResponse,
+  TelegramNewsMessage,
+  TelegramNewsMessagesResponse,
+  TelegramNewsTextEntity,
+  TelegramNewsWidgetCategory,
+  TelegramNewsWidgetExplanation,
+  TelegramNewsWidgetItemKind,
+  TelegramNewsWidgetItemNote,
+  TelegramNewsWidgetResponse,
+} from "./telegramNews.js";
+export {
+  TELEGRAM_CHANNELS_MAX,
+  TELEGRAM_NEWS_WIDGET_CATEGORIES,
+  normalizeTelegramUsername,
+  parseTelegramNewsWidgetCategory,
+} from "./telegramNews.js";

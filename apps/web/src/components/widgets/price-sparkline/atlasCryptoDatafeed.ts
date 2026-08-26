@@ -1,15 +1,23 @@
 import type { CandleApiRow, CryptocurrencyListItem } from "@atlas-v1/shared";
 import type { Datafeed, Period, SymbolInfo } from "@klinecharts/pro";
 import type { KLineData } from "klinecharts";
-import { fetchCandles } from "../../../services/api";
+import { fetchCandles, fetchTelegramNewsDailyIndex } from "../../../services/api";
 import {
   generateBtcTestCandleRows,
   isBtcTestKlinePair,
   tickBtcTestCandleRow,
 } from "./btcKlineTestSeries";
 import { KLINE_CHART_HISTORY_DAYS, candleRowsToKlineBars, inferPricePrecisionFromBars } from "./candleKlineUtils";
+import {
+  NEWS_INDEX_CHART_PAIR,
+  NEWS_INDEX_CHART_SYMBOL,
+  buildNewsIndexSymbolInfo,
+  isNewsIndexPair,
+  newsIndexPointsToKlineBars,
+} from "./newsIndexChartSymbol";
 
 const CANDLES_POLL_MS = 30 * 1000;
+const NEWS_INDEX_POLL_MS = 5 * 60 * 1000;
 
 export function pairForCryptocurrency(c: Pick<CryptocurrencyListItem, "symbol" | "pairSymbol">): string {
   return (c.pairSymbol?.trim() || `${c.symbol}USDT`).toUpperCase();
@@ -60,13 +68,33 @@ function buildKlineCatalog(
     });
   }
 
-  return [...byTicker.values()].sort((a, b) =>
-    a.crypto.symbol.localeCompare(b.crypto.symbol, "en", { sensitivity: "base" }),
-  );
+  return [...byTicker.values()]
+    .concat(newsIndexCatalogEntry())
+    .sort((a, b) => a.crypto.symbol.localeCompare(b.crypto.symbol, "en", { sensitivity: "base" }));
+}
+
+function newsIndexCatalogEntry(): CatalogEntry {
+  const symbolInfo = buildNewsIndexSymbolInfo();
+  return {
+    crypto: {
+      id: NEWS_INDEX_CHART_SYMBOL,
+      symbol: NEWS_INDEX_CHART_SYMBOL,
+      name: "Индекс новостей",
+      iconUrl: "",
+      pairSymbol: NEWS_INDEX_CHART_PAIR,
+      createdAt: "",
+      updatedAt: "",
+    },
+    pair: NEWS_INDEX_CHART_PAIR,
+    symbolInfo,
+  };
 }
 
 function resolveCatalogEntry(symbol: SymbolInfo, catalog: CatalogEntry[]): CatalogEntry | null {
   const ticker = symbol.ticker?.trim().toUpperCase();
+  if (ticker && isNewsIndexPair(ticker)) {
+    return catalog.find((entry) => isNewsIndexPair(entry.pair)) ?? newsIndexCatalogEntry();
+  }
   if (ticker) {
     const byTicker = catalog.find((entry) => entry.symbolInfo.ticker.toUpperCase() === ticker);
     if (byTicker) return byTicker;
@@ -74,6 +102,9 @@ function resolveCatalogEntry(symbol: SymbolInfo, catalog: CatalogEntry[]): Catal
 
   const shortName = symbol.shortName?.trim().toUpperCase();
   if (shortName) {
+    if (isNewsIndexPair(shortName) || shortName === "NEWS") {
+      return catalog.find((entry) => isNewsIndexPair(entry.pair)) ?? newsIndexCatalogEntry();
+    }
     const bySymbol = catalog.find((entry) => entry.crypto.symbol.toUpperCase() === shortName);
     if (bySymbol) return bySymbol;
   }
@@ -143,6 +174,14 @@ export function createAtlasCryptoDatafeed(options: {
     if (pending) return pending;
 
     const promise = (async () => {
+      if (isNewsIndexPair(pair)) {
+        const data = await fetchTelegramNewsDailyIndex({ limit: 366 });
+        const bars = newsIndexPointsToKlineBars(data.points ?? []);
+        barsCache.set(NEWS_INDEX_CHART_PAIR, bars);
+        notifyPricePrecision(bars);
+        return bars;
+      }
+
       if (isBtcTestKlinePair(pair)) {
         const bars = candleRowsToKlineBars(generateBtcTestCandleRows(KLINE_CHART_HISTORY_DAYS));
         barsCache.set(pair, bars);
@@ -214,6 +253,21 @@ export function createAtlasCryptoDatafeed(options: {
       clearPoll();
 
       const pushLatest = () => {
+        if (isNewsIndexPair(pair)) {
+          fetchTelegramNewsDailyIndex({ limit: 366 })
+            .then((data) => {
+              const nextBars = newsIndexPointsToKlineBars(data.points ?? []);
+              const last = nextBars[nextBars.length - 1];
+              if (!last) return;
+              barsCache.set(NEWS_INDEX_CHART_PAIR, nextBars);
+              callback(last);
+            })
+            .catch(() => {
+              // polling errors are non-fatal
+            });
+          return;
+        }
+
         if (isBtcTestKlinePair(pair)) {
           const cached = barsCache.get(pair);
           if (!cached || cached.length === 0) return;
@@ -260,7 +314,10 @@ export function createAtlasCryptoDatafeed(options: {
       };
 
       pushLatest();
-      pollId = window.setInterval(pushLatest, CANDLES_POLL_MS);
+      pollId = window.setInterval(
+        pushLatest,
+        isNewsIndexPair(pair) ? NEWS_INDEX_POLL_MS : CANDLES_POLL_MS,
+      );
     },
 
     unsubscribe() {

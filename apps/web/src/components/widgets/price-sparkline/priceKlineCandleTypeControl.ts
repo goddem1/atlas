@@ -176,8 +176,13 @@ export function saveStoredKlineCandleType(type: KlineChartVisualType): void {
   }
 }
 
-export function applyKlineCandleType(chart: ChartPro, visualType: KlineChartVisualType): void {
+export function applyKlineCandleType(
+  chart: ChartPro,
+  visualType: KlineChartVisualType,
+  options?: { persist?: boolean },
+): void {
   const option = getOption(visualType);
+  const persist = options?.persist !== false;
 
   if (option.lineOnly) {
     chart.setStyles({
@@ -202,7 +207,7 @@ export function applyKlineCandleType(chart: ChartPro, visualType: KlineChartVisu
     });
   }
 
-  saveStoredKlineCandleType(option.id);
+  if (persist) saveStoredKlineCandleType(option.id);
 }
 
 export function getKlineCandleType(chart: ChartPro): KlineChartVisualType {

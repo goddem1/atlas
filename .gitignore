@@ -4,6 +4,8 @@ build
 .env
 .env.local
 docker/.env
+apps/api/telegram-login-qr.png
+apps/api/.telegram-qr-url.txt
 *.log
 .DS_Store
 coverage

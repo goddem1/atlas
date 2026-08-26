@@ -3,8 +3,10 @@ import type {
   MacroEventRow,
   PortfolioChartResponse,
   PortfolioSummaryResponse,
+  TelegramNewsWidgetExplanation,
 } from "@atlas-v1/shared";
 import type { WatchlistRow } from "../widgets/watchlist/WatchlistCard";
+import type { NewsWidgetItem } from "../widgets/news/newsClassify";
 
 const FED_TENORS = ["1M", "3M", "6M", "1Y", "2Y", "3Y", "5Y", "7Y", "10Y", "20Y", "30Y"] as const;
 
@@ -156,3 +158,37 @@ export const GALLERY_PORTFOLIO_CHART: PortfolioChartResponse = {
     { date: "2025-06-12", valueUsd: "124580.00" },
   ],
 };
+
+const GALLERY_NEWS_TEXT =
+  "Это самая важная новость в мире, поэтому мы написали ее сюда и отобразили в нашем виджете.";
+
+export const GALLERY_NEWS_SENTIMENT = 72;
+
+export const GALLERY_NEWS_EXPLANATION: TelegramNewsWidgetExplanation = {
+  formula:
+    "Сентимент 72%: среди кандидатов условно 9 позитивных и 3 негативных сигнала. Формула: 50 + ((9−3)/(9+3))×40 ≈ 70, округление и калибровка → 72%.",
+  notes: Array.from({ length: 5 }, (_, i) => ({
+    id: `gallery-news-${i}`,
+    why: "Сильный макро-сигнал с широким охватом рынка.",
+    impact: "Может сдвинуть риск-аппетит и волатильность по рисковым активам.",
+  })),
+};
+
+export const GALLERY_NEWS_ITEMS: NewsWidgetItem[] = Array.from({ length: 5 }, (_, i) => {
+  const tags = [
+    { id: "macro" as const, label: "Макро", color: "#FF8D28" },
+    { id: "crypto" as const, label: "Крипто", color: "#0088FF" },
+    { id: "funds" as const, label: "Фонда", color: "#CB30E0" },
+    { id: "markets" as const, label: "Рынок", color: "#34C759" },
+    { id: "markets" as const, label: "Рынок", color: "#34C759" },
+  ];
+  return {
+    key: `gallery-news-${i}`,
+    channelUsername: "gallery",
+    messageId: i + 1,
+    text: GALLERY_NEWS_TEXT,
+    url: "https://t.me/",
+    date: "2025-06-12T12:00:00.000Z",
+    tag: tags[i]!,
+  };
+});

@@ -37,7 +37,8 @@ function isWidgetType(v: unknown): v is DashboardCanvasWidget["type"] {
     v === "portfolio" ||
     v === "macro-calendar" ||
     v === "fed-curve" ||
-    v === "watchlist"
+    v === "watchlist" ||
+    v === "news"
   );
 }
 

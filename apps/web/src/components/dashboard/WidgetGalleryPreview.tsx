@@ -1,6 +1,7 @@
 import type { DashboardWidgetType } from "../../lib/dashboardWidgets";
 import { FedCurveWidget } from "../widgets/fed-curve/FedCurveWidget";
 import { MacroCalendarWidget } from "../widgets/macro-calendar/MacroCalendarWidget";
+import { NewsWidget } from "../widgets/news/NewsWidget";
 import { PortfolioWidget } from "../widgets/portfolio/PortfolioWidget";
 import { PriceSparklineWidget } from "../widgets/price-sparkline/PriceSparklineWidget";
 import { WatchlistWidget } from "../widgets/watchlist/WatchlistWidget";
@@ -48,6 +49,12 @@ export function WidgetGalleryPreview({ widgetType }: Props) {
       return (
         <LiveWidgetPreview widgetType="fed-curve">
           <FedCurveWidget galleryPreview />
+        </LiveWidgetPreview>
+      );
+    case "news":
+      return (
+        <LiveWidgetPreview widgetType="news">
+          <NewsWidget galleryPreview />
         </LiveWidgetPreview>
       );
     case "portfolio":
