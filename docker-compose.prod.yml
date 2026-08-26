@@ -23,6 +23,12 @@ services:
       timeout: 5s
       retries: 5
 
+  gost:
+    # HTTP-прокси (RAPIDAPI_PROXY_URL) → локальный SOCKS5 для Telegram MTProto
+    image: ginuerzh/gost:2.11.5
+    restart: unless-stopped
+    command: ["-L=socks5://:1080", "-F=${RAPIDAPI_PROXY_URL}"]
+
   api:
     build:
       context: .
@@ -31,6 +37,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      gost:
+        condition: service_started
     environment:
       DATABASE_URL: postgresql://atlas:${POSTGRES_PASSWORD}@db:5432/atlas_v1?schema=public
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?Set BETTER_AUTH_SECRET in env file}
@@ -67,8 +75,8 @@ services:
       TELEGRAM_PROXY_URL: ${TELEGRAM_PROXY_URL:-}
       TELEGRAM_CONNECT_TIMEOUT_MS: ${TELEGRAM_CONNECT_TIMEOUT_MS:-20000}
       TELEGRAM_PROXY_TYPE: ${TELEGRAM_PROXY_TYPE:-socks5}
-      TELEGRAM_PROXY_HOST: ${TELEGRAM_PROXY_HOST:-}
-      TELEGRAM_PROXY_PORT: ${TELEGRAM_PROXY_PORT:-}
+      TELEGRAM_PROXY_HOST: ${TELEGRAM_PROXY_HOST:-gost}
+      TELEGRAM_PROXY_PORT: ${TELEGRAM_PROXY_PORT:-1080}
       TELEGRAM_PROXY_USERNAME: ${TELEGRAM_PROXY_USERNAME:-}
       TELEGRAM_PROXY_PASSWORD: ${TELEGRAM_PROXY_PASSWORD:-}
       LLM_API_KEY: ${LLM_API_KEY:-}
