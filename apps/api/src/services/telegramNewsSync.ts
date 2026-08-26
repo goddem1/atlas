@@ -163,9 +163,11 @@ export async function startTelegramNewsAutoSync(
 
   await ensureWatchedChannels(prisma, getDefaultTelegramChannels());
 
-  void runTelegramNewsCatchUp(prisma, log).catch((err) => {
+  try {
+    await runTelegramNewsCatchUp(prisma, log);
+  } catch (err) {
     log.warn({ err }, "[telegram-news] initial catch-up failed");
-  });
+  }
 
   const intervalMin = Number.parseInt(process.env.TELEGRAM_NEWS_CATCHUP_MINUTES ?? "5", 10);
   const minutes = Math.max(2, Number.isFinite(intervalMin) ? intervalMin : 5);
@@ -175,13 +177,16 @@ export async function startTelegramNewsAutoSync(
     });
   }, minutes * 60_000);
 
-  if (!listenerStarted) {
+  const liveListenerDisabled = process.env.TELEGRAM_NEWS_LIVE_LISTENER_DISABLED === "true";
+  if (!listenerStarted && !liveListenerDisabled) {
     try {
       await attachNewMessageListener(prisma, log);
       listenerStarted = true;
     } catch (err) {
       log.warn({ err }, "[telegram-news] live listener failed to start");
     }
+  } else if (liveListenerDisabled) {
+    log.info("[telegram-news] live listener disabled (TELEGRAM_NEWS_LIVE_LISTENER_DISABLED)");
   }
 
   log.info({ catchUpMinutes: minutes }, "[telegram-news] auto-sync started (live events + catch-up)");

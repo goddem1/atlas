@@ -266,13 +266,16 @@ function isAuthKeyDuplicated(err: unknown): boolean {
 async function resetTelegramClient(): Promise<void> {
   const pending = clientPromise;
   clientPromise = null;
-  if (!pending) return;
-  try {
-    const client = await pending;
-    await client.disconnect();
-  } catch {
-    // ignore
+  if (pending) {
+    try {
+      const client = await pending;
+      await client.disconnect();
+    } catch {
+      // ignore
+    }
   }
+  // Telegram needs a moment to release the auth key after disconnect.
+  await new Promise((resolve) => setTimeout(resolve, 3000));
 }
 
 /** Serialize MTProto calls and recover from duplicate session errors. */
