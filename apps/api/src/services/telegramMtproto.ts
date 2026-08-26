@@ -54,6 +54,28 @@ function readApiCredentials(): { apiId: number; apiHash: string; session: string
 }
 
 function readProxy(): SocksProxy | undefined {
+  const urlRaw = process.env.TELEGRAM_PROXY_URL?.trim();
+  if (urlRaw) {
+    try {
+      const u = new URL(urlRaw);
+      const host = u.hostname;
+      const port = u.port ? Number.parseInt(u.port, 10) : u.protocol === "socks4:" ? 1080 : 1080;
+      if (!host || !Number.isFinite(port)) return undefined;
+      const proto = u.protocol.replace(":", "").toLowerCase();
+      if (proto === "socks4" || proto === "socks5") {
+        return {
+          ip: host,
+          port,
+          socksType: proto === "socks4" ? 4 : 5,
+          username: decodeURIComponent(u.username) || undefined,
+          password: decodeURIComponent(u.password) || undefined,
+        };
+      }
+    } catch {
+      // fall through to host/port vars
+    }
+  }
+
   const host = process.env.TELEGRAM_PROXY_HOST?.trim();
   const portRaw = process.env.TELEGRAM_PROXY_PORT?.trim();
   if (!host || !portRaw) return undefined;
@@ -68,6 +90,33 @@ function readProxy(): SocksProxy | undefined {
     username: process.env.TELEGRAM_PROXY_USERNAME?.trim() || undefined,
     password: process.env.TELEGRAM_PROXY_PASSWORD?.trim() || undefined,
   };
+}
+
+const TELEGRAM_CONNECT_TIMEOUT_MS = Math.min(
+  60_000,
+  Math.max(5_000, Number.parseInt(process.env.TELEGRAM_CONNECT_TIMEOUT_MS ?? "20000", 10) || 20_000),
+);
+
+async function connectClient(client: TelegramClient): Promise<void> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    await Promise.race([
+      client.connect(),
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(() => {
+          reject(
+            new TelegramMtprotoUnavailableError(
+              readProxy()
+                ? "Не удалось подключиться к Telegram через прокси (таймаут). Проверьте TELEGRAM_PROXY_*."
+                : "Не удалось подключиться к Telegram (таймаут). На сервере в РФ обычно нужен SOCKS5-прокси: TELEGRAM_PROXY_URL или TELEGRAM_PROXY_HOST/PORT.",
+            ),
+          );
+        }, TELEGRAM_CONNECT_TIMEOUT_MS);
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
 }
 
 function detectMediaType(message: Api.Message): TelegramNewsMessage["mediaType"] {
@@ -216,10 +265,10 @@ async function getClient(): Promise<TelegramClient> {
       const stringSession = new StringSession(session);
       const proxy = readProxy();
       const client = new TelegramClient(stringSession, apiId, apiHash, {
-        connectionRetries: 5,
+        connectionRetries: 2,
         ...(proxy ? { proxy } : {}),
       });
-      await client.connect();
+      await connectClient(client);
       if (!(await client.isUserAuthorized())) {
         await client.disconnect();
         throw new TelegramMtprotoUnavailableError(

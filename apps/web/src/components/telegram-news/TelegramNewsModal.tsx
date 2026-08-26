@@ -802,12 +802,6 @@ export function TelegramNewsModal({ open, onClose }: Props) {
     setAddBusy(true);
     setAddError(null);
     try {
-      const rows = await fetchTelegramNewsChannels([username]);
-      const row = rows[0];
-      if (!row || (row.lastMessagePreview?.startsWith("Ошибка:") ?? false)) {
-        setAddError(row?.lastMessagePreview?.replace(/^Ошибка:\s*/, "") || "Канал не найден");
-        return;
-      }
       const next = [...subscribedUsernames, username];
       await persistAndReload(next);
       setActiveUsername(username);

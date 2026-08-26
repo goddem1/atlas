@@ -54,39 +54,38 @@ export function registerTelegramNewsRoutes(app: FastifyInstance, prisma: PrismaC
       const usernames = parseUsernamesQuery(req.query.usernames);
       if (usernames !== undefined) {
         await ensureWatchedChannels(prisma, usernames);
-        void runTelegramNewsCatchUp(prisma, app.log, usernames).catch((err) => {
-          app.log.warn({ err }, "[telegram-news] watch catch-up failed");
-        });
       }
 
       const wantLive = req.query.live === "1" || req.query.live === "true";
       if (wantLive) {
-        const channels = await listTelegramNewsChannels(usernames);
-        return { channels };
-      }
-
-      // Быстрый путь для live UI: превью из БД (обновляется MTProto/catch-up).
-      let channels = await listStoredTelegramChannels(prisma, usernames);
-      const missingMeta = channels.some((c) => !c.title || c.title === c.username);
-      if (channels.length === 0 || missingMeta) {
+        void runTelegramNewsCatchUp(prisma, app.log, usernames).catch((err) => {
+          app.log.warn({ err }, "[telegram-news] live catch-up failed");
+        });
         try {
-          const live = await listTelegramNewsChannels(usernames ?? channels.map((c) => c.username));
-          const { updateChannelMeta } = await import("../services/telegramNewsStore.js");
-          for (const ch of live) {
-            await updateChannelMeta(prisma, ch.username, {
-              title: ch.title,
-              hasPhoto: ch.hasPhoto,
-            });
-          }
-          channels = await listStoredTelegramChannels(prisma, usernames);
-          // Если постов ещё нет — покажем live preview.
-          if (channels.every((c) => !c.lastMessageAt)) {
-            return { channels: live };
-          }
-        } catch {
-          if (channels.length === 0) throw new Error("Не удалось загрузить каналы");
+          const channels = await listTelegramNewsChannels(usernames);
+          return { channels };
+        } catch (err) {
+          const message =
+            err instanceof TelegramMtprotoUnavailableError
+              ? err.message
+              : err instanceof Error
+                ? err.message
+                : "Не удалось загрузить каналы";
+          return reply.status(503).send({ error: message });
         }
       }
+
+      if (usernames !== undefined) {
+        void runTelegramNewsCatchUp(prisma, app.log, usernames).catch((err) => {
+          app.log.warn({ err }, "[telegram-news] watch catch-up failed");
+        });
+      } else {
+        void runTelegramNewsCatchUp(prisma, app.log).catch((err) => {
+          app.log.warn({ err }, "[telegram-news] catch-up failed");
+        });
+      }
+
+      const channels = await listStoredTelegramChannels(prisma, usernames);
       return { channels };
     } catch (err) {
       const message =
@@ -221,15 +220,9 @@ export function registerTelegramNewsRoutes(app: FastifyInstance, prisma: PrismaC
       await ensureWatchedChannels(prisma, [req.params.username]);
 
       if (forceRefresh) {
-        try {
-          const live = await getTelegramNewsMessages(req.params.username, {
-            limit: safeLimit,
-            offsetId: safeOffset,
-          });
-          await upsertTelegramNewsMessages(prisma, live);
-        } catch (err) {
-          app.log.warn({ err, username: req.params.username }, "[telegram-news] live refresh failed");
-        }
+        void runTelegramNewsCatchUp(prisma, app.log, [req.params.username]).catch((err) => {
+          app.log.warn({ err, username: req.params.username }, "[telegram-news] messages refresh catch-up failed");
+        });
       }
 
       let messages = await getStoredTelegramNewsMessages(prisma, req.params.username, {
@@ -237,13 +230,10 @@ export function registerTelegramNewsRoutes(app: FastifyInstance, prisma: PrismaC
         offsetId: safeOffset,
       });
 
-      // Cold start: DB empty → one live pull, then serve.
       if (messages.length === 0) {
-        messages = await getTelegramNewsMessages(req.params.username, {
-          limit: safeLimit,
-          offsetId: safeOffset,
+        void runTelegramNewsCatchUp(prisma, app.log, [req.params.username]).catch((err) => {
+          app.log.warn({ err, username: req.params.username }, "[telegram-news] cold-start catch-up failed");
         });
-        await upsertTelegramNewsMessages(prisma, messages);
       }
 
       return { messages };
