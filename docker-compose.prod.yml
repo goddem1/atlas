@@ -91,6 +91,8 @@ services:
       NEWS_FEEDBACK_FEWSHOT_COUNT: ${NEWS_FEEDBACK_FEWSHOT_COUNT:-8}
       NEWS_FEEDBACK_MIN_SIMILARITY: ${NEWS_FEEDBACK_MIN_SIMILARITY:-0.75}
       NEWS_FEEDBACK_PRICE_HINT_WINDOW_HOURS: ${NEWS_FEEDBACK_PRICE_HINT_WINDOW_HOURS:-4}
+    volumes:
+      - atlas_api_data:/app/apps/api/data
 
   web:
     build:
@@ -106,3 +108,4 @@ services:
 
 volumes:
   atlas_prod_pg_data:
+  atlas_api_data:

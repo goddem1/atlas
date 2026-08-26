@@ -1,15 +1,17 @@
 import type { FastifyInstance } from "fastify";
 import type { PrismaClient } from "@prisma/client";
 import {
-  downloadTelegramChannelPhoto,
-  downloadTelegramMessageImage,
-  downloadTelegramMessageVideo,
-  downloadTelegramMessageVideoThumb,
   getTelegramNewsMessages,
   isTelegramMtprotoConfigured,
   listTelegramNewsChannels,
   TelegramMtprotoUnavailableError,
 } from "../services/telegramMtproto.js";
+import {
+  ensureChannelPhotoCached,
+  ensureMessageImageCached,
+  ensureMessageVideoCached,
+  ensureVideoThumbCached,
+} from "../services/telegramMediaEnsure.js";
 import {
   ensureWatchedChannels,
   getStoredTelegramFeed,
@@ -261,7 +263,7 @@ export function registerTelegramNewsRoutes(app: FastifyInstance, prisma: PrismaC
         return reply.status(404).send();
       }
       try {
-        const media = await downloadTelegramMessageImage(req.params.username, messageId);
+        const media = await ensureMessageImageCached(req.params.username, messageId);
         if (!media) return reply.status(404).send();
         return reply.type(media.contentType).send(media.buffer);
       } catch {
@@ -282,7 +284,7 @@ export function registerTelegramNewsRoutes(app: FastifyInstance, prisma: PrismaC
         return reply.status(404).send();
       }
       try {
-        const media = await downloadTelegramMessageVideo(req.params.username, messageId);
+        const media = await ensureMessageVideoCached(req.params.username, messageId);
         if (!media) return reply.status(404).send();
         return reply.type(media.contentType).send(media.buffer);
       } catch (err) {
@@ -306,7 +308,7 @@ export function registerTelegramNewsRoutes(app: FastifyInstance, prisma: PrismaC
         return reply.status(404).send();
       }
       try {
-        const media = await downloadTelegramMessageVideoThumb(req.params.username, messageId);
+        const media = await ensureVideoThumbCached(req.params.username, messageId);
         if (!media) return reply.status(404).send();
         return reply.type(media.contentType).send(media.buffer);
       } catch {
@@ -323,7 +325,7 @@ export function registerTelegramNewsRoutes(app: FastifyInstance, prisma: PrismaC
         return reply.status(404).send();
       }
       try {
-        const buf = await downloadTelegramChannelPhoto(req.params.username);
+        const buf = await ensureChannelPhotoCached(req.params.username);
         if (!buf) return reply.status(404).send();
         return reply.type("image/jpeg").send(buf);
       } catch {

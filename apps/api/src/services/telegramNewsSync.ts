@@ -14,11 +14,16 @@ import {
 import {
   ensureWatchedChannels,
   getLatestMessageId,
+  getStoredTelegramNewsMessages,
   listWatchedUsernames,
   pruneOldTelegramNewsPosts,
   updateChannelMeta,
   upsertTelegramNewsMessages,
 } from "./telegramNewsStore.js";
+import {
+  ensureChannelPhotoCached,
+  prefetchTelegramMessageMedia,
+} from "./telegramMediaEnsure.js";
 
 type Log = Pick<FastifyBaseLogger, "info" | "warn" | "error" | "debug">;
 
@@ -41,6 +46,7 @@ async function syncOneChannel(
   }
   const n = await upsertTelegramNewsMessages(prisma, fresh);
   await updateChannelMeta(prisma, username, {});
+  await prefetchTelegramMessageMedia(username, fresh, log);
   log.debug({ username, upserted: n, latestId }, "[telegram-news] channel sync");
   return n;
 }
@@ -75,6 +81,13 @@ export async function runTelegramNewsCatchUp(
           title: ch.title,
           hasPhoto: ch.hasPhoto,
         });
+        if (ch.hasPhoto) {
+          try {
+            await ensureChannelPhotoCached(ch.username);
+          } catch (err) {
+            log.warn({ err, username: ch.username }, "[telegram-news] channel photo cache failed");
+          }
+        }
       }
     } catch (err) {
       log.warn({ err }, "[telegram-news] channel meta refresh failed");
@@ -86,6 +99,21 @@ export async function runTelegramNewsCatchUp(
         total += await syncOneChannel(prisma, log, username);
       } catch (err) {
         log.warn({ err, username }, "[telegram-news] channel sync failed");
+      }
+    }
+
+    // Догрузить медиа для постов, уже лежащих в БД (первый запуск / после деплоя).
+    for (const username of channels) {
+      try {
+        const recent = await getStoredTelegramNewsMessages(prisma, username, { limit: 30 });
+        const needsMedia = recent.filter(
+          (m) => m.hasImage || m.hasVideoThumb || m.hasVideo,
+        );
+        if (needsMedia.length > 0) {
+          await prefetchTelegramMessageMedia(username, needsMedia, log);
+        }
+      } catch (err) {
+        log.debug({ err, username }, "[telegram-news] backlog media prefetch skipped");
       }
     }
 

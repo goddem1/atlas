@@ -3,7 +3,7 @@ import type {
   TelegramNewsMessage,
   TelegramNewsTextEntity,
 } from "@atlas-v1/shared";
-import { TELEGRAM_CHANNELS_MAX, normalizeTelegramUsername } from "@atlas-v1/shared";
+import { TELEGRAM_CHANNELS_MAX, normalizeTelegramUsername, isValidTelegramChannelUsername } from "@atlas-v1/shared";
 import { Api, TelegramClient } from "telegram";
 import { StringSession } from "telegram/sessions/index.js";
 import {
@@ -28,7 +28,7 @@ function normalizeUsernameList(raw: string[]): string[] {
   const seen = new Set<string>();
   for (const item of raw) {
     const username = normalizeTelegramUsername(item);
-    if (!username || seen.has(username)) continue;
+    if (!username || !isValidTelegramChannelUsername(username) || seen.has(username)) continue;
     seen.add(username);
     out.push(username);
     if (out.length >= TELEGRAM_CHANNELS_MAX) break;
@@ -253,6 +253,48 @@ function extractTextEntities(message: Api.Message): TelegramNewsTextEntity[] {
 }
 
 let clientPromise: Promise<TelegramClient> | null = null;
+let opQueue: Promise<unknown> = Promise.resolve();
+
+function isAuthKeyDuplicated(err: unknown): boolean {
+  if (!(err instanceof Error)) return false;
+  if (err.message.includes("AUTH_KEY_DUPLICATED")) return true;
+  const code = (err as { code?: number; errorMessage?: string }).code;
+  const errorMessage = (err as { errorMessage?: string }).errorMessage;
+  return code === 406 || errorMessage === "AUTH_KEY_DUPLICATED";
+}
+
+async function resetTelegramClient(): Promise<void> {
+  const pending = clientPromise;
+  clientPromise = null;
+  if (!pending) return;
+  try {
+    const client = await pending;
+    await client.disconnect();
+  } catch {
+    // ignore
+  }
+}
+
+/** Serialize MTProto calls and recover from duplicate session errors. */
+function runTelegramOp<T>(op: () => Promise<T>): Promise<T> {
+  const exec = async (): Promise<T> => {
+    try {
+      return await op();
+    } catch (err) {
+      if (isAuthKeyDuplicated(err)) {
+        await resetTelegramClient();
+        return op();
+      }
+      throw err;
+    }
+  };
+  const result = opQueue.then(exec, exec);
+  opQueue = result.then(
+    () => undefined,
+    () => undefined,
+  );
+  return result;
+}
 
 async function getClient(): Promise<TelegramClient> {
   if (!clientPromise) {
@@ -303,231 +345,245 @@ export function mapApiMessageToNewsMessage(
 }
 
 export async function getTelegramClientForEvents(): Promise<TelegramClient> {
-  return getClient();
+  return runTelegramOp(() => getClient());
 }
 
 /** Resolve public username for a chat/channel peer (best-effort). */
 export async function resolveChannelUsernameFromPeer(
   peer: unknown,
 ): Promise<string | null> {
-  try {
-    const client = await getClient();
-    const entity = await client.getEntity(peer as Parameters<TelegramClient["getEntity"]>[0]);
-    if ("username" in entity && typeof entity.username === "string" && entity.username) {
-      return normalizeTelegramUsername(entity.username);
+  return runTelegramOp(async () => {
+    try {
+      const client = await getClient();
+      const entity = await client.getEntity(peer as Parameters<TelegramClient["getEntity"]>[0]);
+      if ("username" in entity && typeof entity.username === "string" && entity.username) {
+        return normalizeTelegramUsername(entity.username);
+      }
+    } catch {
+      // ignore
     }
-  } catch {
-    // ignore
-  }
-  return null;
+    return null;
+  });
 }
 
 export async function listTelegramNewsChannels(
   usernamesRaw?: string[],
 ): Promise<TelegramNewsChannel[]> {
-  const client = await getClient();
-  const usernames =
-    usernamesRaw !== undefined
-      ? normalizeUsernameList(usernamesRaw)
-      : parseChannelsEnv();
-  const channels: TelegramNewsChannel[] = [];
+  return runTelegramOp(async () => {
+    const client = await getClient();
+    const usernames =
+      usernamesRaw !== undefined
+        ? normalizeUsernameList(usernamesRaw)
+        : parseChannelsEnv();
+    const channels: TelegramNewsChannel[] = [];
 
-  for (const username of usernames) {
-    try {
-      const entity = await client.getEntity(username);
-      const title =
-        "title" in entity && typeof entity.title === "string"
-          ? entity.title
-          : "firstName" in entity && typeof entity.firstName === "string"
-            ? entity.firstName
-            : username;
+    for (const username of usernames) {
+      try {
+        const entity = await client.getEntity(username);
+        const title =
+          "title" in entity && typeof entity.title === "string"
+            ? entity.title
+            : "firstName" in entity && typeof entity.firstName === "string"
+              ? entity.firstName
+              : username;
 
-      let hasPhoto = false;
-      if ("photo" in entity && entity.photo) {
-        hasPhoto = !(entity.photo instanceof Api.ChatPhotoEmpty);
+        let hasPhoto = false;
+        if ("photo" in entity && entity.photo) {
+          hasPhoto = !(entity.photo instanceof Api.ChatPhotoEmpty);
+        }
+
+        const recent = await client.getMessages(entity, { limit: 1 });
+        const last = recent[0];
+        const lastText = last && "message" in last ? String(last.message ?? "") : "";
+        const lastAt =
+          last && last.date
+            ? new Date(last.date * 1000).toISOString()
+            : null;
+
+        channels.push({
+          username,
+          title,
+          hasPhoto,
+          lastMessagePreview: lastText ? previewText(lastText) : last?.media ? "[медиа]" : null,
+          lastMessageAt: lastAt,
+        });
+      } catch (err) {
+        channels.push({
+          username,
+          title: username,
+          hasPhoto: false,
+          lastMessagePreview: err instanceof Error ? `Ошибка: ${err.message}` : "Ошибка загрузки",
+          lastMessageAt: null,
+        });
       }
-
-      const recent = await client.getMessages(entity, { limit: 1 });
-      const last = recent[0];
-      const lastText = last && "message" in last ? String(last.message ?? "") : "";
-      const lastAt =
-        last && last.date
-          ? new Date(last.date * 1000).toISOString()
-          : null;
-
-      channels.push({
-        username,
-        title,
-        hasPhoto,
-        lastMessagePreview: lastText ? previewText(lastText) : last?.media ? "[медиа]" : null,
-        lastMessageAt: lastAt,
-      });
-    } catch (err) {
-      channels.push({
-        username,
-        title: username,
-        hasPhoto: false,
-        lastMessagePreview: err instanceof Error ? `Ошибка: ${err.message}` : "Ошибка загрузки",
-        lastMessageAt: null,
-      });
     }
-  }
 
-  return channels;
+    return channels;
+  });
 }
 
 export async function getTelegramNewsMessages(
   usernameRaw: string,
   options: { limit?: number; offsetId?: number } = {},
 ): Promise<TelegramNewsMessage[]> {
-  const username = normalizeTelegramUsername(usernameRaw);
-  if (!username) return [];
+  return runTelegramOp(async () => {
+    const username = normalizeTelegramUsername(usernameRaw);
+    if (!username) return [];
 
-  const client = await getClient();
-  const entity = await client.getEntity(username);
-  const limit = Math.min(100, Math.max(1, options.limit ?? 40));
-  const offsetId = options.offsetId && options.offsetId > 0 ? options.offsetId : 0;
+    const client = await getClient();
+    const entity = await client.getEntity(username);
+    const limit = Math.min(100, Math.max(1, options.limit ?? 40));
+    const offsetId = options.offsetId && options.offsetId > 0 ? options.offsetId : 0;
 
-  const messages = await client.getMessages(entity, {
-    limit,
-    ...(offsetId > 0 ? { offsetId } : {}),
+    const messages = await client.getMessages(entity, {
+      limit,
+      ...(offsetId > 0 ? { offsetId } : {}),
+    });
+
+    const out: TelegramNewsMessage[] = [];
+    for (const msg of messages) {
+      if (!(msg instanceof Api.Message)) continue;
+      out.push(mapApiMessageToNewsMessage(msg, username));
+    }
+    return out;
   });
-
-  const out: TelegramNewsMessage[] = [];
-  for (const msg of messages) {
-    if (!(msg instanceof Api.Message)) continue;
-    out.push(mapApiMessageToNewsMessage(msg, username));
-  }
-  return out;
 }
 
 export async function downloadTelegramChannelPhoto(usernameRaw: string): Promise<Buffer | null> {
-  const username = normalizeTelegramUsername(usernameRaw);
-  if (!username) return null;
+  return runTelegramOp(async () => {
+    const username = normalizeTelegramUsername(usernameRaw);
+    if (!username) return null;
 
-  const client = await getClient();
-  const entity = await client.getEntity(username);
-  const buffer = await client.downloadProfilePhoto(entity, { isBig: false });
-  if (!buffer || typeof buffer === "string" || buffer.length === 0) return null;
-  return Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer);
+    const client = await getClient();
+    const entity = await client.getEntity(username);
+    const buffer = await client.downloadProfilePhoto(entity, { isBig: false });
+    if (!buffer || typeof buffer === "string" || buffer.length === 0) return null;
+    return Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer);
+  });
 }
 
 export async function downloadTelegramMessageImage(
   usernameRaw: string,
   messageId: number,
 ): Promise<{ buffer: Buffer; contentType: string } | null> {
-  const username = normalizeTelegramUsername(usernameRaw);
-  if (!username || !Number.isFinite(messageId) || messageId <= 0) return null;
+  return runTelegramOp(async () => {
+    const username = normalizeTelegramUsername(usernameRaw);
+    if (!username || !Number.isFinite(messageId) || messageId <= 0) return null;
 
-  const client = await getClient();
-  const entity = await client.getEntity(username);
-  const messages = await client.getMessages(entity, { ids: [messageId] });
-  const msg = messages[0];
-  if (!(msg instanceof Api.Message) || !msg.media) return null;
+    const client = await getClient();
+    const entity = await client.getEntity(username);
+    const messages = await client.getMessages(entity, { ids: [messageId] });
+    const msg = messages[0];
+    if (!(msg instanceof Api.Message) || !msg.media) return null;
 
-  const media = msg.media;
-  let downloaded: Buffer | string | undefined | null = null;
-  let contentTypeHint: string | null = null;
+    const media = msg.media;
+    let downloaded: Buffer | string | undefined | null = null;
+    let contentTypeHint: string | null = null;
 
-  if (media instanceof Api.MessageMediaPhoto) {
-    downloaded = (await client.downloadMedia(msg, {})) as Buffer | string | undefined;
-  } else if (media instanceof Api.MessageMediaWebPage) {
-    const page = media.webpage;
-    if (page instanceof Api.WebPage && page.photo) {
+    if (media instanceof Api.MessageMediaPhoto) {
       downloaded = (await client.downloadMedia(msg, {})) as Buffer | string | undefined;
+    } else if (media instanceof Api.MessageMediaWebPage) {
+      const page = media.webpage;
+      if (page instanceof Api.WebPage && page.photo) {
+        downloaded = (await client.downloadMedia(msg, {})) as Buffer | string | undefined;
+      }
+    } else if (media instanceof Api.MessageMediaDocument) {
+      const doc = media.document;
+      const mime =
+        doc && "mimeType" in doc && typeof doc.mimeType === "string" ? doc.mimeType : "";
+      if (mime.startsWith("image/")) {
+        contentTypeHint = mime;
+        downloaded = (await client.downloadMedia(msg, {})) as Buffer | string | undefined;
+      }
     }
-  } else if (media instanceof Api.MessageMediaDocument) {
-    const doc = media.document;
-    const mime =
-      doc && "mimeType" in doc && typeof doc.mimeType === "string" ? doc.mimeType : "";
-    if (mime.startsWith("image/")) {
-      contentTypeHint = mime;
-      downloaded = (await client.downloadMedia(msg, {})) as Buffer | string | undefined;
-    }
-  }
 
-  const buffer = toBuffer(downloaded);
-  if (!buffer) return null;
-  return {
-    buffer,
-    contentType: contentTypeHint || sniffImageContentType(buffer),
-  };
+    const buffer = toBuffer(downloaded);
+    if (!buffer) return null;
+    return {
+      buffer,
+      contentType: contentTypeHint || sniffImageContentType(buffer),
+    };
+  });
 }
 
 export async function downloadTelegramMessageVideo(
   usernameRaw: string,
   messageId: number,
 ): Promise<{ buffer: Buffer; contentType: string } | null> {
-  const username = normalizeTelegramUsername(usernameRaw);
-  if (!username || !Number.isFinite(messageId) || messageId <= 0) return null;
+  return runTelegramOp(async () => {
+    const username = normalizeTelegramUsername(usernameRaw);
+    if (!username || !Number.isFinite(messageId) || messageId <= 0) return null;
 
-  const client = await getClient();
-  const entity = await client.getEntity(username);
-  const messages = await client.getMessages(entity, { ids: [messageId] });
-  const msg = messages[0];
-  if (!(msg instanceof Api.Message) || !messageHasDownloadableVideo(msg)) return null;
+    const client = await getClient();
+    const entity = await client.getEntity(username);
+    const messages = await client.getMessages(entity, { ids: [messageId] });
+    const msg = messages[0];
+    if (!(msg instanceof Api.Message) || !messageHasDownloadableVideo(msg)) return null;
 
-  const info = getDocumentMimeAndSize(msg);
-  if (!info) return null;
-  if (info.size > TELEGRAM_VIDEO_MAX_BYTES) {
-    throw new TelegramMtprotoUnavailableError(
-      `Видео слишком большое (${Math.round(info.size / (1024 * 1024))} МБ). Лимит ${Math.round(TELEGRAM_VIDEO_MAX_BYTES / (1024 * 1024))} МБ.`,
-    );
-  }
+    const info = getDocumentMimeAndSize(msg);
+    if (!info) return null;
+    if (info.size > TELEGRAM_VIDEO_MAX_BYTES) {
+      throw new TelegramMtprotoUnavailableError(
+        `Видео слишком большое (${Math.round(info.size / (1024 * 1024))} МБ). Лимит ${Math.round(TELEGRAM_VIDEO_MAX_BYTES / (1024 * 1024))} МБ.`,
+      );
+    }
 
-  const downloaded = (await client.downloadMedia(msg, {})) as Buffer | string | undefined;
-  const buffer = toBuffer(downloaded);
-  if (!buffer) return null;
-  const contentType = info.mime.startsWith("video/") ? info.mime : "video/mp4";
-  return { buffer, contentType };
+    const downloaded = (await client.downloadMedia(msg, {})) as Buffer | string | undefined;
+    const buffer = toBuffer(downloaded);
+    if (!buffer) return null;
+    const contentType = info.mime.startsWith("video/") ? info.mime : "video/mp4";
+    return { buffer, contentType };
+  });
 }
 
 export async function downloadTelegramMessageVideoThumb(
   usernameRaw: string,
   messageId: number,
 ): Promise<{ buffer: Buffer; contentType: string } | null> {
-  const username = normalizeTelegramUsername(usernameRaw);
-  if (!username || !Number.isFinite(messageId) || messageId <= 0) return null;
+  return runTelegramOp(async () => {
+    const username = normalizeTelegramUsername(usernameRaw);
+    if (!username || !Number.isFinite(messageId) || messageId <= 0) return null;
 
-  const client = await getClient();
-  const entity = await client.getEntity(username);
-  const messages = await client.getMessages(entity, { ids: [messageId] });
-  const msg = messages[0];
-  if (!(msg instanceof Api.Message) || !messageHasVideoThumb(msg)) return null;
+    const client = await getClient();
+    const entity = await client.getEntity(username);
+    const messages = await client.getMessages(entity, { ids: [messageId] });
+    const msg = messages[0];
+    if (!(msg instanceof Api.Message) || !messageHasVideoThumb(msg)) return null;
 
-  const media = msg.media;
-  if (!(media instanceof Api.MessageMediaDocument)) return null;
-  const doc = media.document;
-  if (!doc || !("thumbs" in doc) || !Array.isArray(doc.thumbs)) return null;
+    const media = msg.media;
+    if (!(media instanceof Api.MessageMediaDocument)) return null;
+    const doc = media.document;
+    if (!doc || !("thumbs" in doc) || !Array.isArray(doc.thumbs)) return null;
 
-  const usable = doc.thumbs.filter(
-    (t) =>
-      t instanceof Api.PhotoSize ||
-      t instanceof Api.PhotoCachedSize ||
-      t instanceof Api.PhotoStrippedSize ||
-      t instanceof Api.VideoSize ||
-      t instanceof Api.PhotoSizeProgressive,
-  );
-  if (usable.length === 0) return null;
+    const usable = doc.thumbs.filter(
+      (t) =>
+        t instanceof Api.PhotoSize ||
+        t instanceof Api.PhotoCachedSize ||
+        t instanceof Api.PhotoStrippedSize ||
+        t instanceof Api.VideoSize ||
+        t instanceof Api.PhotoSizeProgressive,
+    );
+    if (usable.length === 0) return null;
 
-  const thumbSizeOf = (t: (typeof usable)[number]): number => {
-    if (t instanceof Api.PhotoStrippedSize || t instanceof Api.PhotoCachedSize) {
-      return t.bytes.length;
-    }
-    if (t instanceof Api.PhotoSize || t instanceof Api.VideoSize) return t.size;
-    if (t instanceof Api.PhotoSizeProgressive) return Math.max(...t.sizes, 0);
-    return 0;
-  };
-  const best = usable.reduce((a, b) => (thumbSizeOf(b) > thumbSizeOf(a) ? b : a));
+    const thumbSizeOf = (t: (typeof usable)[number]): number => {
+      if (t instanceof Api.PhotoStrippedSize || t instanceof Api.PhotoCachedSize) {
+        return t.bytes.length;
+      }
+      if (t instanceof Api.PhotoSize || t instanceof Api.VideoSize) return t.size;
+      if (t instanceof Api.PhotoSizeProgressive) return Math.max(...t.sizes, 0);
+      return 0;
+    };
+    const best = usable.reduce((a, b) => (thumbSizeOf(b) > thumbSizeOf(a) ? b : a));
 
-  const downloaded = (await client.downloadMedia(msg, {
-    thumb: best,
-  })) as Buffer | string | undefined;
+    const downloaded = (await client.downloadMedia(msg, {
+      thumb: best,
+    })) as Buffer | string | undefined;
 
-  const buffer = toBuffer(downloaded);
-  if (!buffer) return null;
-  return {
-    buffer,
-    contentType: sniffImageContentType(buffer),
-  };
+    const buffer = toBuffer(downloaded);
+    if (!buffer) return null;
+    return {
+      buffer,
+      contentType: sniffImageContentType(buffer),
+    };
+  });
 }

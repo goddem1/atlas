@@ -139,3 +139,13 @@ export function normalizeTelegramUsername(raw: string): string {
   s = s.split(/[/?#]/)[0] ?? "";
   return s.trim().toLowerCase();
 }
+
+const INVALID_TELEGRAM_USERNAMES = new Set(["t.me", "telegram", "telegram.me", "me", "joinchat", "s"]);
+
+/** Публичный @username канала (не ссылка и не служебное слово). */
+export function isValidTelegramChannelUsername(raw: string): boolean {
+  const u = normalizeTelegramUsername(raw);
+  if (!u || u.length < 4 || u.length > 32) return false;
+  if (INVALID_TELEGRAM_USERNAMES.has(u)) return false;
+  return /^[a-z][a-z0-9_]{3,31}$/.test(u);
+}

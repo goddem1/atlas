@@ -5,7 +5,11 @@ import type {
   TelegramNewsMessage,
   TelegramNewsTextEntity,
 } from "@atlas-v1/shared";
-import { TELEGRAM_CHANNELS_MAX, normalizeTelegramUsername } from "@atlas-v1/shared";
+import {
+  TELEGRAM_CHANNELS_MAX,
+  isValidTelegramChannelUsername,
+  normalizeTelegramUsername,
+} from "@atlas-v1/shared";
 import { getDefaultTelegramChannels } from "./telegramMtproto.js";
 
 function asEntities(raw: unknown): TelegramNewsTextEntity[] {
@@ -63,7 +67,7 @@ export async function ensureWatchedChannels(
     new Set(
       usernamesRaw
         .map((u) => normalizeTelegramUsername(u))
-        .filter(Boolean),
+        .filter((u) => isValidTelegramChannelUsername(u)),
     ),
   ).slice(0, TELEGRAM_CHANNELS_MAX);
 
@@ -82,9 +86,15 @@ export async function listWatchedUsernames(prisma: PrismaClient): Promise<string
     select: { username: true },
     orderBy: { username: "asc" },
   });
-  const fromDb = rows.map((r) => r.username);
-  if (fromDb.length > 0) return fromDb.slice(0, TELEGRAM_CHANNELS_MAX);
-  return getDefaultTelegramChannels();
+  const valid = rows.map((r) => r.username).filter((u) => isValidTelegramChannelUsername(u));
+  const invalid = rows.map((r) => r.username).filter((u) => !isValidTelegramChannelUsername(u));
+  if (invalid.length > 0) {
+    await prisma.telegramWatchedChannel.deleteMany({
+      where: { username: { in: invalid } },
+    });
+  }
+  if (valid.length > 0) return valid.slice(0, TELEGRAM_CHANNELS_MAX);
+  return getDefaultTelegramChannels().filter((u) => isValidTelegramChannelUsername(u));
 }
 
 /** Ключ поста: `channelUsername:messageId` → сообщения в порядке keys. */
@@ -268,7 +278,7 @@ export async function getStoredTelegramFeed(
     new Set(
       usernamesRaw
         .map((u) => normalizeTelegramUsername(u))
-        .filter(Boolean),
+        .filter((u) => isValidTelegramChannelUsername(u)),
     ),
   ).slice(0, TELEGRAM_CHANNELS_MAX);
   if (usernames.length === 0) return [];
@@ -299,7 +309,7 @@ export async function getStoredTelegramFeedForMskDay(
     new Set(
       usernamesRaw
         .map((u) => normalizeTelegramUsername(u))
-        .filter(Boolean),
+        .filter((u) => isValidTelegramChannelUsername(u)),
     ),
   ).slice(0, TELEGRAM_CHANNELS_MAX);
   if (usernames.length === 0) return [];

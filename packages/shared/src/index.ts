@@ -309,6 +309,7 @@ export type {
 export {
   TELEGRAM_CHANNELS_MAX,
   TELEGRAM_NEWS_WIDGET_CATEGORIES,
+  isValidTelegramChannelUsername,
   normalizeTelegramUsername,
   parseTelegramNewsWidgetCategory,
 } from "./telegramNews.js";
