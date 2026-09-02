@@ -37,6 +37,7 @@ import {
 } from "../../services/api";
 import { TelegramNewsFiltersPanel } from "./TelegramNewsFiltersPanel";
 import { TelegramNewsAddChannelPanel } from "./TelegramNewsAddChannelPanel";
+import { bindTelegramScrollbar } from "../../lib/bindTelegramScrollbar";
 import "./telegram-news-modal.css";
 
 type Props = {
@@ -82,55 +83,6 @@ function scrollFeedToBottom(feed: HTMLElement) {
 
 function isFeedNearBottom(feed: HTMLElement, thresholdPx = 96): boolean {
   return feed.scrollHeight - feed.scrollTop - feed.clientHeight < thresholdPx;
-}
-
-/** Telegram-like: тонкий скроллбар только при реальном overflow и во время скролла/hover. */
-function bindTelegramScrollbar(el: HTMLElement): () => void {
-  let hideTimer = 0;
-
-  const syncScrollable = () => {
-    const canScroll = el.scrollHeight > el.clientHeight + 1;
-    el.classList.toggle("is-scrollable", canScroll);
-    if (!canScroll) el.classList.remove("is-scrollbar-visible");
-  };
-
-  const showScrollbar = () => {
-    syncScrollable();
-    if (!el.classList.contains("is-scrollable")) return;
-    el.classList.add("is-scrollbar-visible");
-    window.clearTimeout(hideTimer);
-    hideTimer = window.setTimeout(() => {
-      el.classList.remove("is-scrollbar-visible");
-    }, 2500);
-  };
-
-  const onScroll = () => showScrollbar();
-  const onEnter = () => showScrollbar();
-  const onLeave = () => {
-    window.clearTimeout(hideTimer);
-    hideTimer = window.setTimeout(() => {
-      el.classList.remove("is-scrollbar-visible");
-    }, 1200);
-  };
-
-  syncScrollable();
-  const ro = new ResizeObserver(syncScrollable);
-  ro.observe(el);
-  const mo = new MutationObserver(syncScrollable);
-  mo.observe(el, { childList: true, subtree: true, characterData: true });
-  el.addEventListener("scroll", onScroll, { passive: true });
-  el.addEventListener("pointerenter", onEnter);
-  el.addEventListener("pointerleave", onLeave);
-
-  return () => {
-    window.clearTimeout(hideTimer);
-    ro.disconnect();
-    mo.disconnect();
-    el.removeEventListener("scroll", onScroll);
-    el.removeEventListener("pointerenter", onEnter);
-    el.removeEventListener("pointerleave", onLeave);
-    el.classList.remove("is-scrollable", "is-scrollbar-visible");
-  };
 }
 
 function formatMessageTime(iso: string | null): string {
@@ -802,12 +754,6 @@ export function TelegramNewsModal({ open, onClose }: Props) {
     setAddBusy(true);
     setAddError(null);
     try {
-      const rows = await fetchTelegramNewsChannels([username]);
-      const row = rows[0];
-      if (!row || (row.lastMessagePreview?.startsWith("Ошибка:") ?? false)) {
-        setAddError(row?.lastMessagePreview?.replace(/^Ошибка:\s*/, "") || "Канал не найден");
-        return;
-      }
       const next = [...subscribedUsernames, username];
       await persistAndReload(next);
       setActiveUsername(username);

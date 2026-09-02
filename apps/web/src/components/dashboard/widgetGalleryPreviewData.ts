@@ -5,8 +5,10 @@ import type {
   PortfolioSummaryResponse,
   TelegramNewsWidgetExplanation,
 } from "@atlas-v1/shared";
+import type { TradeRecord } from "../../services/api";
 import type { WatchlistRow } from "../widgets/watchlist/WatchlistCard";
 import type { NewsWidgetItem } from "../widgets/news/newsClassify";
+import type { MarketIndexId, MarketIndexSnapshot } from "../widgets/index/marketIndexCatalog";
 
 const FED_TENORS = ["1M", "3M", "6M", "1Y", "2Y", "3Y", "5Y", "7Y", "10Y", "20Y", "30Y"] as const;
 
@@ -192,3 +194,181 @@ export const GALLERY_NEWS_ITEMS: NewsWidgetItem[] = Array.from({ length: 5 }, (_
     tag: tags[i]!,
   };
 });
+
+export const GALLERY_NOTES_ITEMS = Array.from({ length: 4 }, (_, i) => ({
+  id: `gallery-note-${i}`,
+  title: "Тестовый заголовок",
+  updatedAt: "2026-08-29T13:00:00.000Z",
+  preview:
+    i === 0
+      ? "Это текст заметки, чтобы вы видели"
+      : "Это текст заметки, чтобы вы видели, что ту ...",
+  coverImageUrl: null,
+}));
+
+export const GALLERY_JOURNAL_CURVE = [
+  { date: "01.08", cumulativePnl: 0 },
+  { date: "02.08", cumulativePnl: 120 },
+  { date: "03.08", cumulativePnl: 280 },
+  { date: "04.08", cumulativePnl: 180 },
+  { date: "05.08", cumulativePnl: 420 },
+  { date: "06.08", cumulativePnl: 360 },
+  { date: "07.08", cumulativePnl: 520 },
+  { date: "08.08", cumulativePnl: 1000 },
+];
+
+export const GALLERY_JOURNAL_TRADES: TradeRecord[] = [
+  {
+    id: "gallery-trade-1",
+    symbol: "BTCUSDT",
+    direction: "long",
+    entryPrice: "65000",
+    exitPrice: "67000",
+    quantity: "0.1",
+    quantityUnit: "coins",
+    entryAt: "2026-08-04T10:00:00.000Z",
+    exitAt: "2026-08-04T18:00:00.000Z",
+    commission: "1.09",
+    fundingFee: "0.5",
+    reason: "Пробой поддержки",
+    comment: null,
+    createdAt: "2026-08-04T18:00:00.000Z",
+    updatedAt: "2026-08-04T18:00:00.000Z",
+    pnlUsd: 42,
+    pnlPercent: 3.1,
+  },
+  {
+    id: "gallery-trade-2",
+    symbol: "BTCUSDT",
+    direction: "short",
+    entryPrice: "67000",
+    exitPrice: "66500",
+    quantity: "0.1",
+    quantityUnit: "coins",
+    entryAt: "2026-08-04T08:00:00.000Z",
+    exitAt: "2026-08-04T12:00:00.000Z",
+    commission: "1.09",
+    fundingFee: "0.5",
+    reason: null,
+    comment: null,
+    createdAt: "2026-08-04T12:00:00.000Z",
+    updatedAt: "2026-08-04T12:00:00.000Z",
+    pnlUsd: -42,
+    pnlPercent: -0.7,
+  },
+  {
+    id: "gallery-trade-3",
+    symbol: "BTCUSDT",
+    direction: "long",
+    entryPrice: "64000",
+    exitPrice: "65500",
+    quantity: "0.08",
+    quantityUnit: "coins",
+    entryAt: "2026-08-03T14:00:00.000Z",
+    exitAt: "2026-08-03T20:00:00.000Z",
+    commission: "1.09",
+    fundingFee: "0.5",
+    reason: null,
+    comment: null,
+    createdAt: "2026-08-03T20:00:00.000Z",
+    updatedAt: "2026-08-03T20:00:00.000Z",
+    pnlUsd: 42,
+    pnlPercent: 2.3,
+  },
+  {
+    id: "gallery-trade-4",
+    symbol: "BTCUSDT",
+    direction: "short",
+    entryPrice: "66000",
+    exitPrice: "66200",
+    quantity: "0.05",
+    quantityUnit: "coins",
+    entryAt: "2026-08-03T09:00:00.000Z",
+    exitAt: "2026-08-03T11:00:00.000Z",
+    commission: "1.09",
+    fundingFee: "0.5",
+    reason: null,
+    comment: null,
+    createdAt: "2026-08-03T11:00:00.000Z",
+    updatedAt: "2026-08-03T11:00:00.000Z",
+    pnlUsd: -42,
+    pnlPercent: -0.3,
+  },
+  {
+    id: "gallery-trade-5",
+    symbol: "BTCUSDT",
+    direction: "long",
+    entryPrice: "63000",
+    exitPrice: "64500",
+    quantity: "0.12",
+    quantityUnit: "coins",
+    entryAt: "2026-08-02T16:00:00.000Z",
+    exitAt: "2026-08-02T22:00:00.000Z",
+    commission: "1.09",
+    fundingFee: "0.5",
+    reason: null,
+    comment: null,
+    createdAt: "2026-08-02T22:00:00.000Z",
+    updatedAt: "2026-08-02T22:00:00.000Z",
+    pnlUsd: 42,
+    pnlPercent: 2.4,
+  },
+  {
+    id: "gallery-trade-6",
+    symbol: "BTCUSDT",
+    direction: "short",
+    entryPrice: "64800",
+    exitPrice: "65100",
+    quantity: "0.06",
+    quantityUnit: "coins",
+    entryAt: "2026-08-02T10:00:00.000Z",
+    exitAt: "2026-08-02T13:00:00.000Z",
+    commission: "1.09",
+    fundingFee: "0.5",
+    reason: null,
+    comment: null,
+    createdAt: "2026-08-02T13:00:00.000Z",
+    updatedAt: "2026-08-02T13:00:00.000Z",
+    pnlUsd: -42,
+    pnlPercent: -0.5,
+  },
+  {
+    id: "gallery-trade-7",
+    symbol: "BTCUSDT",
+    direction: "long",
+    entryPrice: "62000",
+    exitPrice: "63800",
+    quantity: "0.15",
+    quantityUnit: "coins",
+    entryAt: "2026-08-01T12:00:00.000Z",
+    exitAt: "2026-08-01T20:00:00.000Z",
+    commission: "1.09",
+    fundingFee: "0.5",
+    reason: null,
+    comment: null,
+    createdAt: "2026-08-01T20:00:00.000Z",
+    updatedAt: "2026-08-01T20:00:00.000Z",
+    pnlUsd: 42,
+    pnlPercent: 2.9,
+  },
+];
+
+export const GALLERY_INDEX = {
+  name: "Total 2",
+  value: 771.68e9,
+  changePercent: 0.2,
+};
+
+export const GALLERY_INDEX_BOARD: Partial<Record<MarketIndexId, MarketIndexSnapshot>> = {
+  "fear-greed": { value: 52, changePercent: -1.2 },
+  "btc-dominance": { value: 67.66, changePercent: 0.4 },
+  "total-2": { value: 1.05e12, changePercent: 0.3 },
+  "total-3": { value: 771.68e9, changePercent: -0.2 },
+  funding: { value: -0.0085, changePercent: 0 },
+  vix: { value: 17.3, changePercent: 1.1 },
+  dxy: { value: 98.98, changePercent: -0.15 },
+};
+
+export const GALLERY_FEAR_GREED = {
+  value: 52,
+};

@@ -1,7 +1,12 @@
 import type { DashboardWidgetType } from "../../lib/dashboardWidgets";
+import type { MarketIndexId } from "../widgets/index/marketIndexCatalog";
 import { FedCurveWidget } from "../widgets/fed-curve/FedCurveWidget";
 import { MacroCalendarWidget } from "../widgets/macro-calendar/MacroCalendarWidget";
 import { NewsWidget } from "../widgets/news/NewsWidget";
+import { NotesWidget } from "../widgets/notes/NotesWidget";
+import { JournalWidget } from "../widgets/journal/JournalWidget";
+import { IndexWidget } from "../widgets/index/IndexWidget";
+import { IndexBoardWidget } from "../widgets/index/IndexBoardWidget";
 import { PortfolioWidget } from "../widgets/portfolio/PortfolioWidget";
 import { PriceSparklineWidget } from "../widgets/price-sparkline/PriceSparklineWidget";
 import { WatchlistWidget } from "../widgets/watchlist/WatchlistWidget";
@@ -9,6 +14,7 @@ import { WidgetGalleryScaledFrame } from "./WidgetGalleryScaledFrame";
 
 type Props = {
   widgetType: DashboardWidgetType;
+  indexId?: MarketIndexId;
 };
 
 function LiveWidgetPreview({
@@ -25,7 +31,7 @@ function LiveWidgetPreview({
   );
 }
 
-export function WidgetGalleryPreview({ widgetType }: Props) {
+export function WidgetGalleryPreview({ widgetType, indexId }: Props) {
   switch (widgetType) {
     case "price-sparkline":
       return (
@@ -55,6 +61,30 @@ export function WidgetGalleryPreview({ widgetType }: Props) {
       return (
         <LiveWidgetPreview widgetType="news">
           <NewsWidget galleryPreview />
+        </LiveWidgetPreview>
+      );
+    case "notes":
+      return (
+        <LiveWidgetPreview widgetType="notes">
+          <NotesWidget galleryPreview />
+        </LiveWidgetPreview>
+      );
+    case "journal":
+      return (
+        <LiveWidgetPreview widgetType="journal">
+          <JournalWidget galleryPreview />
+        </LiveWidgetPreview>
+      );
+    case "index":
+      return (
+        <LiveWidgetPreview widgetType="index">
+          <IndexWidget galleryPreview indexId={indexId} />
+        </LiveWidgetPreview>
+      );
+    case "index-board":
+      return (
+        <LiveWidgetPreview widgetType="index-board">
+          <IndexBoardWidget galleryPreview />
         </LiveWidgetPreview>
       );
     case "portfolio":

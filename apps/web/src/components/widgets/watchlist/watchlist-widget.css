@@ -21,13 +21,14 @@
   height: 530px;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow: visible;
   border-radius: 25px 10px 25px 25px;
   color: var(--atlas-fg-primary);
 }
 
 .watchlist-card--list-menu-open {
   overflow: visible;
+  clip-path: none;
   contain: layout;
 }
 

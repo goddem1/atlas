@@ -1,0 +1,248 @@
+@import url("../shared/portfolio-menu.css");
+
+.journal-widget-shell {
+  position: relative;
+  width: 100%;
+  max-width: 570px;
+}
+
+.journal-widget-card-elevated {
+  width: 100%;
+  max-width: 570px;
+  border-radius: 25px 10px 25px 25px;
+}
+
+.journal-widget-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr;
+  width: 100%;
+  min-width: 0;
+  height: 300px;
+  padding: 0;
+  border: 0;
+  border-radius: 25px 10px 25px 25px;
+  overflow: visible;
+  text-align: left;
+  color: var(--atlas-fg-primary);
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.journal-widget-card > .portfolio-widget-divider {
+  position: absolute;
+  z-index: 0;
+}
+
+.journal-widget-card-elevated > .atlas-glass.journal-widget-card {
+  overflow: visible;
+}
+
+.journal-widget-right {
+  position: relative;
+  grid-column: 2;
+  grid-row: 1;
+  padding: 20px;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  font-size: 20px;
+  font-weight: 400;
+  line-height: 24px;
+}
+
+.journal-widget-left {
+  grid-column: 1;
+  grid-row: 1;
+  padding: 20px 10px 16px 20px;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  cursor: grab;
+}
+
+.journal-widget-left:active {
+  cursor: grabbing;
+}
+
+.journal-widget-balance {
+  flex-shrink: 0;
+  font-size: 34px;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--atlas-fg-primary);
+  font-weight: 400;
+}
+
+.journal-widget-total-pnl {
+  flex-shrink: 0;
+  margin-top: 4px;
+  font-size: 18px;
+  line-height: 1;
+  font-weight: 400;
+}
+
+.journal-widget-pnl-positive {
+  color: #34c759;
+}
+
+.journal-widget-pnl-negative {
+  color: #ef4444;
+}
+
+.journal-widget-chart-block {
+  margin-top: 2px;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.journal-widget-chart-wrap {
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.journal-widget-chart-wrap .equity-curve-chart--full {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.journal-widget-chart-wrap .equity-curve-chart-plot {
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+}
+
+.journal-widget-chart-wrap .equity-curve-tooltip {
+  font-size: 11px;
+}
+
+.journal-widget-chart-wrap .recharts-tooltip-wrapper {
+  z-index: 12;
+}
+
+.journal-widget-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  min-height: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.journal-widget-row {
+  width: 100%;
+  min-height: 24px;
+  display: grid;
+  grid-template-columns: 22px 52px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--atlas-fg-primary);
+  text-align: left;
+  cursor: pointer;
+}
+
+.journal-widget-direction {
+  font-weight: inherit;
+}
+
+.journal-widget-direction--long {
+  color: #34c759;
+}
+
+.journal-widget-direction--short {
+  color: #ef4444;
+}
+
+.journal-widget-row-date {
+  color: var(--atlas-third-color);
+}
+
+.journal-widget-row-symbol {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font-weight: inherit;
+  color: var(--atlas-fg-primary);
+}
+
+.journal-widget-row-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.journal-widget-row-pnl {
+  font-weight: inherit;
+  white-space: nowrap;
+}
+
+.journal-widget-row--view-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 18px;
+  color: var(--atlas-second-color);
+}
+
+.journal-widget-row--view-all:hover {
+  color: var(--atlas-third-color);
+}
+
+.journal-widget-row--view-all-arrow {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.journal-widget-row--view-all-arrow svg {
+  width: 32px;
+  height: 22px;
+}
+
+.journal-widget-msg {
+  margin: 0;
+  color: var(--atlas-third-color);
+}
+
+.journal-widget-msg--err {
+  color: #ff3b30;
+}
+
+.journal-pnl--pos {
+  color: #34c759;
+}
+
+.journal-pnl--neg {
+  color: #ef4444;
+}
+
+.journal-pnl--zero {
+  color: var(--atlas-fg-primary);
+}
+
+.journal-widget-card--gallery {
+  pointer-events: none;
+}
+
+.journal-widget-shell .portfolio-menu-circle-icon-close {
+  width: 14px;
+  height: 14px;
+}

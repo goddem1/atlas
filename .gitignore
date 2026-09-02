@@ -13,3 +13,5 @@ coverage
 *.tsbuildinfo
 apps/api/.cache/
 apps/api/data/avatars/
+apps/api/data/notes-media/
+apps/api/data/telegram-media/

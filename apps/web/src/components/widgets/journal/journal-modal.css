@@ -1,0 +1,1333 @@
+.journal-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 12000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  box-sizing: border-box;
+}
+
+.journal-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: transparent;
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  cursor: pointer;
+}
+
+.journal-modal-dialog {
+  position: relative;
+  z-index: 1;
+  width: min(1820px, calc(100vw - 24px));
+  height: auto;
+  max-height: min(920px, calc(100vh - 24px));
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: 0;
+  box-sizing: border-box;
+  background: transparent;
+  color: var(--atlas-fg-primary);
+  font-size: 20px;
+  overflow: auto;
+}
+
+.journal-modal-chart-card,
+.journal-modal-table-card {
+  width: 100%;
+}
+
+.journal-table-edit-btn,
+.journal-table-filter-btn {
+  border: 0;
+  border-radius: 10px;
+  cursor: pointer;
+  font: inherit;
+}
+
+.journal-modal-chart-card {
+  flex-shrink: 0;
+  border-radius: 24px;
+  padding: 18px 20px 14px;
+  box-sizing: border-box;
+  font-size: inherit;
+}
+
+.journal-modal-chart-card.atlas-glass,
+.journal-modal-table-card.atlas-glass {
+  box-shadow: none;
+  contain: none;
+  clip-path: none;
+  background-color: var(--atlas-glass-bg);
+  border: var(--atlas-glass-border);
+  backdrop-filter: var(--atlas-glass-backdrop);
+  -webkit-backdrop-filter: var(--atlas-glass-backdrop);
+}
+
+.journal-filters-popover.atlas-glass {
+  box-shadow: none;
+  contain: none;
+  clip-path: none;
+  background-color: var(--atlas-glass-bg-light);
+  border: var(--atlas-glass-border);
+  backdrop-filter: var(--atlas-glass-backdrop);
+  -webkit-backdrop-filter: var(--atlas-glass-backdrop);
+}
+
+.journal-modal-chart-card .equity-curve-tooltip,
+.journal-modal-chart-card .equity-curve-total-pnl-badge {
+  font-size: inherit;
+}
+
+.journal-filters-popover {
+  position: fixed;
+  z-index: 12050;
+  width: min(280px, calc(100vw - 24px));
+  padding: 12px;
+  border-radius: 16px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.journal-filters-popover-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--atlas-second-color);
+}
+
+.journal-filters-popover-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 14px;
+  color: var(--atlas-second-color);
+}
+
+.journal-filters-popover-field input,
+.journal-filters-popover-field select {
+  height: 36px;
+  border: 0;
+  border-radius: 10px;
+  padding: 0 10px;
+  background: var(--atlas-input-bg);
+  color: var(--atlas-input-fg);
+  font: inherit;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.journal-filters-popover-dates {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.journal-modal-form-wrap {
+  padding: 14px 16px;
+  border-radius: 18px;
+  max-height: 38%;
+  overflow: auto;
+}
+
+.journal-modal-form-row {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  padding: 10px 12px 8px;
+  border-bottom: 1px solid rgba(60, 60, 67, 0.12);
+  background: rgba(255, 255, 255, 0.28);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.journal-trade-form {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+}
+
+.journal-table-form-contents {
+  display: contents;
+}
+
+.journal-table-form-row {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.journal-table-form-row.is-editing {
+  background: rgba(0, 122, 255, 0.1);
+  box-shadow: inset 0 0 0 1px rgba(0, 122, 255, 0.35);
+}
+
+.journal-table-form-row td {
+  vertical-align: middle;
+}
+
+.journal-table-form-row .portfolio-currency-switch,
+.journal-table-form-row .journal-trade-form-direction.portfolio-buy-sell-toggle {
+  background: var(--atlas-input-bg);
+  border: 1.5px solid transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  padding: 3px;
+  border-radius: 15px;
+  height: 50px;
+  box-sizing: border-box;
+}
+
+.journal-table-form-row .portfolio-currency-switch:focus-within,
+.journal-table-form-row .journal-trade-form-direction.portfolio-buy-sell-toggle:focus-within {
+  border-color: var(--atlas-input-focus-border);
+}
+
+.journal-table-form-row .portfolio-currency-btn {
+  background: transparent;
+  border-radius: 12px;
+  font-size: 16px;
+  color: var(--atlas-third-color);
+}
+
+.journal-table-form-row .portfolio-currency-btn.active {
+  background: var(--atlas-primary-btn-bg);
+  color: #f2fbff;
+}
+
+.journal-table-form-row .portfolio-currency-empty-dot {
+  width: 22px;
+  height: 22px;
+}
+
+.journal-table-form-row .portfolio-currency-asset-icon {
+  width: 24px;
+  height: 24px;
+}
+
+.journal-table-form-row .portfolio-buy-sell-btn {
+  background: transparent;
+  color: var(--atlas-fg-primary);
+  border-radius: 12px;
+}
+
+.journal-table-form-row .portfolio-buy-sell-btn.active {
+  color: inherit;
+}
+
+.journal-table-form-row .portfolio-buy-sell-btn.active:first-child {
+  background: rgba(52, 199, 89, 0.22);
+  color: #34c759;
+}
+
+.journal-table-form-row .portfolio-buy-sell-btn.active:last-child {
+  background: rgba(239, 68, 68, 0.22);
+  color: #ef4444;
+}
+
+.journal-table-form-row .journal-trade-ghost-field {
+  position: relative;
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  height: 50px;
+  margin: 0;
+  gap: 0;
+}
+
+.journal-table-form-row .portfolio-input-ghost {
+  width: 100%;
+  max-width: 100%;
+  font-size: 16px;
+  height: 50px;
+  padding-left: 14px;
+  padding-right: 14px;
+}
+
+.journal-table-form-row .portfolio-input-ghost-select-active {
+  padding-left: 42px;
+}
+
+.journal-table-form-row .portfolio-ghost-label {
+  left: 14px;
+  font-size: 16px;
+}
+
+.journal-table-form-row .portfolio-ghost-field:focus-within .portfolio-ghost-label,
+.journal-table-form-row .portfolio-ghost-field.is-floated .portfolio-ghost-label {
+  top: 5px;
+  font-size: 10px;
+}
+
+.journal-table-form-row .portfolio-ghost-field:focus-within .portfolio-input-ghost,
+.journal-table-form-row .portfolio-ghost-field.is-floated .portfolio-input-ghost {
+  padding-top: 11px;
+}
+
+.journal-table-form-row .portfolio-asset-combobox .portfolio-inline-coin {
+  left: 14px;
+}
+
+.journal-table-form-row .portfolio-asset-combobox-arrow {
+  right: 12px;
+}
+
+.journal-trade-form-duration {
+  display: block;
+  white-space: nowrap;
+  color: var(--atlas-third-color);
+  padding-top: 2px;
+}
+
+.journal-trade-form-asset {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  min-width: 0;
+}
+
+.journal-trade-form-amount-line {
+  width: 100%;
+  grid-template-columns: 1fr;
+  gap: 4px;
+  align-items: stretch;
+}
+
+.journal-trade-form-amount-line .portfolio-currency-switch {
+  width: 100%;
+  height: 50px;
+}
+
+.journal-table-form-row .journal-col-pnlUsd,
+.journal-table-form-row .journal-col-pnlPercent {
+  vertical-align: middle;
+}
+
+.journal-trade-form-direction {
+  width: 83px;
+  max-width: 100%;
+  height: 50px;
+}
+
+.journal-trade-form-direction.portfolio-buy-sell-toggle {
+  height: 50px;
+}
+
+.journal-trade-form-direction .portfolio-buy-sell-btn {
+  font-size: 16px;
+  font-weight: 600;
+  height: 44px;
+}
+
+.journal-table-form-row .journal-trade-form-comment.journal-trade-ghost-field,
+.journal-table-form-row .journal-trade-form-reason.journal-trade-ghost-field {
+  width: 100%;
+  max-width: 100%;
+}
+
+.journal-table-form-row .journal-trade-form-comment .portfolio-input-ghost {
+  width: 100%;
+  max-width: 100%;
+}
+
+.journal-table-form-row .portfolio-asset-select-menu {
+  z-index: 12010;
+}
+
+.journal-table-form-error-cell {
+  padding-top: 0;
+  padding-bottom: 10px;
+}
+
+.journal-trade-form-comment-input {
+  min-height: 50px;
+  height: 50px;
+  resize: none;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.journal-table-form-row .journal-trade-form-comment.portfolio-ghost-field.is-floated .journal-trade-form-comment-input,
+.journal-table-form-row .journal-trade-form-comment.portfolio-ghost-field:focus-within .journal-trade-form-comment-input {
+  padding-top: 11px;
+  padding-bottom: 11px;
+  line-height: 28px;
+}
+
+.journal-table-form-row td.journal-col-commentPreview {
+  padding-right: 0;
+}
+
+.journal-table-form-row td.journal-table-form-expand-col {
+  width: 59px;
+  max-width: 59px;
+  min-width: 59px;
+  padding-left: 0;
+  padding-right: 10px;
+  box-sizing: border-box;
+}
+
+.journal-trade-form-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 0 0 auto;
+  width: 39px;
+  max-width: 100%;
+  margin-left: 10px;
+  margin-right: 0;
+}
+
+.journal-trade-form-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 39px;
+  height: 39px;
+  max-width: 100%;
+  flex-shrink: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.journal-trade-form-icon-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.journal-trade-form-icon-btn--ghost {
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--atlas-fg-primary);
+}
+
+.journal-trade-form-icon-btn--primary {
+  background: var(--atlas-primary-btn-bg);
+  color: #fff;
+}
+
+.journal-trade-form-error {
+  margin: 8px 0 0;
+}
+
+html[data-dashboard-theme="dark"] .journal-table-form-row {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.journal-table-form-cell {
+  vertical-align: middle;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.journal-table-form-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  position: relative;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.journal-table-form-row .journal-col-entryAt {
+  width: 215px;
+  max-width: 215px;
+  box-sizing: border-box;
+}
+
+.journal-table-form-row .journal-col-entryAt .journal-table-form-stack {
+  width: 200px;
+  max-width: 100%;
+}
+
+.journal-table-form-row .journal-col-symbol {
+  width: 251px;
+  max-width: 251px;
+  box-sizing: border-box;
+}
+
+.journal-table-form-row .journal-trade-form-asset {
+  width: 100%;
+  max-width: 241px;
+}
+
+.journal-table-form-prices {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.journal-table-form-hint {
+  font-size: inherit;
+  line-height: 1.2;
+  color: var(--atlas-third-color);
+}
+
+.journal-table-form-placeholder {
+  color: var(--atlas-third-color);
+}
+
+.journal-table-input {
+  width: 100%;
+  height: 36px;
+  border: 0;
+  border-radius: 7px;
+  padding: 0 8px;
+  background: var(--atlas-input-bg);
+  color: var(--atlas-input-fg);
+  font: inherit;
+  font-size: inherit;
+  box-sizing: border-box;
+}
+
+.journal-table-input--compact {
+  height: 34px;
+  padding: 0 6px;
+  font-size: inherit;
+}
+
+.journal-table-input--fee {
+  width: 100%;
+  max-width: 92px;
+  height: 34px;
+  padding: 0 6px;
+  font-size: inherit;
+}
+
+.journal-table-form-row .trade-form-direction--compact {
+  gap: 3px;
+}
+
+.journal-table-form-row .trade-form-direction--compact .trade-form-direction-btn {
+  width: 30px;
+  height: 34px;
+  flex: 0 0 30px;
+  font-size: inherit;
+  border-radius: 7px;
+}
+
+.journal-table-input[type="datetime-local"] {
+  font-size: inherit;
+  padding: 0 6px;
+}
+
+.journal-table-input::placeholder {
+  color: var(--atlas-input-placeholder);
+}
+
+.journal-table-input--textarea {
+  min-height: 30px;
+  height: auto;
+  resize: none;
+  overflow: hidden;
+  line-height: 1.35;
+  padding-top: 6px;
+  padding-bottom: 6px;
+  field-sizing: content;
+}
+
+.journal-table-form-expand-col {
+  width: auto;
+  overflow: visible;
+}
+
+.journal-table-form-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+}
+
+.journal-table-form-actions .journal-table-footer-btn {
+  width: 100%;
+  height: 40px;
+  padding: 0 12px;
+  font-size: inherit;
+}
+
+.journal-table-form-actions-error {
+  margin: 0;
+  font-size: inherit;
+  line-height: 1.3;
+  text-align: left;
+}
+
+.journal-table-text-full {
+  display: block;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-width: 100%;
+}
+
+.journal-table tbody tr.is-expanded td {
+  vertical-align: middle;
+}
+
+.journal-table-expand-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 39px;
+  max-width: 100%;
+  margin-left: auto;
+  margin-right: 0;
+  flex-shrink: 0;
+}
+
+.journal-table-edit-btn--inline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 39px;
+  height: 39px;
+  max-width: 100%;
+  flex-shrink: 0;
+  padding: 0;
+  color: var(--atlas-third-color);
+}
+
+.journal-table-edit-btn--inline:hover {
+  color: var(--atlas-fg-primary);
+}
+
+.journal-table-form-comment-row td,
+.journal-table-form-error-row td {
+  background: rgba(255, 255, 255, 0.04);
+  padding-top: 8px;
+  padding-bottom: 10px;
+}
+
+.journal-table tbody tr.is-editing-source {
+  opacity: 0.45;
+}
+
+.journal-modal-error,
+.journal-modal-loading {
+  margin: 0;
+  padding: 0 4px;
+  font-size: inherit;
+}
+
+.journal-modal-error {
+  color: #ff3b30;
+}
+
+.journal-modal-table-card {
+  --journal-table-max-height: 710px;
+  --journal-scrollbar-thumb: rgba(60, 60, 67, 0.28);
+  --journal-scrollbar-thumb-hover: rgba(60, 60, 67, 0.42);
+  flex: 0 1 auto;
+  max-height: var(--journal-table-max-height);
+  border-radius: 24px;
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+html[data-dashboard-theme="dark"] .journal-modal-table-card {
+  --journal-scrollbar-thumb: rgba(255, 255, 255, 0.28);
+  --journal-scrollbar-thumb-hover: rgba(255, 255, 255, 0.42);
+}
+
+.journal-table-wrap {
+  overflow: auto;
+  max-height: var(--journal-table-max-height);
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.journal-table-wrap.is-scrollable.is-scrollbar-visible {
+  scrollbar-width: thin;
+  scrollbar-color: var(--journal-scrollbar-thumb) transparent;
+}
+
+.journal-table-wrap::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+.journal-table-wrap.is-scrollable.is-scrollbar-visible::-webkit-scrollbar {
+  width: 3px;
+  height: 3px;
+}
+
+.journal-table-wrap::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+.journal-table-wrap::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+.journal-table-wrap::-webkit-scrollbar-track {
+  background: transparent;
+  margin-block: 10px;
+}
+
+.journal-table-wrap::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 999px;
+}
+
+.journal-table-wrap.is-scrollable.is-scrollbar-visible::-webkit-scrollbar-thumb {
+  background: var(--journal-scrollbar-thumb);
+}
+
+.journal-table-wrap.is-scrollable.is-scrollbar-visible::-webkit-scrollbar-thumb:hover {
+  background: var(--journal-scrollbar-thumb-hover);
+}
+
+.journal-table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  font-size: inherit;
+}
+
+.journal-table col.journal-col-entryAt {
+  width: 215px;
+}
+
+.journal-col-entryAt {
+  width: 215px;
+  max-width: 215px;
+}
+
+.journal-table th.journal-col-entryAt,
+.journal-table td.journal-col-entryAt {
+  width: 215px;
+  max-width: 215px;
+  box-sizing: border-box;
+}
+
+.journal-table col.journal-col-symbol {
+  width: 251px;
+}
+
+.journal-col-symbol {
+  width: 251px;
+  max-width: 251px;
+}
+
+.journal-table th.journal-col-symbol,
+.journal-table td.journal-col-symbol {
+  width: 251px;
+  max-width: 251px;
+  box-sizing: border-box;
+}
+
+.journal-col-pnlUsd {
+  width: 8%;
+}
+
+.journal-col-pnlPercent {
+  width: 6%;
+}
+
+.journal-col-commission,
+.journal-col-fundingFee {
+  width: 10%;
+}
+
+.journal-col-direction {
+  width: 93px;
+}
+
+.journal-col-reason {
+  width: 14%;
+}
+
+.journal-col-commentPreview {
+  width: 17%;
+}
+
+.journal-col-expand {
+  width: 59px;
+}
+
+.journal-table th,
+.journal-table td {
+  padding: 10px 5px;
+  border-bottom: 1px solid rgba(60, 60, 67, 0.12);
+  text-align: left;
+  vertical-align: middle;
+  min-width: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.journal-table th:first-child,
+.journal-table td:first-child {
+  padding-left: 10px;
+}
+
+.journal-table th:last-child,
+.journal-table td:last-child {
+  padding-right: 10px;
+}
+
+html[data-dashboard-theme="dark"] .journal-table th,
+html[data-dashboard-theme="dark"] .journal-table td {
+  border-bottom-color: rgba(235, 235, 245, 0.1);
+}
+
+.journal-table th {
+  position: sticky;
+  top: 0;
+  height: 50px;
+  min-height: 50px;
+  padding-top: 0;
+  padding-bottom: 0;
+  background: var(--atlas-input-bg-light);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 1;
+  font-size: inherit;
+  font-weight: 500;
+  color: var(--atlas-third-color);
+  text-transform: none;
+  letter-spacing: 0;
+  white-space: nowrap;
+  overflow: visible;
+}
+
+.journal-table td {
+  color: var(--atlas-fg-primary);
+}
+
+html[data-dashboard-theme="dark"] .journal-table th {
+  background: var(--atlas-list-on-glass-hover-bg);
+}
+
+.journal-table-filter-col,
+.journal-col-expand {
+  text-align: right;
+}
+
+.journal-table-date {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.journal-table-date-main {
+  white-space: nowrap;
+}
+
+.journal-table-date-exit,
+.journal-table-date-duration {
+  font-size: inherit;
+  color: var(--atlas-third-color);
+  white-space: nowrap;
+}
+
+.journal-table-clamp {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  max-width: 100%;
+}
+
+.journal-table-symbol {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.journal-table-symbol img {
+  border-radius: 999px;
+}
+
+.journal-direction--long {
+  color: #34c759;
+  font-weight: 500;
+}
+
+.journal-direction--short {
+  color: #ef4444;
+  font-weight: 500;
+}
+
+.journal-table-filter-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--atlas-third-color);
+}
+
+.journal-table-filter-btn.is-active,
+.journal-table-filter-btn:hover {
+  background: rgba(0, 136, 255, 0.12);
+  color: var(--atlas-primary-btn-bg);
+}
+
+.journal-table-expand {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  color: var(--atlas-third-color);
+  font-size: inherit;
+  line-height: 1;
+  transform: rotate(90deg);
+  transition: transform 0.15s ease, color 0.15s ease;
+}
+
+.journal-table-expand.is-open {
+  transform: rotate(-90deg);
+  color: var(--atlas-fg-primary);
+}
+
+.journal-table-detail-row td {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.journal-table-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 4px 0 8px;
+}
+
+.journal-table-detail-reason,
+.journal-table-detail-comment {
+  margin: 0;
+}
+
+.journal-table-edit-btn {
+  align-self: center;
+  padding: 0;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.journal-table-empty {
+  padding: 24px;
+  text-align: center;
+  color: var(--atlas-third-color);
+}
+
+.journal-table-empty-cell {
+  padding: 0;
+  border-top: 0;
+  border-bottom: 0;
+  background: transparent;
+}
+
+.journal-table-empty-row .journal-table-empty {
+  margin: 0;
+}
+
+.journal-table td.journal-table-footer-cell,
+.journal-table .journal-table-footer-row td {
+  padding: 0;
+  border-top: 0;
+  border-bottom: 0;
+  background: transparent;
+}
+
+.journal-table-footer {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+}
+
+.journal-table-footer--top .journal-table-footer-btn {
+  border-radius: 0;
+}
+
+.journal-table-footer .journal-table-footer-btn {
+  flex: 1;
+  width: 100%;
+  border-radius: 0 0 24px 24px;
+}
+
+.journal-table-footer-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 42px;
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.journal-table-footer-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.journal-table-footer-btn--ghost {
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--atlas-fg-primary);
+}
+
+.journal-table-footer-btn--primary {
+  background: rgba(111, 179, 233, 0.45);
+  color: #fff;
+}
+
+.journal-table-footer-btn--primary:hover {
+  background: rgba(111, 179, 233, 0.58);
+}
+
+.journal-table-footer-btn--primary:active {
+  background: rgba(111, 179, 233, 0.68);
+}
+
+html[data-dashboard-theme="dark"] .journal-table-footer-btn--primary {
+  background: color-mix(in srgb, var(--atlas-primary-btn-bg) 45%, transparent);
+}
+
+html[data-dashboard-theme="dark"] .journal-table-footer-btn--primary:hover {
+  background: color-mix(in srgb, var(--atlas-primary-btn-bg) 58%, transparent);
+}
+
+html[data-dashboard-theme="dark"] .journal-table-footer-btn--primary:active {
+  background: color-mix(in srgb, var(--atlas-primary-btn-bg) 68%, transparent);
+}
+
+.journal-pnl--pos {
+  color: #34c759;
+  font-weight: 500;
+}
+
+.journal-pnl--neg {
+  color: #ef4444;
+  font-weight: 500;
+}
+
+.journal-pnl--zero {
+  color: var(--atlas-fg-primary);
+}
+
+.trade-form--inline {
+  min-width: 0;
+}
+
+.trade-form-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.trade-form-row.is-scrollable.is-scrollbar-visible {
+  scrollbar-width: thin;
+  scrollbar-color: var(--journal-scrollbar-thumb) transparent;
+}
+
+.trade-form-row::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+.trade-form-row.is-scrollable.is-scrollbar-visible::-webkit-scrollbar {
+  height: 3px;
+}
+
+.trade-form-row::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.trade-form-row::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 999px;
+}
+
+.trade-form-row.is-scrollable.is-scrollbar-visible::-webkit-scrollbar-thumb {
+  background: var(--journal-scrollbar-thumb);
+}
+
+.trade-form-row.is-scrollable.is-scrollbar-visible::-webkit-scrollbar-thumb:hover {
+  background: var(--journal-scrollbar-thumb-hover);
+}
+
+.trade-form-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.trade-form-cell {
+  flex: 0 0 auto;
+  position: relative;
+}
+
+.trade-form-cell--symbol {
+  width: 88px;
+}
+
+.trade-form-cell--direction {
+  width: 64px;
+}
+
+.trade-form-cell--qty {
+  width: 72px;
+}
+
+.trade-form-cell--datetime {
+  width: 168px;
+}
+
+.trade-form-cell--fee {
+  width: 64px;
+}
+
+.trade-form-cell--reason {
+  width: 140px;
+  min-width: 120px;
+}
+
+.trade-form-cell--actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  position: sticky;
+  right: 0;
+  padding-left: 8px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.28) 24%);
+}
+
+html[data-dashboard-theme="dark"] .trade-form-cell--actions {
+  background: linear-gradient(90deg, transparent, rgba(28, 28, 30, 0.82) 24%);
+}
+
+.trade-form--editing .trade-form-row {
+  box-shadow: inset 0 0 0 1px rgba(0, 122, 255, 0.35);
+  border-radius: 10px;
+  padding: 6px 8px;
+}
+
+.trade-form-field input,
+.trade-form-cell input {
+  width: 100%;
+  height: 34px;
+  border: 0;
+  border-radius: 8px;
+  padding: 0 8px;
+  background: var(--atlas-input-bg);
+  color: var(--atlas-input-fg);
+  font: inherit;
+  font-size: inherit;
+  box-sizing: border-box;
+}
+
+.trade-form-cell input::placeholder {
+  color: var(--atlas-input-placeholder);
+}
+
+.trade-form-cell input[type="datetime-local"] {
+  padding: 0 6px;
+  font-size: inherit;
+}
+
+.trade-form-direction {
+  display: flex;
+  gap: 4px;
+}
+
+.trade-form-direction--compact .trade-form-direction-btn {
+  width: 28px;
+  height: 30px;
+  padding: 0;
+  flex: 0 0 28px;
+  font-weight: 700;
+  font-size: inherit;
+}
+
+.trade-form-direction-btn {
+  border: 0;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  font: inherit;
+}
+
+.trade-form-direction-btn.is-long.is-active {
+  background: rgba(52, 199, 89, 0.22);
+  color: #34c759;
+}
+
+.trade-form-direction-btn.is-short.is-active {
+  background: rgba(239, 68, 68, 0.22);
+  color: #ef4444;
+}
+
+.trade-form-comment-toggle {
+  width: 100%;
+  height: 30px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--atlas-fg-primary);
+  font: inherit;
+  font-size: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.trade-form-comment-toggle.is-filled {
+  color: var(--atlas-primary-btn-bg);
+}
+
+.trade-form-comment-toggle.is-open {
+  background: rgba(0, 136, 255, 0.14);
+  color: var(--atlas-primary-btn-bg);
+}
+
+.trade-form-comment-panel {
+  margin-top: 8px;
+  border-top: 1px dashed rgba(60, 60, 67, 0.16);
+  padding-top: 8px;
+}
+
+.trade-form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.trade-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: inherit;
+  position: relative;
+}
+
+.trade-form-field--wide {
+  grid-column: 1 / -1;
+}
+
+.trade-form-field input,
+.trade-form-field select {
+  height: 36px;
+  border: 0;
+  border-radius: 8px;
+  padding: 0 10px;
+  background: var(--atlas-input-bg);
+  color: var(--atlas-input-fg);
+  font: inherit;
+}
+
+.trade-form-asset-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 20;
+  padding: 6px;
+  max-height: 220px;
+  overflow: auto;
+}
+
+.trade-form-asset-option {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+}
+
+.trade-form-comment-editor {
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.trade-form-comment-body {
+  min-height: 100px;
+  max-height: 160px;
+  overflow: auto;
+  padding: 10px 12px;
+}
+
+.trade-form-btn {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  font: inherit;
+  font-size: inherit;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.trade-form-btn--ghost {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.trade-form-btn--primary {
+  background: var(--atlas-primary-btn-bg);
+  color: #fff;
+}
+
+.trade-form-error {
+  margin: 8px 0 0;
+  color: #ff3b30;
+  font-size: inherit;
+}
+
+.trade-comment-view {
+  padding: 8px 0;
+}

@@ -1,5 +1,9 @@
 import { normalizeFedCurveCompareDays } from "./fedCurveComparePeriod";
 import {
+  normalizeMarketIndexId,
+  type MarketIndexId,
+} from "../components/widgets/index/marketIndexCatalog";
+import {
   normalizeSymbolList,
   normalizeWatchlistLists,
   normalizeWatchlistChangeDisplay,
@@ -25,13 +29,19 @@ export type DashboardWidgetType =
   | "macro-calendar"
   | "fed-curve"
   | "watchlist"
-  | "news";
+  | "news"
+  | "notes"
+  | "journal"
+  | "index"
+  | "index-board";
 
 export type DashboardWidget = {
   id: string;
   type: DashboardWidgetType;
   x: number;
   y: number;
+  /** Выбранный индекс — только для `index`. */
+  indexId?: MarketIndexId;
   /** Тикер из справочника (BTC, ETH) — только для `price-sparkline`. */
   symbol?: string;
   /** Период серой линии (дней) — только для `fed-curve`. */
@@ -83,6 +93,26 @@ export const WIDGET_CATALOG: {
     title: "Новости",
     description: "Лента Telegram с тегами и настроением",
   },
+  {
+    type: "notes",
+    title: "Заметки",
+    description: "Текстовые заметки с форматированием и фото",
+  },
+  {
+    type: "journal",
+    title: "Журнал сделок",
+    description: "Закрытые сделки, PnL и equity curve",
+  },
+  {
+    type: "index",
+    title: "Индекс",
+    description: "Один рыночный показатель и дневное изменение — тип выбирается в виджете",
+  },
+  {
+    type: "index-board",
+    title: "Индексы",
+    description: "Сводка ключевых показателей: F&G, доминация, Total, VIX, DXY",
+  },
 ];
 
 const PRICE_WIDGET_H = 200;
@@ -92,6 +122,14 @@ const MACRO_CALENDAR_WIDGET_W = 550;
 const MACRO_CALENDAR_WIDGET_H = 300;
 const NEWS_WIDGET_W = 350;
 const NEWS_WIDGET_H = 494;
+const NOTES_WIDGET_W = 350;
+const NOTES_WIDGET_H = 326;
+const JOURNAL_WIDGET_W = 570;
+const JOURNAL_WIDGET_H = 300;
+const INDEX_WIDGET_W = 150;
+const INDEX_WIDGET_H = 100;
+const INDEX_BOARD_WIDGET_W = 280;
+const INDEX_BOARD_WIDGET_H = 260;
 /** ~3rem — согласовано с `calc(100vw - 3rem)` в виджетах. */
 const VIEWPORT_WIDGET_GUTTER = 48;
 
@@ -115,6 +153,22 @@ export function dashboardWidgetOuterSize(
     const w = Math.min(NEWS_WIDGET_W, Math.max(260, viewportWidth - VIEWPORT_WIDGET_GUTTER));
     return { w, h: NEWS_WIDGET_H };
   }
+  if (type === "notes") {
+    const w = Math.min(NOTES_WIDGET_W, Math.max(260, viewportWidth - VIEWPORT_WIDGET_GUTTER));
+    return { w, h: NOTES_WIDGET_H };
+  }
+  if (type === "journal") {
+    const w = Math.min(JOURNAL_WIDGET_W, Math.max(280, viewportWidth - VIEWPORT_WIDGET_GUTTER));
+    return { w, h: JOURNAL_WIDGET_H };
+  }
+  if (type === "index") {
+    const w = Math.min(INDEX_WIDGET_W, Math.max(120, viewportWidth - VIEWPORT_WIDGET_GUTTER));
+    return { w, h: INDEX_WIDGET_H };
+  }
+  if (type === "index-board") {
+    const w = Math.min(INDEX_BOARD_WIDGET_W, Math.max(220, viewportWidth - VIEWPORT_WIDGET_GUTTER));
+    return { w, h: INDEX_BOARD_WIDGET_H };
+  }
   if (type === "watchlist") {
     const w = Math.min(350, Math.max(200, viewportWidth - VIEWPORT_WIDGET_GUTTER));
     return { w, h: WATCHLIST_WIDGET_H };
@@ -132,7 +186,11 @@ function isWidgetType(v: unknown): v is DashboardWidgetType {
     v === "macro-calendar" ||
     v === "fed-curve" ||
     v === "watchlist" ||
-    v === "news"
+    v === "news" ||
+    v === "notes" ||
+    v === "journal" ||
+    v === "index" ||
+    v === "index-board"
   );
 }
 
@@ -261,6 +319,7 @@ export const GUEST_DASHBOARD_WIDGETS: DashboardWidget[] = [
   { id: "guest-btc", type: "price-sparkline", symbol: "BTC", x: 0, y: 0 },
   { id: "guest-eth", type: "price-sparkline", symbol: "ETH", x: 0, y: 0 },
   { id: "guest-macro", type: "macro-calendar", x: 0, y: 0 },
+  { id: "guest-journal", type: "journal", x: 0, y: 0 },
 ];
 
 function estimateBoardSize(viewportWidth: number): { width: number; height: number } {
@@ -317,7 +376,9 @@ function normalizeWidgets(raw: unknown): DashboardWidget[] {
     const o = row as Record<string, unknown>;
     const id = typeof o.id === "string" && o.id.length > 0 ? o.id : null;
     if (!id) continue;
-    if (!isWidgetType(o.type)) continue;
+    const typeRaw = o.type;
+    const widgetType = typeRaw === "fear-greed" ? "index" : typeRaw;
+    if (!isWidgetType(widgetType)) continue;
     const x = typeof o.x === "number" && Number.isFinite(o.x) ? o.x : 0;
     const y = typeof o.y === "number" && Number.isFinite(o.y) ? o.y : 0;
     const symRaw = o.symbol;
@@ -346,13 +407,18 @@ function normalizeWidgets(raw: unknown): DashboardWidget[] {
             watchlistListsRaw ? undefined : legacySymbols,
           )
         : null;
+    const indexId =
+      widgetType === "index"
+        ? normalizeMarketIndexId(typeRaw === "fear-greed" ? "fear-greed" : o.indexId)
+        : undefined;
     out.push({
       id,
-      type: o.type,
+      type: widgetType,
       x,
       y,
       ...(symbol ? { symbol } : {}),
       ...(compareDays !== undefined ? { compareDays } : {}),
+      ...(widgetType === "index" ? { indexId } : {}),
       ...(o.type === "watchlist" && watchlistState
         ? {
             watchlistLists: watchlistState.watchlistLists,
@@ -366,6 +432,11 @@ function normalizeWidgets(raw: unknown): DashboardWidget[] {
     });
   }
   return out.length > 0 ? out : defaultWidgets();
+}
+
+/** Нормализует виджеты из API/localStorage в тип дашборда. */
+export function normalizeDashboardWidgets(raw: unknown): DashboardWidget[] {
+  return normalizeWidgets(raw);
 }
 
 export function loadDashboardWidgets(): DashboardWidget[] {

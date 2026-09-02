@@ -32,6 +32,34 @@ export function candleRowsToKlineBars(rows: CandleApiRow[]): KLineData[] {
   return [...byTimestamp.values()].sort((a, b) => a.timestamp - b.timestamp);
 }
 
+/**
+ * TradingView CRYPTOCAP: тело свечи от close предыдущего дня до close текущего,
+ * цвет — по направлению close относительно prev close (не open vs close).
+ */
+export function colorBarsByPreviousClose(bars: KLineData[]): KLineData[] {
+  if (bars.length <= 1) return bars;
+
+  const out: KLineData[] = [{ ...bars[0]! }];
+  for (let i = 1; i < bars.length; i++) {
+    const bar = bars[i]!;
+    const prevClose = bars[i - 1]!.close;
+    out.push({
+      ...bar,
+      open: prevClose,
+      high: Math.max(bar.high, prevClose, bar.close),
+      low: Math.min(bar.low, prevClose, bar.close),
+    });
+  }
+  return out;
+}
+
+export function mergeKlineBarsByTimestamp(existing: KLineData[], incoming: KLineData[]): KLineData[] {
+  const byTimestamp = new Map<number, KLineData>();
+  for (const bar of existing) byTimestamp.set(bar.timestamp, bar);
+  for (const bar of incoming) byTimestamp.set(bar.timestamp, bar);
+  return [...byTimestamp.values()].sort((a, b) => a.timestamp - b.timestamp);
+}
+
 export function inferPricePrecision(price: number): number {
   if (!Number.isFinite(price) || price <= 0) return 2;
   if (price >= 1000) return 2;

@@ -1,15 +1,17 @@
 import type { FastifyInstance } from "fastify";
 import type { PrismaClient } from "@prisma/client";
 import {
-  downloadTelegramChannelPhoto,
-  downloadTelegramMessageImage,
-  downloadTelegramMessageVideo,
-  downloadTelegramMessageVideoThumb,
   getTelegramNewsMessages,
   isTelegramMtprotoConfigured,
   listTelegramNewsChannels,
   TelegramMtprotoUnavailableError,
 } from "../services/telegramMtproto.js";
+import {
+  ensureChannelPhotoCached,
+  ensureMessageImageCached,
+  ensureMessageVideoCached,
+  ensureVideoThumbCached,
+} from "../services/telegramMediaEnsure.js";
 import {
   ensureWatchedChannels,
   getStoredTelegramFeed,
@@ -20,6 +22,7 @@ import {
 import { runTelegramNewsCatchUp } from "../services/telegramNewsSync.js";
 import { getNewsWidgetInsight, resolveNewsWidgetMskDay } from "../services/newsWidgetLlm.js";
 import { listTelegramNewsDailyIndex } from "../services/telegramNewsDailyIndex.js";
+import { isTelegramDisabled, telegramDisabledNewsWidgetPayload } from "../services/telegramFeature.js";
 import { requireProjectOwner } from "../middleware/requireProjectOwner.js";
 import {
   getPriceHintsForPost,
@@ -44,6 +47,9 @@ function parseFiltersQuery(raw: string | undefined): string[] {
 export function registerTelegramNewsRoutes(app: FastifyInstance, prisma: PrismaClient): void {
   app.get<{ Querystring: { usernames?: string; live?: string } }>("/telegram/channels", async (req, reply) => {
     reply.header("Cache-Control", "no-store");
+    if (isTelegramDisabled()) {
+      return { channels: [] };
+    }
     if (!isTelegramMtprotoConfigured()) {
       return reply.status(503).send({
         error:
@@ -54,39 +60,38 @@ export function registerTelegramNewsRoutes(app: FastifyInstance, prisma: PrismaC
       const usernames = parseUsernamesQuery(req.query.usernames);
       if (usernames !== undefined) {
         await ensureWatchedChannels(prisma, usernames);
-        void runTelegramNewsCatchUp(prisma, app.log, usernames).catch((err) => {
-          app.log.warn({ err }, "[telegram-news] watch catch-up failed");
-        });
       }
 
       const wantLive = req.query.live === "1" || req.query.live === "true";
       if (wantLive) {
-        const channels = await listTelegramNewsChannels(usernames);
-        return { channels };
-      }
-
-      // Быстрый путь для live UI: превью из БД (обновляется MTProto/catch-up).
-      let channels = await listStoredTelegramChannels(prisma, usernames);
-      const missingMeta = channels.some((c) => !c.title || c.title === c.username);
-      if (channels.length === 0 || missingMeta) {
+        void runTelegramNewsCatchUp(prisma, app.log, usernames).catch((err) => {
+          app.log.warn({ err }, "[telegram-news] live catch-up failed");
+        });
         try {
-          const live = await listTelegramNewsChannels(usernames ?? channels.map((c) => c.username));
-          const { updateChannelMeta } = await import("../services/telegramNewsStore.js");
-          for (const ch of live) {
-            await updateChannelMeta(prisma, ch.username, {
-              title: ch.title,
-              hasPhoto: ch.hasPhoto,
-            });
-          }
-          channels = await listStoredTelegramChannels(prisma, usernames);
-          // Если постов ещё нет — покажем live preview.
-          if (channels.every((c) => !c.lastMessageAt)) {
-            return { channels: live };
-          }
-        } catch {
-          if (channels.length === 0) throw new Error("Не удалось загрузить каналы");
+          const channels = await listTelegramNewsChannels(usernames);
+          return { channels };
+        } catch (err) {
+          const message =
+            err instanceof TelegramMtprotoUnavailableError
+              ? err.message
+              : err instanceof Error
+                ? err.message
+                : "Не удалось загрузить каналы";
+          return reply.status(503).send({ error: message });
         }
       }
+
+      if (usernames !== undefined) {
+        void runTelegramNewsCatchUp(prisma, app.log, usernames).catch((err) => {
+          app.log.warn({ err }, "[telegram-news] watch catch-up failed");
+        });
+      } else {
+        void runTelegramNewsCatchUp(prisma, app.log).catch((err) => {
+          app.log.warn({ err }, "[telegram-news] catch-up failed");
+        });
+      }
+
+      const channels = await listStoredTelegramChannels(prisma, usernames);
       return { channels };
     } catch (err) {
       const message =
@@ -103,6 +108,9 @@ export function registerTelegramNewsRoutes(app: FastifyInstance, prisma: PrismaC
     Querystring: { usernames?: string; filters?: string };
   }>("/telegram/news-widget", async (req, reply) => {
     reply.header("Cache-Control", "no-store");
+    if (isTelegramDisabled()) {
+      return telegramDisabledNewsWidgetPayload();
+    }
     if (!isTelegramMtprotoConfigured()) {
       return reply.status(503).send({
         error:
@@ -153,6 +161,9 @@ export function registerTelegramNewsRoutes(app: FastifyInstance, prisma: PrismaC
     Querystring: { usernames?: string; limit?: string; before?: string; refresh?: string };
   }>("/telegram/feed", async (req, reply) => {
     reply.header("Cache-Control", "no-store");
+    if (isTelegramDisabled()) {
+      return { messages: [] };
+    }
     if (!isTelegramMtprotoConfigured()) {
       return reply.status(503).send({
         error:
@@ -205,6 +216,9 @@ export function registerTelegramNewsRoutes(app: FastifyInstance, prisma: PrismaC
     Querystring: { limit?: string; offsetId?: string; refresh?: string };
   }>("/telegram/channels/:username/messages", async (req, reply) => {
     reply.header("Cache-Control", "no-store");
+    if (isTelegramDisabled()) {
+      return { messages: [] };
+    }
     if (!isTelegramMtprotoConfigured()) {
       return reply.status(503).send({
         error:
@@ -221,15 +235,9 @@ export function registerTelegramNewsRoutes(app: FastifyInstance, prisma: PrismaC
       await ensureWatchedChannels(prisma, [req.params.username]);
 
       if (forceRefresh) {
-        try {
-          const live = await getTelegramNewsMessages(req.params.username, {
-            limit: safeLimit,
-            offsetId: safeOffset,
-          });
-          await upsertTelegramNewsMessages(prisma, live);
-        } catch (err) {
-          app.log.warn({ err, username: req.params.username }, "[telegram-news] live refresh failed");
-        }
+        void runTelegramNewsCatchUp(prisma, app.log, [req.params.username]).catch((err) => {
+          app.log.warn({ err, username: req.params.username }, "[telegram-news] messages refresh catch-up failed");
+        });
       }
 
       let messages = await getStoredTelegramNewsMessages(prisma, req.params.username, {
@@ -237,13 +245,10 @@ export function registerTelegramNewsRoutes(app: FastifyInstance, prisma: PrismaC
         offsetId: safeOffset,
       });
 
-      // Cold start: DB empty → one live pull, then serve.
       if (messages.length === 0) {
-        messages = await getTelegramNewsMessages(req.params.username, {
-          limit: safeLimit,
-          offsetId: safeOffset,
+        void runTelegramNewsCatchUp(prisma, app.log, [req.params.username]).catch((err) => {
+          app.log.warn({ err, username: req.params.username }, "[telegram-news] cold-start catch-up failed");
         });
-        await upsertTelegramNewsMessages(prisma, messages);
       }
 
       return { messages };
@@ -271,7 +276,7 @@ export function registerTelegramNewsRoutes(app: FastifyInstance, prisma: PrismaC
         return reply.status(404).send();
       }
       try {
-        const media = await downloadTelegramMessageImage(req.params.username, messageId);
+        const media = await ensureMessageImageCached(req.params.username, messageId);
         if (!media) return reply.status(404).send();
         return reply.type(media.contentType).send(media.buffer);
       } catch {
@@ -292,7 +297,7 @@ export function registerTelegramNewsRoutes(app: FastifyInstance, prisma: PrismaC
         return reply.status(404).send();
       }
       try {
-        const media = await downloadTelegramMessageVideo(req.params.username, messageId);
+        const media = await ensureMessageVideoCached(req.params.username, messageId);
         if (!media) return reply.status(404).send();
         return reply.type(media.contentType).send(media.buffer);
       } catch (err) {
@@ -316,7 +321,7 @@ export function registerTelegramNewsRoutes(app: FastifyInstance, prisma: PrismaC
         return reply.status(404).send();
       }
       try {
-        const media = await downloadTelegramMessageVideoThumb(req.params.username, messageId);
+        const media = await ensureVideoThumbCached(req.params.username, messageId);
         if (!media) return reply.status(404).send();
         return reply.type(media.contentType).send(media.buffer);
       } catch {
@@ -333,7 +338,7 @@ export function registerTelegramNewsRoutes(app: FastifyInstance, prisma: PrismaC
         return reply.status(404).send();
       }
       try {
-        const buf = await downloadTelegramChannelPhoto(req.params.username);
+        const buf = await ensureChannelPhotoCached(req.params.username);
         if (!buf) return reply.status(404).send();
         return reply.type("image/jpeg").send(buf);
       } catch {
@@ -346,6 +351,17 @@ export function registerTelegramNewsRoutes(app: FastifyInstance, prisma: PrismaC
     "/telegram/news-feedback/candidates",
     async (req, reply) => {
       reply.header("Cache-Control", "no-store");
+      if (isTelegramDisabled()) {
+        const day = req.query.day?.trim() || resolveNewsWidgetMskDay();
+        return {
+          day,
+          sentiment: null,
+          formula: null,
+          candidateCount: 0,
+          top5: [],
+          candidates: [],
+        };
+      }
       if (!(await requireProjectOwner(req, reply))) return;
       const day = req.query.day?.trim() || resolveNewsWidgetMskDay();
       if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) {

@@ -23,6 +23,42 @@ model User {
   klineChartIndicators UserKlineChartIndicators[]
   sessions        Session[]
   accounts        Account[]
+  notes           Note[]
+  trades          Trade[]
+}
+
+model Trade {
+  id          String   @id @default(cuid())
+  userId      String
+  symbol      String
+  direction   String
+  entryPrice  Decimal  @db.Decimal(24, 8)
+  exitPrice   Decimal  @db.Decimal(24, 8)
+  quantity    Decimal  @db.Decimal(24, 8)
+  quantityUnit String  @default("coins")
+  entryAt     DateTime
+  exitAt      DateTime?
+  commission  Decimal  @default(0) @db.Decimal(24, 8)
+  fundingFee  Decimal  @default(0) @db.Decimal(24, 8)
+  reason      String?
+  comment     Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, exitAt])
+}
+
+model Note {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String   @default("Без названия")
+  content   Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, updatedAt])
 }
 
 model UserKlineChartPrefs {
@@ -370,4 +406,64 @@ model NewsPickFeedback {
 
   @@index([day])
   @@map("NewsPickFeedback")
+}
+
+/// Ежедневный снимок рыночных индексов CoinMarketCap (МСК-день).
+model CmcDailySnapshot {
+  id        String   @id @default(cuid())
+  day       String   @unique
+
+  fearGreedValue            Int
+  fearGreedClassification   String
+
+  btcDominance     Decimal @db.Decimal(28, 12)
+  ethDominance     Decimal @db.Decimal(28, 12)
+  totalMarketCap   Decimal @db.Decimal(28, 2)
+  altcoinMarketCap Decimal @db.Decimal(28, 2)
+
+  btcMarketCap     Decimal @db.Decimal(28, 2)
+  ethMarketCap     Decimal @db.Decimal(28, 2)
+  total3MarketCap  Decimal @db.Decimal(28, 2)
+
+  altcoinSeasonIndex       Int
+  altcoinSeasonMarketCap   Decimal? @db.Decimal(28, 2)
+
+  fundingRates Json
+
+  createdAt DateTime @default(now())
+
+  @@index([day(sort: Desc)])
+  @@map("CmcDailySnapshot")
+}
+
+/// Дневные бары рыночных индексов (TradingView RapidAPI, историческая загрузка).
+model MarketIndexDailyBar {
+  id       String   @id @default(cuid())
+  indexId  String
+  interval String   @default("1d")
+  day      String
+  openTime DateTime
+  open     Decimal? @db.Decimal(28, 12)
+  high     Decimal? @db.Decimal(28, 12)
+  low      Decimal? @db.Decimal(28, 12)
+  close    Decimal  @db.Decimal(28, 12)
+  volume   Decimal? @db.Decimal(38, 12)
+
+  @@unique([indexId, interval, openTime])
+  @@index([indexId, openTime(sort: Desc)])
+  @@map("MarketIndexDailyBar")
+}
+
+/// Дневная история Fear & Greed Index (CoinMarketCap data-api).
+model FearGreedDailyBar {
+  id             String   @id @default(cuid())
+  day            String   @unique
+  score          Int
+  classification String
+  barTime        DateTime
+  btcPrice       Decimal? @db.Decimal(28, 12)
+  btcVolume      Decimal? @db.Decimal(38, 12)
+
+  @@index([barTime(sort: Desc)])
+  @@map("FearGreedDailyBar")
 }

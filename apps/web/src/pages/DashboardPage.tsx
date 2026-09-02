@@ -10,11 +10,17 @@ import { DashboardSettings } from "../components/dashboard/DashboardSettings";
 import { authClient } from "../lib/auth-client";
 import { MacroCalendarWidget } from "../components/widgets/macro-calendar/MacroCalendarWidget";
 import { NewsWidget, type NewsWidgetExplainPayload } from "../components/widgets/news/NewsWidget";
+import { NotesWidget } from "../components/widgets/notes/NotesWidget";
+import { JournalWidget } from "../components/widgets/journal/JournalWidget";
+import { IndexWidget } from "../components/widgets/index/IndexWidget";
+import { IndexBoardWidget } from "../components/widgets/index/IndexBoardWidget";
+import type { MarketIndexId } from "../components/widgets/index/marketIndexCatalog";
 import { NewsWidgetExplainModal } from "../components/widgets/news/NewsWidgetExplainModal";
 import { PortfolioWidget } from "../components/widgets/portfolio/PortfolioWidget";
 import { FedCurveWidget } from "../components/widgets/fed-curve/FedCurveWidget";
 import { PriceSparklineWidget } from "../components/widgets/price-sparkline/PriceSparklineWidget";
 import { pairForCryptocurrency } from "../components/widgets/price-sparkline/atlasCryptoDatafeed";
+import { isTelegramEnabled } from "../lib/telegramFeature";
 import { WatchlistWidget, type WatchlistWidgetState } from "../components/widgets/watchlist/WatchlistWidget";
 import {
   fetchCryptocurrencies,
@@ -33,6 +39,7 @@ import {
   dashboardWidgetOuterSize,
   layoutAllWidgetsSequential,
   layoutDashboardWidgetsForBoard,
+  normalizeDashboardWidgets,
   resolveCollisions,
   snapAndClampDashboardPosition,
   type DashboardWidget,
@@ -58,6 +65,12 @@ const PriceSparklineKlineModal = lazy(() =>
   })),
 );
 const AuthModal = lazy(() => import("../components/auth/AuthModal").then((m) => ({ default: m.AuthModal })));
+const NotesModal = lazy(() =>
+  import("../components/notes/NotesModal").then((m) => ({ default: m.NotesModal })),
+);
+const JournalModal = lazy(() =>
+  import("../components/widgets/journal/JournalModal").then((m) => ({ default: m.JournalModal })),
+);
 
 const SAVE_DEBOUNCE_MS = 600;
 
@@ -69,9 +82,13 @@ type DraggableWidgetProps = {
   onRemove: (id: string) => void;
   onOpenMacroCalendar?: () => void;
   onOpenNews?: () => void;
+  onOpenNotes?: (noteId?: string) => void;
+  onOpenJournal?: (tradeId?: string) => void;
   onOpenNewsExplain?: (payload: NewsWidgetExplainPayload) => void;
   onFedCurveCompareDays?: (id: string, days: FedCurveCompareDays) => void;
   onWatchlistChange?: (id: string, state: WatchlistWidgetState) => void;
+  onIndexIdChange?: (id: string, indexId: MarketIndexId) => void;
+  onOpenIndexChart?: (indexId: MarketIndexId) => void;
 };
 
 function cn(...parts: Array<string | undefined | false>): string {
@@ -90,9 +107,13 @@ const DraggableWidget = memo(function DraggableWidget({
   onRemove,
   onOpenMacroCalendar,
   onOpenNews,
+  onOpenNotes,
+  onOpenJournal,
   onOpenNewsExplain,
   onFedCurveCompareDays,
   onWatchlistChange,
+  onIndexIdChange,
+  onOpenIndexChart,
 }: DraggableWidgetProps) {
   const nodeRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -110,6 +131,10 @@ const DraggableWidget = memo(function DraggableWidget({
     (state: WatchlistWidgetState) => onWatchlistChange?.(widget.id, state),
     [onWatchlistChange, widget.id],
   );
+  const handleIndexIdChange = useCallback(
+    (indexId: MarketIndexId) => onIndexIdChange?.(widget.id, indexId),
+    [onIndexIdChange, widget.id],
+  );
   const handleWatchlistSettingsOpenChange = useCallback((open: boolean) => {
     setWatchlistSettingsOpen(open);
   }, []);
@@ -124,14 +149,22 @@ const DraggableWidget = memo(function DraggableWidget({
           ? "h-[530px] w-[min(350px,100%)]"
           : widget.type === "news"
             ? "h-[494px] w-[min(350px,100%)]"
-            : "w-[min(350px,100%)]";
+            : widget.type === "notes"
+              ? "h-[326px] w-[min(350px,100%)]"
+              : widget.type === "journal"
+                ? "h-[300px] w-[min(570px,100%)]"
+                : widget.type === "index"
+                  ? "h-[100px] w-[min(150px,100%)]"
+                  : widget.type === "index-board"
+                    ? "h-[260px] w-[min(280px,100%)]"
+                    : "w-[min(350px,100%)]";
 
   return (
     <Draggable
       nodeRef={nodeRef}
       handle=".drag-handle"
       disabled={widget.type === "watchlist" && watchlistSettingsOpen}
-      cancel=".price-widget-icon-button,.portfolio-menu-trigger,.btn-on-glass,.macro-cal-expand,.fed-curve-settings-popover,.fed-curve-settings-period-btn,.watchlist-list-header-select,.news-widget-row,.news-widget-inline-link"
+      cancel=".price-widget-icon-button,.portfolio-menu-trigger,.btn-on-glass,.macro-cal-expand,.fed-curve-settings-popover,.fed-curve-settings-period-btn,.watchlist-list-header-select,.news-widget-row,.news-widget-inline-link,.notes-widget-row,.notes-widget-inline-link,.journal-widget-row,.journal-period-switcher,.index-widget-name-btn"
       bounds="parent"
       grid={[gridSize, gridSize]}
       position={isDragging ? undefined : { x: widget.x, y: widget.y }}
@@ -190,6 +223,20 @@ const DraggableWidget = memo(function DraggableWidget({
             onOpenNews={onOpenNews}
             onOpenExplain={onOpenNewsExplain}
           />
+        ) : widget.type === "notes" ? (
+          <NotesWidget dragHandleClassName="drag-handle" onDeleteWidget={handleDelete} onOpenNotes={onOpenNotes} />
+        ) : widget.type === "journal" ? (
+          <JournalWidget dragHandleClassName="drag-handle" onDeleteWidget={handleDelete} onOpenJournal={onOpenJournal} />
+        ) : widget.type === "index" ? (
+          <IndexWidget
+            dragHandleClassName="drag-handle"
+            indexId={widget.indexId}
+            onIndexIdChange={handleIndexIdChange}
+            onOpenExtendedChart={onOpenIndexChart}
+            onDeleteWidget={handleDelete}
+          />
+        ) : widget.type === "index-board" ? (
+          <IndexBoardWidget dragHandleClassName="drag-handle" onDeleteWidget={handleDelete} />
         ) : (
           <PortfolioWidget onDeleteWidget={handleDelete} />
         )}
@@ -223,8 +270,13 @@ export function DashboardPage() {
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [macroOpen, setMacroOpen] = useState(false);
   const [telegramNewsOpen, setTelegramNewsOpen] = useState(false);
+  const [notesOpen, setNotesOpen] = useState(false);
+  const [notesInitialId, setNotesInitialId] = useState<string | null>(null);
+  const [journalOpen, setJournalOpen] = useState(false);
+  const [journalInitialId, setJournalInitialId] = useState<string | null>(null);
   const [newsExplain, setNewsExplain] = useState<NewsWidgetExplainPayload | null>(null);
   const [klineOpen, setKlineOpen] = useState(false);
+  const [klineMarketIndexId, setKlineMarketIndexId] = useState<MarketIndexId | null>(null);
   const [klineCryptoList, setKlineCryptoList] = useState<CryptocurrencyListItem[]>([]);
   const [authOpen, setAuthOpen] = useState(false);
   const [profileUser, setProfileUser] = useState<ProfileUserResponse | null>(null);
@@ -313,7 +365,7 @@ export function DashboardPage() {
         const rect = boardRef.current?.getBoundingClientRect();
         setWidgets(
           layoutDashboardWidgetsForBoard(
-            state.widgets,
+            normalizeDashboardWidgets(state.widgets),
             rect?.width,
             rect?.height,
             window.innerWidth,
@@ -418,12 +470,18 @@ export function DashboardPage() {
     );
   }, []);
 
+  const setIndexId = useCallback((id: string, indexId: MarketIndexId) => {
+    setWidgets((ws) =>
+      ws.map((w) => (w.id === id && w.type === "index" ? { ...w, indexId } : w)),
+    );
+  }, []);
+
   const removeWidget = useCallback((id: string) => {
     setWidgets((ws) => ws.filter((w) => w.id !== id));
   }, []);
 
   const addWidget = useCallback(
-    (type: DashboardWidgetType) => {
+    (type: DashboardWidgetType, options?: { indexId?: MarketIndexId }) => {
     if (type === "portfolio" && !isLoggedIn) return;
 
     const el = boardRef.current;
@@ -437,7 +495,16 @@ export function DashboardPage() {
       const { h } = dashboardWidgetOuterSize(type, vw);
       const stepY = Math.ceil((h + DASHBOARD_WIDGET_GAP) / DASHBOARD_GRID_SIZE) * DASHBOARD_GRID_SIZE;
       const snapped = snapAndClampDashboardPosition(0, idx * stepY, type, bw, bh, vw);
-      const next = [...ws, { id: createWidgetId(), type, x: snapped.x, y: snapped.y }];
+      const next = [
+        ...ws,
+        {
+          id: createWidgetId(),
+          type,
+          x: snapped.x,
+          y: snapped.y,
+          ...(type === "index" && options?.indexId ? { indexId: options.indexId } : {}),
+        },
+      ];
       return layoutAllWidgetsSequential(next, bw, bh, vw);
     });
   },
@@ -445,12 +512,36 @@ export function DashboardPage() {
   );
 
   const openMacroCalendar = useCallback(() => setMacroOpen(true), []);
-  const openKlineChart = useCallback(() => setKlineOpen(true), []);
+  const openNotes = useCallback((noteId?: string) => {
+    setNotesInitialId(noteId ?? null);
+    setNotesOpen(true);
+  }, []);
+  const closeNotes = useCallback(() => {
+    setNotesOpen(false);
+    setNotesInitialId(null);
+  }, []);
+  const openJournal = useCallback((tradeId?: string) => {
+    setJournalInitialId(tradeId ?? null);
+    setJournalOpen(true);
+  }, []);
+  const closeJournal = useCallback(() => {
+    setJournalOpen(false);
+    setJournalInitialId(null);
+  }, []);
+  const openKlineChart = useCallback(() => {
+    setKlineMarketIndexId(null);
+    setKlineOpen(true);
+  }, []);
+  const openKlineChartForIndex = useCallback((indexId: MarketIndexId) => {
+    setKlineMarketIndexId(indexId);
+    setKlineOpen(true);
+  }, []);
   const closeKlineChart = useCallback(() => {
     if (document.fullscreenElement) {
       void document.exitFullscreen().catch(() => undefined);
     }
     setKlineOpen(false);
+    setKlineMarketIndexId(null);
   }, []);
 
   const primaryPriceWidget = useMemo(
@@ -569,15 +660,44 @@ export function DashboardPage() {
             aria-label="Открыть график"
             onClick={openKlineChart}
           >
-            <img src="/assets/portfolio-ui/chart_bar.svg" alt="" aria-hidden="true" className="dashboard-quick-tabs-item-icon" />
+            <img src="/assets/portfolio-ui/bars.svg" alt="" aria-hidden="true" className="dashboard-quick-tabs-item-icon" />
+          </button>
+          {isTelegramEnabled() ? (
+            <button
+              type="button"
+              className="dashboard-quick-tabs-item dashboard-quick-tabs-item--chat"
+              aria-label="Открыть Telegram-новости"
+              onClick={() => setTelegramNewsOpen(true)}
+            >
+              <img src="/assets/portfolio-ui/messages.svg" alt="" aria-hidden="true" className="dashboard-quick-tabs-item-icon" />
+            </button>
+          ) : null}
+          <button
+            type="button"
+            className={cn(
+              "dashboard-quick-tabs-item dashboard-quick-tabs-item--notes",
+              notesOpen && "is-active",
+            )}
+            aria-label="Открыть заметки"
+            onClick={() => openNotes()}
+          >
+            <img src="/assets/portfolio-ui/folder.svg" alt="" aria-hidden="true" className="dashboard-quick-tabs-item-icon" />
           </button>
           <button
             type="button"
-            className="dashboard-quick-tabs-item dashboard-quick-tabs-item--chat"
-            aria-label="Открыть Telegram-новости"
-            onClick={() => setTelegramNewsOpen(true)}
+            className={cn(
+              "dashboard-quick-tabs-item dashboard-quick-tabs-item--journal",
+              journalOpen && "is-active",
+            )}
+            aria-label="Открыть журнал сделок"
+            onClick={() => openJournal()}
           >
-            <img src="/assets/portfolio-ui/chat.svg" alt="" aria-hidden="true" className="dashboard-quick-tabs-item-icon" />
+            <img
+              src="/assets/portfolio-ui/book.svg"
+              alt=""
+              aria-hidden="true"
+              className="dashboard-quick-tabs-item-icon"
+            />
           </button>
         </div>
       </div>
@@ -591,7 +711,11 @@ export function DashboardPage() {
             w.type === "macro-calendar" ||
             w.type === "fed-curve" ||
             w.type === "watchlist" ||
-            w.type === "news" ? (
+            w.type === "news" ||
+            w.type === "notes" ||
+            w.type === "journal" ||
+            w.type === "index" ||
+            w.type === "index-board" ? (
               <DraggableWidget
                 key={w.id}
                 widget={w}
@@ -600,10 +724,14 @@ export function DashboardPage() {
                 onPriceSymbol={setPriceWidgetSymbol}
                 onRemove={removeWidget}
                 onOpenMacroCalendar={openMacroCalendar}
-                onOpenNews={() => setTelegramNewsOpen(true)}
+                onOpenNews={isTelegramEnabled() ? () => setTelegramNewsOpen(true) : undefined}
+                onOpenNotes={openNotes}
+                onOpenJournal={openJournal}
                 onOpenNewsExplain={setNewsExplain}
                 onFedCurveCompareDays={setFedCurveCompareDays}
                 onWatchlistChange={setWatchlistState}
+                onIndexIdChange={setIndexId}
+                onOpenIndexChart={openKlineChartForIndex}
               />
             ) : null,
           )}
@@ -652,9 +780,19 @@ export function DashboardPage() {
           <MacroEventsModal open onClose={() => setMacroOpen(false)} />
         </Suspense>
       ) : null}
-      {telegramNewsOpen ? (
+      {isTelegramEnabled() && telegramNewsOpen ? (
         <Suspense fallback={null}>
           <TelegramNewsModal open onClose={() => setTelegramNewsOpen(false)} />
+        </Suspense>
+      ) : null}
+      {notesOpen ? (
+        <Suspense fallback={null}>
+          <NotesModal open initialNoteId={notesInitialId} onClose={closeNotes} />
+        </Suspense>
+      ) : null}
+      {journalOpen ? (
+        <Suspense fallback={null}>
+          <JournalModal open initialTradeId={journalInitialId} onClose={closeJournal} />
         </Suspense>
       ) : null}
       {newsExplain ? (
@@ -668,18 +806,19 @@ export function DashboardPage() {
           candidateCount={newsExplain.candidateCount}
         />
       ) : null}
-      {klineOpen && klineTarget ? (
+      {klineOpen && (klineMarketIndexId || klineTarget) ? (
         <Suspense fallback={null}>
           <PriceSparklineKlineModal
             open
             onClose={closeKlineChart}
-            symbol={klineTarget.symbol}
-            pair={pairForCryptocurrency(klineTarget)}
-            iconUrl={klineTarget.iconUrl}
+            symbol={klineTarget?.symbol ?? ""}
+            pair={klineTarget ? pairForCryptocurrency(klineTarget) : ""}
+            iconUrl={klineTarget?.iconUrl}
             cryptocurrencies={klineCryptoList}
             watchlistLists={klineWatchlistLists}
             onWatchlistListsChange={updateKlineWatchlistLists}
             isLoggedIn={isLoggedIn}
+            marketIndexId={klineMarketIndexId}
           />
         </Suspense>
       ) : null}

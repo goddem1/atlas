@@ -14,11 +14,17 @@ import {
 import {
   ensureWatchedChannels,
   getLatestMessageId,
+  getStoredTelegramNewsMessages,
   listWatchedUsernames,
   pruneOldTelegramNewsPosts,
   updateChannelMeta,
   upsertTelegramNewsMessages,
 } from "./telegramNewsStore.js";
+import {
+  ensureChannelPhotoCached,
+  prefetchTelegramMessageMedia,
+} from "./telegramMediaEnsure.js";
+import { isTelegramDisabled } from "./telegramFeature.js";
 
 type Log = Pick<FastifyBaseLogger, "info" | "warn" | "error" | "debug">;
 
@@ -41,6 +47,7 @@ async function syncOneChannel(
   }
   const n = await upsertTelegramNewsMessages(prisma, fresh);
   await updateChannelMeta(prisma, username, {});
+  await prefetchTelegramMessageMedia(username, fresh, log);
   log.debug({ username, upserted: n, latestId }, "[telegram-news] channel sync");
   return n;
 }
@@ -75,6 +82,13 @@ export async function runTelegramNewsCatchUp(
           title: ch.title,
           hasPhoto: ch.hasPhoto,
         });
+        if (ch.hasPhoto) {
+          try {
+            await ensureChannelPhotoCached(ch.username);
+          } catch (err) {
+            log.warn({ err, username: ch.username }, "[telegram-news] channel photo cache failed");
+          }
+        }
       }
     } catch (err) {
       log.warn({ err }, "[telegram-news] channel meta refresh failed");
@@ -86,6 +100,21 @@ export async function runTelegramNewsCatchUp(
         total += await syncOneChannel(prisma, log, username);
       } catch (err) {
         log.warn({ err, username }, "[telegram-news] channel sync failed");
+      }
+    }
+
+    // Догрузить медиа для постов, уже лежащих в БД (первый запуск / после деплоя).
+    for (const username of channels) {
+      try {
+        const recent = await getStoredTelegramNewsMessages(prisma, username, { limit: 30 });
+        const needsMedia = recent.filter(
+          (m) => m.hasImage || m.hasVideoThumb || m.hasVideo,
+        );
+        if (needsMedia.length > 0) {
+          await prefetchTelegramMessageMedia(username, needsMedia, log);
+        }
+      } catch (err) {
+        log.debug({ err, username }, "[telegram-news] backlog media prefetch skipped");
       }
     }
 
@@ -124,6 +153,10 @@ export async function startTelegramNewsAutoSync(
   prisma: PrismaClient,
   log: Log,
 ): Promise<() => void> {
+  if (isTelegramDisabled()) {
+    log.info("[telegram-news] auto-sync disabled via TELEGRAM_DISABLED");
+    return () => undefined;
+  }
   if (!isTelegramMtprotoConfigured()) {
     log.warn("[telegram-news] auto-sync disabled (MTProto not configured)");
     return () => undefined;
@@ -135,9 +168,11 @@ export async function startTelegramNewsAutoSync(
 
   await ensureWatchedChannels(prisma, getDefaultTelegramChannels());
 
-  void runTelegramNewsCatchUp(prisma, log).catch((err) => {
+  try {
+    await runTelegramNewsCatchUp(prisma, log);
+  } catch (err) {
     log.warn({ err }, "[telegram-news] initial catch-up failed");
-  });
+  }
 
   const intervalMin = Number.parseInt(process.env.TELEGRAM_NEWS_CATCHUP_MINUTES ?? "5", 10);
   const minutes = Math.max(2, Number.isFinite(intervalMin) ? intervalMin : 5);
@@ -147,13 +182,16 @@ export async function startTelegramNewsAutoSync(
     });
   }, minutes * 60_000);
 
-  if (!listenerStarted) {
+  const liveListenerDisabled = process.env.TELEGRAM_NEWS_LIVE_LISTENER_DISABLED === "true";
+  if (!listenerStarted && !liveListenerDisabled) {
     try {
       await attachNewMessageListener(prisma, log);
       listenerStarted = true;
     } catch (err) {
       log.warn({ err }, "[telegram-news] live listener failed to start");
     }
+  } else if (liveListenerDisabled) {
+    log.info("[telegram-news] live listener disabled (TELEGRAM_NEWS_LIVE_LISTENER_DISABLED)");
   }
 
   log.info({ catchUpMinutes: minutes }, "[telegram-news] auto-sync started (live events + catch-up)");

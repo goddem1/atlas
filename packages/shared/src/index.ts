@@ -21,7 +21,11 @@ export type DashboardCanvasWidgetType =
   | "macro-calendar"
   | "fed-curve"
   | "watchlist"
-  | "news";
+  | "news"
+  | "notes"
+  | "journal"
+  | "index"
+  | "index-board";
 
 export interface DashboardCanvasWidget {
   id: string;
@@ -29,6 +33,8 @@ export interface DashboardCanvasWidget {
   x: number;
   y: number;
   symbol?: string;
+  /** Выбранный индекс — только для `index`. */
+  indexId?: string;
   /** Смещение серой линии кривой ФРС (дней), только для `fed-curve`. */
   compareDays?: number;
   /** Тикеры в списке, только для `watchlist` (legacy — мигрируется в `watchlistLists`). */
@@ -309,6 +315,21 @@ export type {
 export {
   TELEGRAM_CHANNELS_MAX,
   TELEGRAM_NEWS_WIDGET_CATEGORIES,
+  isValidTelegramChannelUsername,
   normalizeTelegramUsername,
   parseTelegramNewsWidgetCategory,
 } from "./telegramNews.js";
+export type {
+  FundingRateEntry,
+  CmcDailySnapshotHistoryField,
+  CmcDailySnapshotHistoryPoint,
+  CmcDailySnapshotLatestResponse,
+} from "./cmcTypes.js";
+export type {
+  MarketIndexDailyBarPoint,
+  MarketIndexDailyBarsResponse,
+} from "./marketIndexDailyBar.js";
+export type {
+  FearGreedDailyBarPoint,
+  FearGreedDailyBarsResponse,
+} from "./fearGreedDailyBar.js";

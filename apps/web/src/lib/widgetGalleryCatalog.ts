@@ -18,6 +18,8 @@ export type WidgetGalleryItem = {
   title: string;
   description: string;
   widgetType: DashboardWidgetType;
+  /** Стартовый индекс — только для `index`. */
+  indexId?: import("../components/widgets/index/marketIndexCatalog").MarketIndexId;
 };
 
 export const WIDGET_GALLERY_CATEGORIES: {
@@ -78,6 +80,35 @@ export const WIDGET_GALLERY_ITEMS: WidgetGalleryItem[] = [
     title: "Новости",
     description: "Лента Telegram с тегами и настроением",
     widgetType: "news",
+  },
+  {
+    id: "journal",
+    categoryId: "trading-journal",
+    title: "Журнал сделок",
+    description: "Закрытые сделки, PnL и equity curve",
+    widgetType: "journal",
+  },
+  {
+    id: "notes",
+    categoryId: "notes",
+    title: "Заметки",
+    description: "Текстовые заметки с форматированием и фото",
+    widgetType: "notes",
+  },
+  {
+    id: "index",
+    categoryId: "indices",
+    title: "Индекс",
+    description: "Один рыночный показатель и дневное изменение — тип выбирается в виджете",
+    widgetType: "index",
+    indexId: "total-2",
+  },
+  {
+    id: "index-board",
+    categoryId: "indices",
+    title: "Индексы",
+    description: "Сводка ключевых показателей: F&G, доминация, Total, VIX, DXY",
+    widgetType: "index-board",
   },
 ];
 
