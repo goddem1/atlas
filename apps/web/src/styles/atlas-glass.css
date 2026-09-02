@@ -13,9 +13,13 @@
   --atlas-glass-bg-light: rgba(255, 255, 255, 0.1);
   /* Светлая тема по умолчанию; на дашборде см. html[data-dashboard-theme]. */
   --atlas-glass-border: 1px solid rgba(255, 255, 255, 0.6);
+  --atlas-glass-shadow-inner: inset -4px -4px 12px 0 rgba(255, 255, 255, 0.08);
+  --atlas-glass-shadow-outer: 0 20px 50px 0 rgba(0, 0, 0, 0.08);
   --atlas-glass-shadow:
-    0 20px 50px 0 rgba(0, 0, 0, 0.05), 
-    inset -4px -4px 12px 0px rgba(255, 255, 255, 0.08);
+    var(--atlas-glass-shadow-outer),
+    var(--atlas-glass-shadow-inner);
+  --atlas-widget-radius: 25px 10px 25px 25px;
+  --atlas-widget-radius-fed-curve: 20px 10px 20px 20px;
   --atlas-glass-backdrop: blur(22px) saturate(150%);
   /* Поля (.portfolio-input, ghost, комбобокс, период в макро) — править цвета здесь. */
   --atlas-input-bg: #ffffff;
@@ -177,12 +181,111 @@ html[data-dashboard-theme="dark"] .macro-events-icon-button:not(.is-active) .mac
 .atlas-glass {
   position: relative;
   isolation: isolate;
-  contain: layout paint;
+  contain: layout style;
   background-color: var(--atlas-glass-bg);
   border: var(--atlas-glass-border);
   box-shadow: var(--atlas-glass-shadow);
   backdrop-filter: var(--atlas-glass-backdrop);
   -webkit-backdrop-filter: var(--atlas-glass-backdrop);
+}
+
+/*
+  Dashboard widget cards use overflow:hidden — outer box-shadow gets clipped square.
+  Outer shadow lives on .dashboard-widget-slot (same layer as Draggable transform).
+  Frosted fill + inset highlight on the card ::before.
+*/
+.price-widget-shell,
+.macro-cal-shell,
+.portfolio-widget-shell,
+.notes-widget-shell,
+.news-widget-shell,
+.watchlist-shell,
+.journal-widget-card-elevated,
+.index-widget-shell,
+.index-board-shell,
+.fed-curve-widget-shell {
+  position: relative;
+  isolation: isolate;
+  overflow: visible;
+}
+
+.price-widget-shell > .atlas-glass,
+.macro-cal-shell > .atlas-glass,
+.portfolio-widget-shell > .atlas-glass,
+.notes-widget-shell > .atlas-glass,
+.news-widget-shell > .atlas-glass,
+.watchlist-shell > .atlas-glass,
+.journal-widget-card-elevated > .atlas-glass,
+.index-widget-shell > .atlas-glass,
+.index-board-shell > .atlas-glass,
+.fed-curve-widget-shell > .atlas-glass {
+  position: relative;
+  z-index: 1;
+  contain: none;
+  overflow: visible;
+  clip-path: inset(0 round var(--atlas-widget-radius));
+  border-radius: var(--atlas-widget-radius);
+  background-color: transparent;
+  border: none;
+  box-shadow: none;
+  backdrop-filter: var(--atlas-glass-backdrop);
+  -webkit-backdrop-filter: var(--atlas-glass-backdrop);
+}
+
+.fed-curve-widget-shell > .atlas-glass {
+  clip-path: inset(0 round var(--atlas-widget-radius-fed-curve));
+  border-radius: var(--atlas-widget-radius-fed-curve);
+}
+
+.price-widget-shell > .atlas-glass::before,
+.macro-cal-shell > .atlas-glass::before,
+.portfolio-widget-shell > .atlas-glass::before,
+.notes-widget-shell > .atlas-glass::before,
+.news-widget-shell > .atlas-glass::before,
+.watchlist-shell > .atlas-glass::before,
+.journal-widget-card-elevated > .atlas-glass::before,
+.index-widget-shell > .atlas-glass::before,
+.index-board-shell > .atlas-glass::before,
+.fed-curve-widget-shell > .atlas-glass::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: var(--atlas-widget-radius);
+  background-color: var(--atlas-glass-bg);
+  border: var(--atlas-glass-border);
+  box-sizing: border-box;
+  box-shadow: var(--atlas-glass-shadow-inner);
+  transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.fed-curve-widget-shell > .atlas-glass::before {
+  border-radius: var(--atlas-widget-radius-fed-curve);
+}
+
+.watchlist-shell > .atlas-glass.watchlist-card--list-menu-open {
+  clip-path: none;
+}
+
+.price-widget-shell > .atlas-glass > *:not(.portfolio-widget-divider):not(.macro-cal-divider),
+.macro-cal-shell > .atlas-glass > *:not(.portfolio-widget-divider):not(.macro-cal-divider),
+.portfolio-widget-shell > .atlas-glass > *:not(.portfolio-widget-divider):not(.macro-cal-divider),
+.notes-widget-shell > .atlas-glass > *:not(.portfolio-widget-divider):not(.macro-cal-divider),
+.news-widget-shell > .atlas-glass > *:not(.portfolio-widget-divider):not(.macro-cal-divider),
+.watchlist-shell > .atlas-glass > *:not(.portfolio-widget-divider):not(.macro-cal-divider),
+.journal-widget-card-elevated > .atlas-glass > *:not(.portfolio-widget-divider):not(.macro-cal-divider),
+.index-widget-shell > .atlas-glass > *:not(.portfolio-widget-divider):not(.macro-cal-divider),
+.index-board-shell > .atlas-glass > *:not(.portfolio-widget-divider):not(.macro-cal-divider),
+.fed-curve-widget-shell > .atlas-glass > *:not(.portfolio-widget-divider):not(.macro-cal-divider) {
+  position: relative;
+  z-index: 1;
+}
+
+.atlas-glass-elevated {
+  display: block;
 }
 
 /*

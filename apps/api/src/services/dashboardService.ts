@@ -31,6 +31,22 @@ function newWidgetId(): string {
   return `w_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
 }
 
+const VALID_INDEX_IDS = new Set([
+  "fear-greed",
+  "btc-dominance",
+  "total-1",
+  "total-2",
+  "total-3",
+  "funding",
+  "vix",
+  "dxy",
+]);
+
+function normalizeIndexId(value: unknown): string | undefined {
+  if (typeof value !== "string" || !VALID_INDEX_IDS.has(value)) return undefined;
+  return value;
+}
+
 function isWidgetType(v: unknown): v is DashboardCanvasWidget["type"] {
   return (
     v === "price-sparkline" ||
@@ -38,7 +54,11 @@ function isWidgetType(v: unknown): v is DashboardCanvasWidget["type"] {
     v === "macro-calendar" ||
     v === "fed-curve" ||
     v === "watchlist" ||
-    v === "news"
+    v === "news" ||
+    v === "notes" ||
+    v === "journal" ||
+    v === "index" ||
+    v === "index-board"
   );
 }
 
@@ -49,7 +69,10 @@ function normalizeWidgets(raw: unknown): DashboardCanvasWidget[] {
     if (!row || typeof row !== "object") continue;
     const o = row as Record<string, unknown>;
     const id = typeof o.id === "string" && o.id.length > 0 ? o.id : null;
-    if (!id || !isWidgetType(o.type)) continue;
+    if (!id) continue;
+    const typeRaw = o.type;
+    const widgetType = typeRaw === "fear-greed" ? "index" : typeRaw;
+    if (!isWidgetType(widgetType)) continue;
     const x = typeof o.x === "number" && Number.isFinite(o.x) ? o.x : 0;
     const y = typeof o.y === "number" && Number.isFinite(o.y) ? o.y : 0;
     const symRaw = o.symbol;
@@ -76,13 +99,18 @@ function normalizeWidgets(raw: unknown): DashboardCanvasWidget[] {
             watchlistListsRaw ? undefined : legacySymbols,
           )
         : null;
+    const indexId =
+      widgetType === "index"
+        ? normalizeIndexId(typeRaw === "fear-greed" ? "fear-greed" : o.indexId)
+        : undefined;
     out.push({
       id,
-      type: o.type,
+      type: widgetType,
       x,
       y,
       ...(symbol ? { symbol } : {}),
       ...(compareDays !== undefined ? { compareDays } : {}),
+      ...(widgetType === "index" && indexId ? { indexId } : {}),
       ...(o.type === "watchlist" && watchlistState
         ? {
             watchlistLists: watchlistState.watchlistLists,

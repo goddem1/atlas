@@ -22,6 +22,7 @@ import {
 import { runTelegramNewsCatchUp } from "../services/telegramNewsSync.js";
 import { getNewsWidgetInsight, resolveNewsWidgetMskDay } from "../services/newsWidgetLlm.js";
 import { listTelegramNewsDailyIndex } from "../services/telegramNewsDailyIndex.js";
+import { isTelegramDisabled, telegramDisabledNewsWidgetPayload } from "../services/telegramFeature.js";
 import { requireProjectOwner } from "../middleware/requireProjectOwner.js";
 import {
   getPriceHintsForPost,
@@ -46,6 +47,9 @@ function parseFiltersQuery(raw: string | undefined): string[] {
 export function registerTelegramNewsRoutes(app: FastifyInstance, prisma: PrismaClient): void {
   app.get<{ Querystring: { usernames?: string; live?: string } }>("/telegram/channels", async (req, reply) => {
     reply.header("Cache-Control", "no-store");
+    if (isTelegramDisabled()) {
+      return { channels: [] };
+    }
     if (!isTelegramMtprotoConfigured()) {
       return reply.status(503).send({
         error:
@@ -104,6 +108,9 @@ export function registerTelegramNewsRoutes(app: FastifyInstance, prisma: PrismaC
     Querystring: { usernames?: string; filters?: string };
   }>("/telegram/news-widget", async (req, reply) => {
     reply.header("Cache-Control", "no-store");
+    if (isTelegramDisabled()) {
+      return telegramDisabledNewsWidgetPayload();
+    }
     if (!isTelegramMtprotoConfigured()) {
       return reply.status(503).send({
         error:
@@ -154,6 +161,9 @@ export function registerTelegramNewsRoutes(app: FastifyInstance, prisma: PrismaC
     Querystring: { usernames?: string; limit?: string; before?: string; refresh?: string };
   }>("/telegram/feed", async (req, reply) => {
     reply.header("Cache-Control", "no-store");
+    if (isTelegramDisabled()) {
+      return { messages: [] };
+    }
     if (!isTelegramMtprotoConfigured()) {
       return reply.status(503).send({
         error:
@@ -206,6 +216,9 @@ export function registerTelegramNewsRoutes(app: FastifyInstance, prisma: PrismaC
     Querystring: { limit?: string; offsetId?: string; refresh?: string };
   }>("/telegram/channels/:username/messages", async (req, reply) => {
     reply.header("Cache-Control", "no-store");
+    if (isTelegramDisabled()) {
+      return { messages: [] };
+    }
     if (!isTelegramMtprotoConfigured()) {
       return reply.status(503).send({
         error:
@@ -338,6 +351,17 @@ export function registerTelegramNewsRoutes(app: FastifyInstance, prisma: PrismaC
     "/telegram/news-feedback/candidates",
     async (req, reply) => {
       reply.header("Cache-Control", "no-store");
+      if (isTelegramDisabled()) {
+        const day = req.query.day?.trim() || resolveNewsWidgetMskDay();
+        return {
+          day,
+          sentiment: null,
+          formula: null,
+          candidateCount: 0,
+          top5: [],
+          candidates: [],
+        };
+      }
       if (!(await requireProjectOwner(req, reply))) return;
       const day = req.query.day?.trim() || resolveNewsWidgetMskDay();
       if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) {

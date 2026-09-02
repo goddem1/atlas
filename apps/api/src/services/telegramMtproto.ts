@@ -10,6 +10,7 @@ import {
   listTelegramSocksProxyCandidates,
   type TelegramSocksProxy,
 } from "../lib/httpProxy.js";
+import { isTelegramDisabled } from "./telegramFeature.js";
 
 export class TelegramMtprotoUnavailableError extends Error {
   constructor(message: string) {
@@ -310,6 +311,7 @@ async function getClient(): Promise<TelegramClient> {
 }
 
 export function isTelegramMtprotoConfigured(): boolean {
+  if (isTelegramDisabled()) return false;
   try {
     readApiCredentials();
     return true;

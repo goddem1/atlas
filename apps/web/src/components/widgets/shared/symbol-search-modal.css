@@ -473,6 +473,41 @@
   color: #fff;
 }
 
+.symbol-search-logo-fallback--fear-greed {
+  background: linear-gradient(135deg, #ff3b30 0%, #ff9500 50%, #34c759 100%);
+  color: #fff;
+}
+
+.symbol-search-logo-fallback--btc-dom {
+  background: linear-gradient(135deg, #f7931a 0%, #ffb347 100%);
+  color: #fff;
+}
+
+.symbol-search-logo-fallback--total {
+  background: linear-gradient(135deg, #5856d6 0%, #af52de 100%);
+  color: #fff;
+}
+
+.symbol-search-logo-fallback--total2 {
+  background: linear-gradient(135deg, #34c759 0%, #30d158 100%);
+  color: #fff;
+}
+
+.symbol-search-logo-fallback--total3 {
+  background: linear-gradient(135deg, #ff9500 0%, #ffcc00 100%);
+  color: #fff;
+}
+
+.symbol-search-logo-fallback--dxy {
+  background: linear-gradient(135deg, #007aff 0%, #0051d5 100%);
+  color: #fff;
+}
+
+.symbol-search-logo-fallback--vix {
+  background: linear-gradient(135deg, #ff3b30 0%, #ff6961 100%);
+  color: #fff;
+}
+
 .symbol-search-ticker {
   min-width: 0;
   font-size: 13px;

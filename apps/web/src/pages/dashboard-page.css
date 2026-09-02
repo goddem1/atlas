@@ -150,7 +150,9 @@
 
 .dashboard-quick-tabs-item--calendar,
 .dashboard-quick-tabs-item--chart,
-.dashboard-quick-tabs-item--chat {
+.dashboard-quick-tabs-item--chat,
+.dashboard-quick-tabs-item--notes,
+.dashboard-quick-tabs-item--journal {
   min-height: 36px;
   height: 54px;
   display: inline-flex;
@@ -706,14 +708,20 @@ html[data-dashboard-theme="dark"] .dashboard-theme-toggle--panel .dashboard-them
 
 /* Виджеты вне viewport — браузер может пропустить paint (не влияет на попапы поверх). */
 .dashboard-widget-slot {
-  content-visibility: auto;
-  contain: layout style;
+  overflow: visible;
+  border-radius: var(--atlas-widget-radius);
+  /* Тень на том же слое, что и transform Draggable — иначе GPU рисует её «угловатой». */
+  box-shadow: var(--atlas-glass-shadow-outer);
   contain-intrinsic-size: 350px 200px;
 }
 
 .dashboard-widget-slot--price-sparkline,
 .dashboard-widget-slot--fed-curve {
   contain-intrinsic-size: 350px 200px;
+}
+
+.dashboard-widget-slot--fed-curve {
+  border-radius: var(--atlas-widget-radius-fed-curve);
 }
 
 .dashboard-widget-slot--portfolio {
@@ -732,9 +740,24 @@ html[data-dashboard-theme="dark"] .dashboard-theme-toggle--panel .dashboard-them
   contain-intrinsic-size: 350px 494px;
 }
 
+.dashboard-widget-slot--notes {
+  contain-intrinsic-size: 350px 326px;
+}
+
+.dashboard-widget-slot--journal {
+  contain-intrinsic-size: 570px 300px;
+}
+
+.dashboard-widget-slot--index {
+  contain-intrinsic-size: 150px 100px;
+}
+
+.dashboard-widget-slot--index-board {
+  contain-intrinsic-size: 280px 260px;
+}
+
 .dashboard-widget-slot--watchlist-settings-open {
   z-index: 465;
   contain: none;
-  content-visibility: visible;
   overflow: visible;
 }

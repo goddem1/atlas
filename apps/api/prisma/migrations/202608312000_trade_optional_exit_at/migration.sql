@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Trade" ALTER COLUMN "exitAt" DROP NOT NULL;

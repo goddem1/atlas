@@ -29,6 +29,7 @@ import {
   attachKlineCandleTypeControl,
   loadStoredKlineCandleType,
 } from "./priceKlineCandleTypeControl";
+import { CandleType } from "klinecharts";
 import { attachKlineDrawingToolControl } from "./priceKlineDrawingToolControl";
 import { attachKlineIndicatorControl } from "./priceKlineIndicatorControl";
 import { attachKlineIndicatorTooltipHover } from "./priceKlineIndicatorTooltipHover";
@@ -39,10 +40,47 @@ import { ensureKlineRuLocale, KLINE_PRO_LOCALE } from "./priceKlineLocaleRu";
 import { ensureKlineHorizontalPriceTagsAlwaysVisible } from "./priceKlineHorizontalPriceTags";
 import { PriceKlineCoinList } from "./PriceKlineCoinList";
 import {
+  BTC_DOMINANCE_CHART_SYMBOL,
+  buildBtcDominanceSymbolInfo,
+  isBtcDominancePair,
+} from "./btcDominanceChartSymbol";
+import {
+  TOTAL_MARKET_CAP_CHART_SYMBOL,
+  buildTotalMarketCapSymbolInfo,
+  isTotalMarketCapPair,
+} from "./totalMarketCapChartSymbol";
+import {
+  TOTAL2_MARKET_CAP_CHART_SYMBOL,
+  buildTotal2MarketCapSymbolInfo,
+  isTotal2MarketCapPair,
+} from "./total2MarketCapChartSymbol";
+import {
+  TOTAL3_MARKET_CAP_CHART_SYMBOL,
+  buildTotal3MarketCapSymbolInfo,
+  isTotal3MarketCapPair,
+} from "./total3MarketCapChartSymbol";
+import {
+  FEAR_GREED_CHART_SYMBOL,
+  buildFearGreedSymbolInfo,
+  isFearGreedPair,
+} from "./fearGreedChartSymbol";
+import {
+  DXY_CHART_SYMBOL,
+  buildDxySymbolInfo,
+  isDxyPair,
+} from "./dxyChartSymbol";
+import {
+  VIX_CHART_SYMBOL,
+  buildVixSymbolInfo,
+  isVixPair,
+} from "./vixChartSymbol";
+import {
   NEWS_INDEX_CHART_SYMBOL,
   buildNewsIndexSymbolInfo,
   isNewsIndexPair,
 } from "./newsIndexChartSymbol";
+import type { MarketIndexId } from "../index/marketIndexCatalog";
+import { resolveMarketIndexKlineTarget } from "../index/marketIndexKlineTarget";
 import "./price-sparkline-kline-modal.css";
 
 const loadSymbolSearchModal = () =>
@@ -62,6 +100,8 @@ type Props = {
   watchlistLists: WatchlistListData[];
   onWatchlistListsChange?: (lists: WatchlistListData[]) => void;
   isLoggedIn: boolean;
+  /** Если задан — график открывается на выбранном рыночном индексе. */
+  marketIndexId?: MarketIndexId | null;
 };
 
 function clearProContainer(el: HTMLElement) {
@@ -80,6 +120,7 @@ export function PriceSparklineKlineModal({
   watchlistLists,
   onWatchlistListsChange,
   isLoggedIn,
+  marketIndexId = null,
 }: Props) {
   useBackdropBlurPause(open);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -114,7 +155,8 @@ export function PriceSparklineKlineModal({
       setSymbolSearchOpen(false);
       return;
     }
-    setActiveSymbol(symbol);
+    const indexTarget = marketIndexId ? resolveMarketIndexKlineTarget(marketIndexId) : null;
+    setActiveSymbol(indexTarget?.symbol ?? symbol);
     setCoinListOpen(true);
     // После старта графика — подгрузить чанк и прогреть компонент поиска.
     let cancelled = false;
@@ -139,7 +181,7 @@ export function PriceSparklineKlineModal({
       if (idleId != null) idleWindow.cancelIdleCallback?.(idleId);
       if (timeoutId != null) window.clearTimeout(timeoutId);
     };
-  }, [open, symbol]);
+  }, [open, symbol, marketIndexId]);
 
   useEffect(() => {
     if (!open) return;
@@ -172,6 +214,55 @@ export function PriceSparklineKlineModal({
     const chart = chartRef.current;
     chart?.setSymbol(buildNewsIndexSymbolInfo());
     if (chart) applyKlineCandleType(chart, "line", { persist: false });
+  }, []);
+
+  const selectFearGreed = useCallback(() => {
+    setActiveSymbol(FEAR_GREED_CHART_SYMBOL);
+    const chart = chartRef.current;
+    chart?.setSymbol(buildFearGreedSymbolInfo());
+    if (chart) applyKlineCandleType(chart, "line", { persist: false });
+  }, []);
+
+  const selectBtcDominance = useCallback(() => {
+    setActiveSymbol(BTC_DOMINANCE_CHART_SYMBOL);
+    const chart = chartRef.current;
+    chart?.setSymbol(buildBtcDominanceSymbolInfo());
+    if (chart) applyKlineCandleType(chart, CandleType.CandleSolid, { persist: false });
+  }, []);
+
+  const selectTotalMarketCap = useCallback(() => {
+    setActiveSymbol(TOTAL_MARKET_CAP_CHART_SYMBOL);
+    const chart = chartRef.current;
+    chart?.setSymbol(buildTotalMarketCapSymbolInfo());
+    if (chart) applyKlineCandleType(chart, CandleType.CandleSolid, { persist: false });
+  }, []);
+
+  const selectTotal2MarketCap = useCallback(() => {
+    setActiveSymbol(TOTAL2_MARKET_CAP_CHART_SYMBOL);
+    const chart = chartRef.current;
+    chart?.setSymbol(buildTotal2MarketCapSymbolInfo());
+    if (chart) applyKlineCandleType(chart, CandleType.CandleSolid, { persist: false });
+  }, []);
+
+  const selectTotal3MarketCap = useCallback(() => {
+    setActiveSymbol(TOTAL3_MARKET_CAP_CHART_SYMBOL);
+    const chart = chartRef.current;
+    chart?.setSymbol(buildTotal3MarketCapSymbolInfo());
+    if (chart) applyKlineCandleType(chart, CandleType.CandleSolid, { persist: false });
+  }, []);
+
+  const selectDxy = useCallback(() => {
+    setActiveSymbol(DXY_CHART_SYMBOL);
+    const chart = chartRef.current;
+    chart?.setSymbol(buildDxySymbolInfo());
+    if (chart) applyKlineCandleType(chart, CandleType.CandleSolid, { persist: false });
+  }, []);
+
+  const selectVix = useCallback(() => {
+    setActiveSymbol(VIX_CHART_SYMBOL);
+    const chart = chartRef.current;
+    chart?.setSymbol(buildVixSymbolInfo());
+    if (chart) applyKlineCandleType(chart, CandleType.CandleSolid, { persist: false });
   }, []);
 
   useEffect(() => {
@@ -223,13 +314,17 @@ export function PriceSparklineKlineModal({
       void (async () => {
         if (cancelled) return;
 
+        const indexTarget = marketIndexId ? resolveMarketIndexKlineTarget(marketIndexId) : null;
+        const initialSymbol = indexTarget?.symbol ?? symbol;
+        const initialPair = indexTarget?.pair ?? pair;
         const dark = isDashboardDarkTheme();
-        const symbolInfo = buildKlineSymbolInfo({ symbol, iconUrl });
-        const initialIndicators = await resolveInitialKlineIndicators(pair, isLoggedIn);
+        const symbolInfo =
+          indexTarget?.symbolInfo ?? buildKlineSymbolInfo({ symbol: initialSymbol, iconUrl });
+        const initialIndicators = await resolveInitialKlineIndicators(initialPair, isLoggedIn);
         if (cancelled) return;
 
         const { mainIndicators, subIndicators } = initialIndicators;
-        let activePair = pair;
+        let activePair = initialPair;
         let persistenceGeneration = 0;
 
         const attachPersistenceForPair = async (nextPair: string) => {
@@ -293,15 +388,24 @@ export function PriceSparklineKlineModal({
             subIndicators,
             datafeed: createAtlasCryptoDatafeed({
               cryptocurrencies: cryptocurrenciesRef.current,
-              initial: { symbol, pair, iconUrl },
+              initial: { symbol: initialSymbol, pair: initialPair, iconUrl: indexTarget ? undefined : iconUrl },
               onActiveSymbolChange: (active) => {
                 if (cancelled) return;
                 setActiveSymbol(active.symbol);
                 const liveChart = resolveKlineChartFromProContainer(el);
                 if (liveChart) {
                   const chartPro = liveChart as unknown as ChartPro;
-                  if (isNewsIndexPair(active.pair)) {
+                  if (isNewsIndexPair(active.pair) || isFearGreedPair(active.pair)) {
                     applyKlineCandleType(chartPro, "line", { persist: false });
+                  } else if (
+                    isBtcDominancePair(active.pair) ||
+                    isTotalMarketCapPair(active.pair) ||
+                    isTotal2MarketCapPair(active.pair) ||
+                    isTotal3MarketCapPair(active.pair) ||
+                    isDxyPair(active.pair) ||
+                    isVixPair(active.pair)
+                  ) {
+                    applyKlineCandleType(chartPro, CandleType.CandleSolid, { persist: false });
                   } else {
                     const stored = loadStoredKlineCandleType();
                     if (stored) applyKlineCandleType(chartPro, stored, { persist: false });
@@ -326,9 +430,11 @@ export function PriceSparklineKlineModal({
             }
           });
 
-          const storedCandleType = loadStoredKlineCandleType();
-          if (storedCandleType) {
-            applyKlineCandleType(chart, storedCandleType);
+          if (indexTarget) {
+            applyKlineCandleType(chart, indexTarget.candleType, { persist: false });
+          } else {
+            const storedCandleType = loadStoredKlineCandleType();
+            if (storedCandleType) applyKlineCandleType(chart, storedCandleType);
           }
 
           // Toolbar icons must appear with the chart — attach before deferred overlays.
@@ -424,7 +530,7 @@ export function PriceSparklineKlineModal({
       chartRef.current = null;
       if (containerEl) clearProContainer(containerEl);
     };
-  }, [open, pair, symbol, iconUrl, requestClose, isLoggedIn]);
+  }, [open, pair, symbol, iconUrl, requestClose, isLoggedIn, marketIndexId]);
 
   if (!open) return null;
 
@@ -475,6 +581,34 @@ export function PriceSparklineKlineModal({
             onClose={() => setSymbolSearchOpen(false)}
             onSelectNewsIndex={() => {
               selectNewsIndex();
+              setSymbolSearchOpen(false);
+            }}
+            onSelectFearGreed={() => {
+              selectFearGreed();
+              setSymbolSearchOpen(false);
+            }}
+            onSelectBtcDominance={() => {
+              selectBtcDominance();
+              setSymbolSearchOpen(false);
+            }}
+            onSelectTotalMarketCap={() => {
+              selectTotalMarketCap();
+              setSymbolSearchOpen(false);
+            }}
+            onSelectTotal2MarketCap={() => {
+              selectTotal2MarketCap();
+              setSymbolSearchOpen(false);
+            }}
+            onSelectTotal3MarketCap={() => {
+              selectTotal3MarketCap();
+              setSymbolSearchOpen(false);
+            }}
+            onSelectDxy={() => {
+              selectDxy();
+              setSymbolSearchOpen(false);
+            }}
+            onSelectVix={() => {
+              selectVix();
               setSymbolSearchOpen(false);
             }}
             onSelect={(crypto) => {

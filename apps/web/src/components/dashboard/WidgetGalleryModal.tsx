@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import type { DashboardWidgetType } from "../../lib/dashboardWidgets";
+import type { MarketIndexId } from "../widgets/index/marketIndexCatalog";
 import {
   filterWidgetGalleryItems,
   isWidgetGalleryCategoryEnabled,
@@ -10,6 +11,7 @@ import {
 } from "../../lib/widgetGalleryCatalog";
 import { WidgetGalleryPreview } from "./WidgetGalleryPreview";
 import { useBackdropBlurPause } from "../../lib/useBackdropBlurPause";
+import { isTelegramEnabled } from "../../lib/telegramFeature";
 import "../widgets/portfolio/portfolio-widget.css";
 import "./widget-gallery.css";
 
@@ -17,7 +19,7 @@ type Props = {
   open: boolean;
   isLoggedIn: boolean;
   onClose: () => void;
-  onPick: (type: DashboardWidgetType) => void;
+  onPick: (type: DashboardWidgetType, options?: { indexId?: MarketIndexId }) => void;
 };
 
 export function WidgetGalleryModal({ open, isLoggedIn, onClose, onPick }: Props) {
@@ -42,7 +44,9 @@ export function WidgetGalleryModal({ open, isLoggedIn, onClose, onPick }: Props)
 
   const baseItems = useMemo(() => {
     return WIDGET_GALLERY_ITEMS.filter(
-      (item) => isLoggedIn || item.widgetType !== "portfolio",
+      (item) =>
+        (isLoggedIn || item.widgetType !== "portfolio") &&
+        (isTelegramEnabled() || item.widgetType !== "news"),
     );
   }, [isLoggedIn]);
 
@@ -121,12 +125,12 @@ export function WidgetGalleryModal({ open, isLoggedIn, onClose, onPick }: Props)
                         type="button"
                         className="widget-gallery-card"
                         onClick={() => {
-                          onPick(item.widgetType);
+                          onPick(item.widgetType, item.indexId ? { indexId: item.indexId } : undefined);
                           onClose();
                         }}
                       >
                         <div className="widget-gallery-card-preview">
-                          <WidgetGalleryPreview widgetType={item.widgetType} />
+                          <WidgetGalleryPreview widgetType={item.widgetType} indexId={item.indexId} />
                         </div>
                         <div className="widget-gallery-card-text">
                           <p className="widget-gallery-card-title">{item.title}</p>

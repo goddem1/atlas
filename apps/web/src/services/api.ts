@@ -20,6 +20,11 @@ import type {
   TelegramNewsWidgetResponse,
   TelegramNewsDailyIndexResponse,
   UserDashboardState,
+  CmcDailySnapshotHistoryField,
+  CmcDailySnapshotHistoryPoint,
+  CmcDailySnapshotLatestResponse,
+  MarketIndexDailyBarsResponse,
+  FearGreedDailyBarsResponse,
 } from "@atlas-v1/shared";
 
 import { normalizeKlinePairSymbol } from "@atlas-v1/shared";
@@ -575,5 +580,246 @@ export function resolveNewsFeedbackMskDay(now = new Date()): string {
   const utc = Date.UTC(y, m - 1, d);
   const prev = new Date(utc - 24 * 60 * 60 * 1000);
   return `${String(prev.getUTCFullYear()).padStart(4, "0")}-${String(prev.getUTCMonth() + 1).padStart(2, "0")}-${String(prev.getUTCDate()).padStart(2, "0")}`;
+}
+
+export type NoteListItem = {
+  id: string;
+  title: string;
+  updatedAt: string;
+  preview: string;
+  coverImageUrl: string | null;
+};
+
+export type NoteDetail = {
+  id: string;
+  title: string;
+  content: unknown;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export async function fetchNotesList(): Promise<NoteListItem[]> {
+  const res = await portfolioFetch(`${apiBase()}/notes`, { cache: "no-store" });
+  return parseJson<NoteListItem[]>(res);
+}
+
+export async function fetchNote(id: string): Promise<NoteDetail> {
+  const res = await portfolioFetch(`${apiBase()}/notes/${encodeURIComponent(id)}`, { cache: "no-store" });
+  return parseJson<NoteDetail>(res);
+}
+
+export async function createNote(input?: { title?: string; content?: unknown }): Promise<NoteDetail> {
+  const res = await portfolioFetch(`${apiBase()}/notes`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input ?? {}),
+  });
+  return parseJson<NoteDetail>(res);
+}
+
+export async function updateNote(
+  id: string,
+  input: { title?: string; content?: unknown },
+): Promise<NoteDetail> {
+  const res = await portfolioFetch(`${apiBase()}/notes/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  return parseJson<NoteDetail>(res);
+}
+
+export async function deleteNote(id: string): Promise<void> {
+  const res = await portfolioFetch(`${apiBase()}/notes/${encodeURIComponent(id)}`, { method: "DELETE" });
+  if (!res.ok) await parseJson(res);
+}
+
+export async function requestNoteUploadUrl(contentType: string): Promise<{ uploadUrl: string; publicUrl: string }> {
+  const res = await portfolioFetch(`${apiBase()}/notes/upload-url`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ contentType }),
+  });
+  return parseJson<{ uploadUrl: string; publicUrl: string }>(res);
+}
+
+function resolveNoteAssetUrl(url: string): string {
+  if (/^https?:\/\//i.test(url)) return url;
+  if (typeof window === "undefined") return url;
+  if (url.startsWith("/")) return `${window.location.origin}${url}`;
+  return `${window.location.origin}/${url}`;
+}
+
+export async function uploadNoteImage(file: File): Promise<string> {
+  const contentType = file.type || "image/jpeg";
+  const { uploadUrl, publicUrl } = await requestNoteUploadUrl(contentType);
+  const targetUrl = resolveNoteAssetUrl(uploadUrl);
+  const isSameOrigin = targetUrl.startsWith(window.location.origin);
+  const putRes = await fetch(targetUrl, {
+    method: "PUT",
+    body: file,
+    headers: { "Content-Type": contentType },
+    credentials: isSameOrigin ? "include" : "omit",
+  });
+  if (!putRes.ok) {
+    let detail = "";
+    try {
+      const parsed = (await putRes.json()) as { error?: string };
+      detail = parsed.error?.trim() ?? "";
+    } catch {
+      /* ignore */
+    }
+    throw new Error(detail || "Не удалось загрузить изображение");
+  }
+  return resolveNoteAssetUrl(publicUrl);
+}
+
+export type TradePeriod = "day" | "month" | "year" | "all";
+
+export type TradeRecord = {
+  id: string;
+  symbol: string;
+  direction: "long" | "short" | string;
+  entryPrice: string;
+  exitPrice: string;
+  quantity: string;
+  quantityUnit: "coins" | "usd";
+  entryAt: string;
+  exitAt: string | null;
+  commission: string;
+  fundingFee: string;
+  reason: string | null;
+  comment: unknown;
+  createdAt: string;
+  updatedAt: string;
+  pnlUsd: number;
+  pnlPercent: number;
+};
+
+export type TradeUpsertPayload = {
+  symbol?: string;
+  direction?: string;
+  entryPrice?: number | string;
+  exitPrice?: number | string;
+  quantity?: number | string;
+  quantityUnit?: "coins" | "usd";
+  entryAt?: string;
+  exitAt?: string | null;
+  commission?: number | string;
+  fundingFee?: number | string;
+  reason?: string | null;
+  comment?: unknown;
+};
+
+export type EquityCurvePoint = {
+  date: string;
+  cumulativePnl: number;
+};
+
+function tradeQuery(params: Record<string, string | undefined>): string {
+  const q = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value != null && value !== "") q.set(key, value);
+  }
+  const s = q.toString();
+  return s ? `?${s}` : "";
+}
+
+export async function fetchTrades(query?: {
+  symbol?: string;
+  direction?: string;
+  from?: string;
+  to?: string;
+  pnlMin?: string;
+  pnlMax?: string;
+  period?: TradePeriod;
+}): Promise<TradeRecord[]> {
+  const res = await portfolioFetch(`${apiBase()}/trades${tradeQuery(query ?? {})}`, { cache: "no-store" });
+  return parseJson<TradeRecord[]>(res);
+}
+
+export async function fetchTrade(id: string): Promise<TradeRecord> {
+  const res = await portfolioFetch(`${apiBase()}/trades/${encodeURIComponent(id)}`, { cache: "no-store" });
+  return parseJson<TradeRecord>(res);
+}
+
+export async function fetchTradeEquityCurve(period: TradePeriod = "all"): Promise<EquityCurvePoint[]> {
+  const res = await portfolioFetch(`${apiBase()}/trades/equity-curve?period=${encodeURIComponent(period)}`, {
+    cache: "no-store",
+  });
+  return parseJson<EquityCurvePoint[]>(res);
+}
+
+export async function createTrade(input: TradeUpsertPayload): Promise<TradeRecord> {
+  const res = await portfolioFetch(`${apiBase()}/trades`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  return parseJson<TradeRecord>(res);
+}
+
+export async function updateTrade(id: string, input: TradeUpsertPayload): Promise<TradeRecord> {
+  const res = await portfolioFetch(`${apiBase()}/trades/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  return parseJson<TradeRecord>(res);
+}
+
+export async function deleteTrade(id: string): Promise<void> {
+  const res = await portfolioFetch(`${apiBase()}/trades/${encodeURIComponent(id)}`, { method: "DELETE" });
+  if (!res.ok) await parseJson(res);
+}
+
+export type MarketIndicesHistoryResponse = {
+  field: CmcDailySnapshotHistoryField;
+  days: number;
+  points: CmcDailySnapshotHistoryPoint[];
+};
+
+export async function fetchMarketIndicesLatest(): Promise<CmcDailySnapshotLatestResponse> {
+  const res = await fetch(`${apiBase()}/market-indices/latest`, { cache: "no-store" });
+  return parseJson<CmcDailySnapshotLatestResponse>(res);
+}
+
+export async function fetchMarketIndicesHistory(
+  field: CmcDailySnapshotHistoryField,
+  days = 30,
+): Promise<MarketIndicesHistoryResponse> {
+  const q = new URLSearchParams({ field, days: String(days) });
+  const res = await fetch(`${apiBase()}/market-indices/history?${q}`, { cache: "no-store" });
+  return parseJson<MarketIndicesHistoryResponse>(res);
+}
+
+export async function fetchMarketIndexDailyBars(options: {
+  indexId: string;
+  limit?: number;
+  from?: string;
+  to?: string;
+}): Promise<MarketIndexDailyBarsResponse> {
+  const q = new URLSearchParams({ indexId: options.indexId });
+  if (options.limit != null) q.set("limit", String(options.limit));
+  if (options.from) q.set("from", options.from);
+  if (options.to) q.set("to", options.to);
+  const res = await fetch(`${apiBase()}/market-indices/bars?${q}`, { cache: "no-store" });
+  return parseJson<MarketIndexDailyBarsResponse>(res);
+}
+
+export async function fetchFearGreedDailyBars(options?: {
+  limit?: number;
+  from?: string;
+  to?: string;
+}): Promise<FearGreedDailyBarsResponse> {
+  const q = new URLSearchParams();
+  if (options?.limit != null) q.set("limit", String(options.limit));
+  if (options?.from) q.set("from", options.from);
+  if (options?.to) q.set("to", options.to);
+  const suffix = q.size > 0 ? `?${q}` : "";
+  const res = await fetch(`${apiBase()}/market-indices/fear-greed/history${suffix}`, {
+    cache: "no-store",
+  });
+  return parseJson<FearGreedDailyBarsResponse>(res);
 }
 

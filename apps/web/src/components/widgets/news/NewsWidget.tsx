@@ -4,6 +4,7 @@ import { loadTelegramFilters } from "../../../lib/telegramFilters";
 import { loadTelegramChannels } from "../../../lib/telegramChannels";
 import { TwemojiText } from "../../../lib/twemojiText";
 import { useIsBackdropBlurPaused } from "../../../lib/useIsBackdropBlurPaused";
+import { isTelegramEnabled } from "../../../lib/telegramFeature";
 import { fetchTelegramNewsWidget } from "../../../services/api";
 import {
   GALLERY_NEWS_EXPLANATION,
@@ -69,6 +70,19 @@ export const NewsWidget = memo(function NewsWidget({
 
   const load = useCallback(() => {
     if (galleryPreview) return;
+    if (!isTelegramEnabled()) {
+      setItems([]);
+      setSentiment(50);
+      setExplanation({
+        formula: "Telegram отключён локально.",
+        notes: [],
+      });
+      setDay(undefined);
+      setCandidateCount(undefined);
+      setErr(null);
+      setLoading(false);
+      return;
+    }
     const stored = loadTelegramChannels();
     const usernames = stored && stored.length > 0 ? stored : [];
     if (usernames.length === 0) {
@@ -135,6 +149,7 @@ export const NewsWidget = memo(function NewsWidget({
   );
   const dragCn = cn("news-widget-head", dragHandleClassName);
   const hasExplanation = Boolean(explanation.formula) || explanation.notes.length > 0;
+  const telegramEnabled = isTelegramEnabled();
 
   return (
     <div className="news-widget-shell">
@@ -174,8 +189,10 @@ export const NewsWidget = memo(function NewsWidget({
               openNews();
             }}
             aria-label="Открыть ленту новостей"
+            disabled={!telegramEnabled}
+            title={telegramEnabled ? undefined : "Telegram отключён локально"}
           >
-            <img src="/assets/portfolio-ui/chat.svg" alt="" className="portfolio-menu-circle-icon" />
+            <img src="/assets/portfolio-ui/messages.svg" alt="" className="portfolio-menu-circle-icon" />
           </button>
           <button
             type="button"
@@ -214,10 +231,12 @@ export const NewsWidget = memo(function NewsWidget({
         {!loading && err ? <p className="news-widget-msg news-widget-msg--err">{err}</p> : null}
         {!loading && !err && items.length === 0 ? (
           <p className="news-widget-msg">
-            Нет новостей
-            <button type="button" className="news-widget-inline-link" onClick={openNews}>
-              открыть ленту
-            </button>
+            {telegramEnabled ? "Нет новостей" : "Telegram отключён локально"}
+            {telegramEnabled ? (
+              <button type="button" className="news-widget-inline-link" onClick={openNews}>
+                открыть ленту
+              </button>
+            ) : null}
           </p>
         ) : null}
 
@@ -246,7 +265,7 @@ export const NewsWidget = memo(function NewsWidget({
         ) : null}
       </div>
 
-      {!galleryPreview && localNewsOpen && !onOpenNews ? (
+      {!galleryPreview && localNewsOpen && !onOpenNews && telegramEnabled ? (
         <Suspense fallback={null}>
           <TelegramNewsModal open onClose={() => setLocalNewsOpen(false)} />
         </Suspense>

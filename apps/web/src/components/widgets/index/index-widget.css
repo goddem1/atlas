@@ -1,0 +1,126 @@
+@import url("../shared/portfolio-menu.css");
+
+.index-widget-shell {
+  position: relative;
+  width: 100%;
+  max-width: 150px;
+}
+
+.index-widget-card {
+  position: relative;
+  isolation: isolate;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 150px;
+  height: 100px;
+  padding: 0 15px 12px;
+  border: 0;
+  cursor: default;
+  border-radius: 25px 10px 25px 25px;
+  overflow: visible;
+  text-align: left;
+  color: var(--atlas-fg-primary);
+}
+
+.index-widget-card--gauge {
+  text-align: center;
+}
+
+.index-widget-card--gallery {
+  pointer-events: none;
+}
+
+.index-widget-body {
+  position: relative;
+  z-index: 1;
+  box-sizing: border-box;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  padding-top: 12px;
+  cursor: grab;
+}
+
+.index-widget-body:active {
+  cursor: grabbing;
+}
+
+.index-widget-card--gauge .index-widget-body {
+  align-items: center;
+}
+
+.index-widget-header {
+  width: 100%;
+  padding-bottom: 3px;
+}
+
+.index-widget-header--gauge {
+  padding-bottom: 6px;
+}
+
+.index-widget-name {
+  font-size: 14px;
+  line-height: 1.2;
+  font-weight: 400;
+  color: var(--atlas-third-color);
+}
+
+.index-widget-name-btn {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.index-widget-card--gauge .index-widget-name-btn {
+  text-align: left;
+  white-space: nowrap;
+}
+
+.index-widget-name-btn:hover {
+  color: var(--atlas-second-color);
+}
+
+.index-widget-value {
+  font-size: 24px;
+  line-height: 1;
+  font-weight: 400;
+  letter-spacing: -0.03em;
+  color: var(--atlas-fg-primary);
+}
+
+.index-widget-gauge {
+  margin-top: 2px;
+}
+
+.index-widget-change {
+  padding-top: 6px;
+  font-size: 16px;
+  line-height: 1;
+  font-weight: 400;
+}
+
+.index-widget-change--pos {
+  color: #34c759;
+}
+
+.index-widget-change--neg {
+  color: #ef4444;
+}
+
+.index-widget-change--zero {
+  color: var(--atlas-fg-primary);
+}
+
+.index-widget-shell .portfolio-menu-circle-icon-close {
+  width: 14px;
+  height: 14px;
+}

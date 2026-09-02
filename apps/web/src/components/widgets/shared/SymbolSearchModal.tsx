@@ -2,10 +2,18 @@ import { useEffect, useMemo, useRef, useState, type ReactNode, type UIEvent } fr
 import { createPortal } from "react-dom";
 import type { CryptocurrencyListItem, WatchlistListData } from "@atlas-v1/shared";
 import { normalizeSymbolList, WATCHLIST_MAX_SYMBOLS } from "@atlas-v1/shared";
-import { fetchTelegramNewsDailyIndex } from "../../../services/api";
+import { fetchMarketIndicesLatest, fetchMarketIndexDailyBars, fetchTelegramNewsDailyIndex } from "../../../services/api";
 import { pairForCryptocurrency } from "../price-sparkline/atlasCryptoDatafeed";
 import { isDashboardDarkTheme } from "../price-sparkline/candleKlineUtils";
+import { BTC_DOMINANCE_CHART_SYMBOL } from "../price-sparkline/btcDominanceChartSymbol";
 import { NEWS_INDEX_CHART_SYMBOL } from "../price-sparkline/newsIndexChartSymbol";
+import { TOTAL_MARKET_CAP_CHART_SYMBOL } from "../price-sparkline/totalMarketCapChartSymbol";
+import { TOTAL2_MARKET_CAP_CHART_SYMBOL } from "../price-sparkline/total2MarketCapChartSymbol";
+import { TOTAL3_MARKET_CAP_CHART_SYMBOL } from "../price-sparkline/total3MarketCapChartSymbol";
+import { FEAR_GREED_CHART_SYMBOL } from "../price-sparkline/fearGreedChartSymbol";
+import { DXY_CHART_SYMBOL } from "../price-sparkline/dxyChartSymbol";
+import { VIX_CHART_SYMBOL } from "../price-sparkline/vixChartSymbol";
+import { formatIndexCompactValue } from "../index/indexFormat";
 import { useBackdropBlurPause } from "../../../lib/useBackdropBlurPause";
 import "./symbol-search-modal.css";
 
@@ -14,8 +22,30 @@ const EXCHANGE_LOGO = "https://s3-symbol-logo.tradingview.com/source/BINANCE.svg
 const MARKET_TYPE = "spot crypto";
 /** Сколько строк рендерить сразу — полный каталог слишком тяжёлый для первого кадра. */
 const LIST_PAGE_SIZE = 48;
+const INDEX_CHART_SYMBOLS = new Set([
+  NEWS_INDEX_CHART_SYMBOL,
+  BTC_DOMINANCE_CHART_SYMBOL,
+  TOTAL_MARKET_CAP_CHART_SYMBOL,
+  TOTAL2_MARKET_CAP_CHART_SYMBOL,
+  TOTAL3_MARKET_CAP_CHART_SYMBOL,
+  FEAR_GREED_CHART_SYMBOL,
+  DXY_CHART_SYMBOL,
+  VIX_CHART_SYMBOL,
+]);
 
 type SearchCategory = "index" | "crypto";
+
+type IndexSearchOption = {
+  symbol: string;
+  ticker: string;
+  title: string;
+  marketType: string;
+  metric: string | null;
+  logoLetter: string;
+  logoClass: string;
+  matches: (query: string) => boolean;
+  onSelect: () => void;
+};
 
 type Props = {
   open: boolean;
@@ -28,6 +58,13 @@ type Props = {
   onWatchlistListsChange?: (lists: WatchlistListData[]) => void;
   /** Если задан — в поиске появляются вкладки «Индекс» / «Крипто». */
   onSelectNewsIndex?: () => void;
+  onSelectBtcDominance?: () => void;
+  onSelectTotalMarketCap?: () => void;
+  onSelectTotal2MarketCap?: () => void;
+  onSelectTotal3MarketCap?: () => void;
+  onSelectFearGreed?: () => void;
+  onSelectDxy?: () => void;
+  onSelectVix?: () => void;
   onClose: () => void;
   onSelect: (c: CryptocurrencyListItem) => void;
 };
@@ -104,6 +141,13 @@ export function SymbolSearchModal({
   watchlistLists = [],
   onWatchlistListsChange,
   onSelectNewsIndex,
+  onSelectBtcDominance,
+  onSelectTotalMarketCap,
+  onSelectTotal2MarketCap,
+  onSelectTotal3MarketCap,
+  onSelectFearGreed,
+  onSelectDxy,
+  onSelectVix,
   onClose,
   onSelect,
 }: Props) {
@@ -114,12 +158,242 @@ export function SymbolSearchModal({
   const [bookmarkMenuSymbol, setBookmarkMenuSymbol] = useState<string | null>(null);
   const [category, setCategory] = useState<SearchCategory>("crypto");
   const [newsSentiment, setNewsSentiment] = useState<number | null>(null);
+  const [btcDominance, setBtcDominance] = useState<string | null>(null);
+  const [totalMarketCap, setTotalMarketCap] = useState<string | null>(null);
+  const [total2MarketCap, setTotal2MarketCap] = useState<string | null>(null);
+  const [total3MarketCap, setTotal3MarketCap] = useState<string | null>(null);
+  const [fearGreedScore, setFearGreedScore] = useState<number | null>(null);
+  const [dxyValue, setDxyValue] = useState<string | null>(null);
+  const [vixValue, setVixValue] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
   const bookmarkMenuRef = useRef<HTMLDivElement>(null);
 
   const bookmarksEnabled = watchlistLists.length > 0 && Boolean(onWatchlistListsChange);
-  const categoriesEnabled = Boolean(onSelectNewsIndex);
+  const categoriesEnabled = Boolean(
+    onSelectNewsIndex ||
+    onSelectBtcDominance ||
+    onSelectTotalMarketCap ||
+    onSelectTotal2MarketCap ||
+    onSelectTotal3MarketCap ||
+    onSelectFearGreed ||
+    onSelectDxy ||
+    onSelectVix,
+  );
+
+  const indexOptions = useMemo<IndexSearchOption[]>(() => {
+    const opts: IndexSearchOption[] = [];
+    if (onSelectNewsIndex) {
+      opts.push({
+        symbol: NEWS_INDEX_CHART_SYMBOL,
+        ticker: "NEWS",
+        title: "Индекс новостей · дневной сентимент",
+        marketType: "news index",
+        metric: newsSentiment != null ? `${newsSentiment}` : "Atlas",
+        logoLetter: "N",
+        logoClass: "symbol-search-logo-fallback--news",
+        matches: (query) => {
+          const labels = ["news", "newsidx", "индекс", "новости", "sentiment", "сентимент"];
+          return labels.some((label) => label.includes(query) || query.includes(label));
+        },
+        onSelect: onSelectNewsIndex,
+      });
+    }
+    if (onSelectFearGreed) {
+      opts.push({
+        symbol: FEAR_GREED_CHART_SYMBOL,
+        ticker: "FNG",
+        title: "Fear & Greed · дневная история",
+        marketType: "sentiment index",
+        metric: fearGreedScore != null ? `${fearGreedScore}` : "Atlas",
+        logoLetter: "F",
+        logoClass: "symbol-search-logo-fallback--fear-greed",
+        matches: (query) => {
+          const labels = [
+            "fng",
+            "fear",
+            "greed",
+            "страх",
+            "жадность",
+            "feargreed",
+            "fear-greed",
+            "sentiment",
+          ];
+          return labels.some((label) => label.includes(query) || query.includes(label));
+        },
+        onSelect: onSelectFearGreed,
+      });
+    }
+    if (onSelectBtcDominance) {
+      opts.push({
+        symbol: BTC_DOMINANCE_CHART_SYMBOL,
+        ticker: "BTCDOM",
+        title: "BTC доминация · дневная история",
+        marketType: "market index",
+        metric: btcDominance != null ? `${btcDominance}%` : "Atlas",
+        logoLetter: "B",
+        logoClass: "symbol-search-logo-fallback--btc-dom",
+        matches: (query) => {
+          const labels = [
+            "btc",
+            "btcdom",
+            "btcd",
+            "dominance",
+            "доминация",
+            "доминирование",
+            "btc.d",
+            "cryptocap",
+          ];
+          return labels.some((label) => label.includes(query) || query.includes(label));
+        },
+        onSelect: onSelectBtcDominance,
+      });
+    }
+    if (onSelectTotalMarketCap) {
+      opts.push({
+        symbol: TOTAL_MARKET_CAP_CHART_SYMBOL,
+        ticker: "TOTAL",
+        title: "Total market cap · дневная история",
+        marketType: "market index",
+        metric: totalMarketCap ?? "Atlas",
+        logoLetter: "T",
+        logoClass: "symbol-search-logo-fallback--total",
+        matches: (query) => {
+          const labels = [
+            "total",
+            "total1",
+            "market cap",
+            "marketcap",
+            "капитализация",
+            "капитал",
+            "cryptocap",
+            "cryptocap:total",
+          ];
+          return labels.some((label) => label.includes(query) || query.includes(label));
+        },
+        onSelect: onSelectTotalMarketCap,
+      });
+    }
+    if (onSelectTotal2MarketCap) {
+      opts.push({
+        symbol: TOTAL2_MARKET_CAP_CHART_SYMBOL,
+        ticker: "TOTAL2",
+        title: "Total 2 · altcoin market cap",
+        marketType: "market index",
+        metric: total2MarketCap ?? "Atlas",
+        logoLetter: "2",
+        logoClass: "symbol-search-logo-fallback--total2",
+        matches: (query) => {
+          const labels = [
+            "total2",
+            "total 2",
+            "altcoin",
+            "альткоин",
+            "альты",
+            "marketcap",
+            "капитализация",
+            "cryptocap:total2",
+          ];
+          return labels.some((label) => label.includes(query) || query.includes(label));
+        },
+        onSelect: onSelectTotal2MarketCap,
+      });
+    }
+    if (onSelectTotal3MarketCap) {
+      opts.push({
+        symbol: TOTAL3_MARKET_CAP_CHART_SYMBOL,
+        ticker: "TOTAL3",
+        title: "Total 3 · дневная история",
+        marketType: "market index",
+        metric: total3MarketCap ?? "Atlas",
+        logoLetter: "3",
+        logoClass: "symbol-search-logo-fallback--total3",
+        matches: (query) => {
+          const labels = [
+            "total3",
+            "total 3",
+            "marketcap",
+            "капитализация",
+            "cryptocap:total3",
+          ];
+          return labels.some((label) => label.includes(query) || query.includes(label));
+        },
+        onSelect: onSelectTotal3MarketCap,
+      });
+    }
+    if (onSelectDxy) {
+      opts.push({
+        symbol: DXY_CHART_SYMBOL,
+        ticker: "DXY",
+        title: "US Dollar Index · дневная история",
+        marketType: "market index",
+        metric: dxyValue ?? "Atlas",
+        logoLetter: "$",
+        logoClass: "symbol-search-logo-fallback--dxy",
+        matches: (query) => {
+          const labels = [
+            "dxy",
+            "dollar",
+            "usd",
+            "доллар",
+            "индекс",
+            "usdx",
+            "tvc:dxy",
+          ];
+          return labels.some((label) => label.includes(query) || query.includes(label));
+        },
+        onSelect: onSelectDxy,
+      });
+    }
+    if (onSelectVix) {
+      opts.push({
+        symbol: VIX_CHART_SYMBOL,
+        ticker: "VIX",
+        title: "VIX Volatility Index · дневная история",
+        marketType: "market index",
+        metric: vixValue ?? "Atlas",
+        logoLetter: "V",
+        logoClass: "symbol-search-logo-fallback--vix",
+        matches: (query) => {
+          const labels = [
+            "vix",
+            "volatility",
+            "волатильность",
+            "страх",
+            "индекс",
+            "cboe",
+            "tvc:vix",
+          ];
+          return labels.some((label) => label.includes(query) || query.includes(label));
+        },
+        onSelect: onSelectVix,
+      });
+    }
+    return opts;
+  }, [
+    onSelectNewsIndex,
+    onSelectBtcDominance,
+    onSelectTotalMarketCap,
+    onSelectTotal2MarketCap,
+    onSelectTotal3MarketCap,
+    onSelectFearGreed,
+    onSelectDxy,
+    onSelectVix,
+    newsSentiment,
+    btcDominance,
+    totalMarketCap,
+    total2MarketCap,
+    total3MarketCap,
+    fearGreedScore,
+    dxyValue,
+    vixValue,
+  ]);
+
+  const filteredIndexOptions = useMemo(() => {
+    const normalized = query.trim().toLowerCase();
+    if (!normalized) return indexOptions;
+    return indexOptions.filter((option) => option.matches(normalized));
+  }, [indexOptions, query]);
 
   useEffect(() => {
     if (!open) {
@@ -130,7 +404,7 @@ export function SymbolSearchModal({
       return;
     }
     const active = activeSymbol?.trim().toUpperCase() ?? "";
-    setCategory(active === NEWS_INDEX_CHART_SYMBOL ? "index" : "crypto");
+    setCategory(INDEX_CHART_SYMBOLS.has(active) ? "index" : "crypto");
   }, [open, activeSymbol]);
 
   useEffect(() => {
@@ -146,10 +420,96 @@ export function SymbolSearchModal({
       .catch(() => {
         if (!cancelled) setNewsSentiment(null);
       });
+    if (
+      onSelectBtcDominance ||
+      onSelectTotalMarketCap ||
+      onSelectTotal2MarketCap ||
+      onSelectTotal3MarketCap ||
+      onSelectFearGreed
+    ) {
+      void fetchMarketIndicesLatest()
+        .then((data) => {
+          if (cancelled) return;
+          if (onSelectBtcDominance) {
+            const value = Number.parseFloat(data.btcDominance);
+            setBtcDominance(Number.isFinite(value) ? value.toFixed(2) : null);
+          }
+          if (onSelectTotalMarketCap) {
+            const value = Number.parseFloat(data.totalMarketCap);
+            setTotalMarketCap(Number.isFinite(value) ? formatIndexCompactValue(value) : null);
+          }
+          if (onSelectTotal2MarketCap) {
+            const value = Number.parseFloat(data.altcoinMarketCap);
+            setTotal2MarketCap(Number.isFinite(value) ? formatIndexCompactValue(value) : null);
+          }
+          if (onSelectTotal3MarketCap) {
+            const value = Number.parseFloat(data.total3MarketCap);
+            setTotal3MarketCap(Number.isFinite(value) ? formatIndexCompactValue(value) : null);
+          }
+          if (onSelectFearGreed) {
+            setFearGreedScore(Number.isFinite(data.fearGreedValue) ? data.fearGreedValue : null);
+          }
+        })
+        .catch(() => {
+          if (!cancelled) {
+            if (onSelectBtcDominance) setBtcDominance(null);
+            if (onSelectTotalMarketCap) setTotalMarketCap(null);
+            if (onSelectTotal2MarketCap) setTotal2MarketCap(null);
+            if (onSelectTotal3MarketCap) setTotal3MarketCap(null);
+            if (onSelectFearGreed) setFearGreedScore(null);
+          }
+        });
+    }
     return () => {
       cancelled = true;
     };
-  }, [open, categoriesEnabled]);
+  }, [
+    open,
+    categoriesEnabled,
+    onSelectBtcDominance,
+    onSelectTotalMarketCap,
+    onSelectTotal2MarketCap,
+    onSelectTotal3MarketCap,
+    onSelectFearGreed,
+  ]);
+
+  useEffect(() => {
+    if (!open || !onSelectDxy) return;
+    let cancelled = false;
+    void fetchMarketIndexDailyBars({ indexId: "dxy", limit: 1 })
+      .then((data) => {
+        if (cancelled) return;
+        const points = data.points ?? [];
+        const last = points[points.length - 1];
+        const value = last ? Number.parseFloat(last.close) : Number.NaN;
+        setDxyValue(Number.isFinite(value) ? value.toFixed(3) : null);
+      })
+      .catch(() => {
+        if (!cancelled) setDxyValue(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [open, onSelectDxy]);
+
+  useEffect(() => {
+    if (!open || !onSelectVix) return;
+    let cancelled = false;
+    void fetchMarketIndexDailyBars({ indexId: "vix", limit: 1 })
+      .then((data) => {
+        if (cancelled) return;
+        const points = data.points ?? [];
+        const last = points[points.length - 1];
+        const value = last ? Number.parseFloat(last.close) : Number.NaN;
+        setVixValue(Number.isFinite(value) ? value.toFixed(2) : null);
+      })
+      .catch(() => {
+        if (!cancelled) setVixValue(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [open, onSelectVix]);
 
   useEffect(() => {
     if (!open) return;
@@ -209,13 +569,6 @@ export function SymbolSearchModal({
     );
   }, [rows, query, categoriesEnabled, category]);
 
-  const indexMatchesQuery = useMemo(() => {
-    const s = query.trim().toLowerCase();
-    if (!s) return true;
-    const labels = ["news", "newsidx", "индекс", "новости", "sentiment", "сентимент"];
-    return labels.some((label) => label.includes(s) || s.includes(label));
-  }, [query]);
-
   const membershipBySymbol = useMemo(() => {
     const map = new Map<string, string[]>();
     for (const list of watchlistLists) {
@@ -232,7 +585,7 @@ export function SymbolSearchModal({
   useEffect(() => {
     setActiveIndex(0);
     setVisibleCount(LIST_PAGE_SIZE);
-  }, [query, filtered.length, category]);
+  }, [query, filtered.length, filteredIndexOptions.length, category]);
 
   useEffect(() => {
     if (activeIndex + 8 < visibleCount) return;
@@ -256,9 +609,23 @@ export function SymbolSearchModal({
 
   const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (categoriesEnabled && category === "index") {
-      if (e.key === "Enter" && indexMatchesQuery && onSelectNewsIndex) {
+      if (filteredIndexOptions.length === 0) return;
+
+      if (e.key === "ArrowDown") {
         e.preventDefault();
-        onSelectNewsIndex();
+        setActiveIndex((index) => Math.min(index + 1, filteredIndexOptions.length - 1));
+        return;
+      }
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setActiveIndex((index) => Math.max(index - 1, 0));
+        return;
+      }
+      if (e.key === "Enter") {
+        e.preventDefault();
+        const option = filteredIndexOptions[activeIndex];
+        if (!option) return;
+        option.onSelect();
         onClose();
       }
       return;
@@ -432,76 +799,77 @@ export function SymbolSearchModal({
             onScroll={handleListScroll}
           >
             {categoriesEnabled && category === "index" ? (
-              !indexMatchesQuery ? (
+              filteredIndexOptions.length === 0 ? (
                 <li className="symbol-search-message">Ничего не найдено</li>
               ) : (
-                <li role="presentation" className="symbol-search-row-wrap">
-                  <div
-                    className={`symbol-search-row is-focused${activeTicker === NEWS_INDEX_CHART_SYMBOL ? " is-current" : ""}`}
-                    data-index={0}
-                  >
-                    <div className="symbol-search-row-main">
-                      <span className="symbol-search-marker" aria-hidden="true">
-                        <svg viewBox="0 0 14 14" width="14" height="14" fill="none">
-                          <path
-                            d="M7 2.5v9M2.5 7h9"
-                            stroke="currentColor"
-                            strokeWidth="1.8"
-                            strokeLinecap="round"
-                          />
-                        </svg>
-                      </span>
-                      <button
-                        type="button"
-                        role="option"
-                        aria-selected
-                        className="symbol-search-row-select"
-                        onClick={() => {
-                          onSelectNewsIndex?.();
-                          onClose();
-                        }}
+                filteredIndexOptions.map((option, index) => {
+                  const isRowActive = index === activeIndex;
+                  const isCurrent = activeTicker === option.symbol;
+                  const selectOption = () => {
+                    option.onSelect();
+                    onClose();
+                  };
+
+                  return (
+                    <li key={option.symbol} role="presentation" className="symbol-search-row-wrap">
+                      <div
+                        className={`symbol-search-row${isRowActive ? " is-focused" : ""}${isCurrent ? " is-current" : ""}`}
+                        data-index={index}
+                        onMouseEnter={() => setActiveIndex(index)}
                       >
-                        <span className="symbol-search-logo-fallback symbol-search-logo-fallback--news">
-                          N
-                        </span>
-                        <span className="symbol-search-ticker">
-                          {highlightMatch("NEWS", query)}
-                        </span>
-                      </button>
-                    </div>
-                    <button
-                      type="button"
-                      className="symbol-search-row-select symbol-search-row-select--desc"
-                      tabIndex={-1}
-                      onClick={() => {
-                        onSelectNewsIndex?.();
-                        onClose();
-                      }}
-                    >
-                      <span className="symbol-search-desc">
-                        {highlightMatch("Индекс новостей · дневной сентимент", query)}
-                      </span>
-                    </button>
-                    <button
-                      type="button"
-                      className="symbol-search-row-select symbol-search-row-select--exchange"
-                      tabIndex={-1}
-                      onClick={() => {
-                        onSelectNewsIndex?.();
-                        onClose();
-                      }}
-                    >
-                      <div className="symbol-search-exchange">
-                        <div className="symbol-search-exchange-text">
-                          <div className="symbol-search-market-type">news index</div>
-                          <div className="symbol-search-exchange-name">
-                            {newsSentiment != null ? `${newsSentiment}` : "Atlas"}
-                          </div>
+                        <div className="symbol-search-row-main">
+                          <span className="symbol-search-marker" aria-hidden="true">
+                            <svg viewBox="0 0 14 14" width="14" height="14" fill="none">
+                              <path
+                                d="M7 2.5v9M2.5 7h9"
+                                stroke="currentColor"
+                                strokeWidth="1.8"
+                                strokeLinecap="round"
+                              />
+                            </svg>
+                          </span>
+                          <button
+                            type="button"
+                            role="option"
+                            aria-selected={isRowActive}
+                            className="symbol-search-row-select"
+                            onClick={selectOption}
+                          >
+                            <span className={`symbol-search-logo-fallback ${option.logoClass}`}>
+                              {option.logoLetter}
+                            </span>
+                            <span className="symbol-search-ticker">
+                              {highlightMatch(option.ticker, query)}
+                            </span>
+                          </button>
                         </div>
+                        <button
+                          type="button"
+                          className="symbol-search-row-select symbol-search-row-select--desc"
+                          tabIndex={-1}
+                          onClick={selectOption}
+                        >
+                          <span className="symbol-search-desc">
+                            {highlightMatch(option.title, query)}
+                          </span>
+                        </button>
+                        <button
+                          type="button"
+                          className="symbol-search-row-select symbol-search-row-select--exchange"
+                          tabIndex={-1}
+                          onClick={selectOption}
+                        >
+                          <div className="symbol-search-exchange">
+                            <div className="symbol-search-exchange-text">
+                              <div className="symbol-search-market-type">{option.marketType}</div>
+                              <div className="symbol-search-exchange-name">{option.metric ?? "Atlas"}</div>
+                            </div>
+                          </div>
+                        </button>
                       </div>
-                    </button>
-                  </div>
-                </li>
+                    </li>
+                  );
+                })
               )
             ) : loadError ? (
               <li className="symbol-search-message symbol-search-message-error">

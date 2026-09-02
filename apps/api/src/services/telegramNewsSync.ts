@@ -24,6 +24,7 @@ import {
   ensureChannelPhotoCached,
   prefetchTelegramMessageMedia,
 } from "./telegramMediaEnsure.js";
+import { isTelegramDisabled } from "./telegramFeature.js";
 
 type Log = Pick<FastifyBaseLogger, "info" | "warn" | "error" | "debug">;
 
@@ -152,6 +153,10 @@ export async function startTelegramNewsAutoSync(
   prisma: PrismaClient,
   log: Log,
 ): Promise<() => void> {
+  if (isTelegramDisabled()) {
+    log.info("[telegram-news] auto-sync disabled via TELEGRAM_DISABLED");
+    return () => undefined;
+  }
   if (!isTelegramMtprotoConfigured()) {
     log.warn("[telegram-news] auto-sync disabled (MTProto not configured)");
     return () => undefined;
