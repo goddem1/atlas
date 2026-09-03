@@ -8,6 +8,7 @@ import {
   CMC_MARKET_INDEX_HISTORY_FIELDS,
 } from "./marketIndexFromApi";
 
+/** Автообновление раз в час без перезагрузки страницы. */
 const POLL_MS = 60 * 60_000;
 
 type MarketIndicesStoreState = {
@@ -29,6 +30,11 @@ let pollTimer: ReturnType<typeof setInterval> | null = null;
 let inflight: Promise<void> | null = null;
 let subscriberCount = 0;
 let paused = false;
+let historyByFieldCache: Partial<
+  Record<CmcDailySnapshotHistoryField, CmcDailySnapshotHistoryPoint[]>
+> | null = null;
+let tvBarsCache: { vix: Awaited<ReturnType<typeof fetchMarketIndexDailyBars>>["points"]; dxy: Awaited<ReturnType<typeof fetchMarketIndexDailyBars>>["points"] } | null =
+  null;
 const listeners = new Set<() => void>();
 
 function emit(): void {
@@ -40,36 +46,58 @@ function setState(patch: Partial<MarketIndicesStoreState>): void {
   emit();
 }
 
-async function refreshMarketIndicesData(): Promise<void> {
+async function loadBaselineHistory(): Promise<{
+  historyByField: Partial<Record<CmcDailySnapshotHistoryField, CmcDailySnapshotHistoryPoint[]>>;
+  vix: Awaited<ReturnType<typeof fetchMarketIndexDailyBars>>["points"];
+  dxy: Awaited<ReturnType<typeof fetchMarketIndexDailyBars>>["points"];
+}> {
+  const [historyEntries, vixBars, dxyBars] = await Promise.all([
+    Promise.all(
+      CMC_MARKET_INDEX_HISTORY_FIELDS.map(async (field) => {
+        const response = await fetchMarketIndicesHistory(field, 2);
+        return [field, response.points] as const;
+      }),
+    ),
+    fetchMarketIndexDailyBars({ indexId: "vix", limit: 2 }),
+    fetchMarketIndexDailyBars({ indexId: "dxy", limit: 2 }),
+  ]);
+  return {
+    historyByField: Object.fromEntries(historyEntries) as Partial<
+      Record<CmcDailySnapshotHistoryField, CmcDailySnapshotHistoryPoint[]>
+    >,
+    vix: vixBars.points ?? [],
+    dxy: dxyBars.points ?? [],
+  };
+}
+
+async function refreshMarketIndicesData(options?: { forceBaseline?: boolean }): Promise<void> {
   if (inflight) return inflight;
 
   inflight = (async () => {
     setState({ loading: state.snapshots == null, error: null });
     try {
       const latest = await fetchMarketIndicesLatest();
-      const [historyEntries, vixBars, dxyBars] = await Promise.all([
-        Promise.all(
-          CMC_MARKET_INDEX_HISTORY_FIELDS.map(async (field) => {
-            const response = await fetchMarketIndicesHistory(field, 2);
-            return [field, response.points] as const;
-          }),
-        ),
-        fetchMarketIndexDailyBars({ indexId: "vix", limit: 2 }),
-        fetchMarketIndexDailyBars({ indexId: "dxy", limit: 2 }),
-      ]);
-      const historyByField = Object.fromEntries(historyEntries) as Partial<
-        Record<CmcDailySnapshotHistoryField, CmcDailySnapshotHistoryPoint[]>
-      >;
+      const needBaseline =
+        options?.forceBaseline ||
+        historyByFieldCache == null ||
+        tvBarsCache == null ||
+        state.day !== latest.day;
+
+      if (needBaseline) {
+        const baseline = await loadBaselineHistory();
+        historyByFieldCache = baseline.historyByField;
+        tvBarsCache = { vix: baseline.vix, dxy: baseline.dxy };
+      }
 
       setState({
         loading: false,
         error: null,
         day: latest.day,
         snapshots: {
-          ...buildMarketIndexSnapshots(latest, historyByField),
+          ...buildMarketIndexSnapshots(latest, historyByFieldCache ?? {}),
           ...buildTvMarketIndexSnapshots({
-            vix: vixBars.points ?? [],
-            dxy: dxyBars.points ?? [],
+            vix: tvBarsCache?.vix ?? [],
+            dxy: tvBarsCache?.dxy ?? [],
           }),
         },
       });
@@ -86,24 +114,33 @@ async function refreshMarketIndicesData(): Promise<void> {
   return inflight;
 }
 
+function onVisibilityChange(): void {
+  if (document.visibilityState === "visible" && !paused && subscriberCount > 0) {
+    void refreshMarketIndicesData();
+  }
+}
+
 function startPolling(): void {
   if (pollTimer != null) return;
   pollTimer = setInterval(() => {
     if (!paused) void refreshMarketIndicesData();
   }, POLL_MS);
+  document.addEventListener("visibilitychange", onVisibilityChange);
 }
 
 function stopPolling(): void {
-  if (pollTimer == null) return;
-  clearInterval(pollTimer);
-  pollTimer = null;
+  if (pollTimer != null) {
+    clearInterval(pollTimer);
+    pollTimer = null;
+  }
+  document.removeEventListener("visibilitychange", onVisibilityChange);
 }
 
 function subscribe(listener: () => void): () => void {
   listeners.add(listener);
   subscriberCount += 1;
   if (subscriberCount === 1) {
-    void refreshMarketIndicesData();
+    void refreshMarketIndicesData({ forceBaseline: true });
     startPolling();
   }
   return () => {

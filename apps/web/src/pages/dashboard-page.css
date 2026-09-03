@@ -84,21 +84,24 @@
 }
 
 .dashboard-quick-tabs-menu {
+  position: absolute;
+  left: 24px;
+  top: 50%;
   width: 50px;
   height: min(900px, calc(100dvh - 32px));
-  margin-left: 14px;
+  margin-left: 0;
   border-radius: 24px;
   overflow: hidden;
   border: var(--atlas-glass-border);
   box-shadow: var(--atlas-glass-shadow);
   background-color: var(--atlas-glass-bg);
-  backdrop-filter: var(--atlas-glass-backdrop);
-  -webkit-backdrop-filter: var(--atlas-glass-backdrop);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   transform-origin: left center;
-  transform: translateX(-10px) scaleX(0.92) scaleY(0.94);
+  transform: translate(-10px, -50%) scaleX(0.92) scaleY(0.94);
   opacity: 0;
+  visibility: hidden;
   pointer-events: none;
-  filter: blur(4px);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -107,8 +110,7 @@
   transition:
     opacity 0.28s ease,
     transform 0.38s cubic-bezier(0.22, 1, 0.36, 1),
-    filter 0.38s cubic-bezier(0.22, 1, 0.36, 1);
-  pointer-events: none;
+    visibility 0.28s ease;
 }
 
 .dashboard-quick-tabs:hover .dashboard-quick-tabs-trigger,
@@ -126,9 +128,11 @@
 .dashboard-quick-tabs:hover .dashboard-quick-tabs-menu,
 .dashboard-quick-tabs:focus-within .dashboard-quick-tabs-menu {
   opacity: 1;
-  transform: translateX(0) scaleX(1) scaleY(1);
-  filter: blur(0);
+  visibility: visible;
+  transform: translate(0, -50%) scaleX(1) scaleY(1);
   pointer-events: auto;
+  backdrop-filter: var(--atlas-glass-backdrop);
+  -webkit-backdrop-filter: var(--atlas-glass-backdrop);
 }
 
 .dashboard-quick-tabs-item {
@@ -756,7 +760,8 @@ html[data-dashboard-theme="dark"] .dashboard-theme-toggle--panel .dashboard-them
   contain-intrinsic-size: 280px 260px;
 }
 
-.dashboard-widget-slot--watchlist-settings-open {
+.dashboard-widget-slot--watchlist-settings-open,
+.dashboard-widget-slot--watchlist-list-menu-open {
   z-index: 465;
   contain: none;
   overflow: visible;

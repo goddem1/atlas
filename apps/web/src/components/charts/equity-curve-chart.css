@@ -12,8 +12,10 @@
 }
 
 .equity-curve-chart-plot {
+  flex: 1;
   min-width: 0;
   min-height: 0;
+  height: 100%;
   overflow: hidden;
 }
 
@@ -44,6 +46,12 @@
   top: 0;
   right: 0;
   left: auto;
+}
+
+.equity-curve-chart--mini,
+.equity-curve-chart--full {
+  display: flex;
+  flex-direction: column;
 }
 
 .equity-curve-chart--mini {

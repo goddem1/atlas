@@ -22,7 +22,7 @@ type Props = {
   onPick: (type: DashboardWidgetType, options?: { indexId?: MarketIndexId }) => void;
 };
 
-export function WidgetGalleryModal({ open, isLoggedIn, onClose, onPick }: Props) {
+export function WidgetGalleryModal({ open, onClose, onPick }: Props) {
   useBackdropBlurPause(open);
   const [categoryId, setCategoryId] = useState<WidgetGalleryCategoryId>("all");
   const [query, setQuery] = useState("");
@@ -44,11 +44,9 @@ export function WidgetGalleryModal({ open, isLoggedIn, onClose, onPick }: Props)
 
   const baseItems = useMemo(() => {
     return WIDGET_GALLERY_ITEMS.filter(
-      (item) =>
-        (isLoggedIn || item.widgetType !== "portfolio") &&
-        (isTelegramEnabled() || item.widgetType !== "news"),
+      (item) => isTelegramEnabled() || item.widgetType !== "news",
     );
-  }, [isLoggedIn]);
+  }, []);
 
   const items = useMemo(() => {
     return filterWidgetGalleryItems(baseItems, categoryId, query);

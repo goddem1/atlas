@@ -31,12 +31,15 @@ type ChartRow = {
   value: number;
   valuePos: number;
   valueNeg: number;
+  linePos: number | null;
+  lineNeg: number | null;
 };
 
-const CHART_LINE_COLOR = "#007aff";
 const CHART_ZERO_LINE_COLOR = "#c7c7cc";
 const CHART_POS_FILL = "rgba(52, 199, 89, 0.32)";
 const CHART_NEG_FILL = "rgba(255, 59, 48, 0.26)";
+const CHART_POS_LINE = "#34c759";
+const CHART_NEG_LINE = "#ff3b30";
 
 function rowFromTradeDay(date: string, value: number, slot: number): ChartRow {
   return {
@@ -46,6 +49,8 @@ function rowFromTradeDay(date: string, value: number, slot: number): ChartRow {
     value,
     valuePos: value >= 0 ? value : 0,
     valueNeg: value < 0 ? value : 0,
+    linePos: value >= 0 ? value : null,
+    lineNeg: value < 0 ? value : null,
   };
 }
 
@@ -57,6 +62,8 @@ function rowFromZeroCrossing(slot: number): ChartRow {
     value: 0,
     valuePos: 0,
     valueNeg: 0,
+    linePos: 0,
+    lineNeg: 0,
   };
 }
 
@@ -173,28 +180,11 @@ function EquityCurveTooltip({ active, payload }: ChartTooltipProps) {
   );
 }
 
-function makeDot(variant: "mini" | "full") {
-  const radius = variant === "mini" ? 3 : 3.8;
-  const strokeWidth = variant === "mini" ? 1.4 : 1.6;
-  return function EquityCurveDot(props: { cx?: number; cy?: number; payload?: ChartRow }) {
-    const { cx, cy, payload } = props;
-    if (cx == null || cy == null || !payload?.isTradeDay) return null;
-    return (
-      <circle cx={cx} cy={cy} r={radius} fill="#ffffff" stroke={CHART_LINE_COLOR} strokeWidth={strokeWidth} />
-    );
-  };
-}
-
-function makeActiveDot(variant: "mini" | "full") {
-  const radius = variant === "mini" ? 4 : 5;
-  const strokeWidth = variant === "mini" ? 1.6 : 1.8;
-  return function EquityCurveActiveDot(props: { cx?: number; cy?: number; payload?: ChartRow }) {
-    const { cx, cy, payload } = props;
-    if (cx == null || cy == null || !payload?.isTradeDay) return null;
-    return (
-      <circle cx={cx} cy={cy} r={radius} fill="#ffffff" stroke={CHART_LINE_COLOR} strokeWidth={strokeWidth} />
-    );
-  };
+function EquityCurveActiveDot(props: { cx?: number; cy?: number; payload?: ChartRow }) {
+  const { cx, cy, payload } = props;
+  if (cx == null || cy == null || !payload?.isTradeDay) return null;
+  const color = payload.value >= 0 ? CHART_POS_LINE : CHART_NEG_LINE;
+  return <circle cx={cx} cy={cy} r={4} fill="#ffffff" stroke={color} strokeWidth={1.6} />;
 }
 
 export function EquityCurveChart({
@@ -219,8 +209,6 @@ export function EquityCurveChart({
 
   const chartHeight = resolveChartHeight(variant, measuredHeight);
 
-  const Dot = useMemo(() => makeDot(variant), [variant]);
-  const ActiveDot = useMemo(() => makeActiveDot(variant), [variant]);
   const lastValue = useMemo(() => {
     const days = aggregateByTradeDay(points);
     if (days.length === 0) return null;
@@ -274,6 +262,8 @@ export function EquityCurveChart({
             stroke="none"
             fill={CHART_POS_FILL}
             baseLine={0}
+            dot={false}
+            activeDot={false}
             isAnimationActive={false}
           />
           <Area
@@ -282,16 +272,39 @@ export function EquityCurveChart({
             stroke="none"
             fill={CHART_NEG_FILL}
             baseLine={0}
+            dot={false}
+            activeDot={false}
+            isAnimationActive={false}
+          />
+          <Line
+            type="linear"
+            dataKey="linePos"
+            stroke={CHART_POS_LINE}
+            strokeWidth={variant === "mini" ? 1.8 : 2}
+            dot={false}
+            activeDot={false}
+            connectNulls={false}
+            isAnimationActive={false}
+          />
+          <Line
+            type="linear"
+            dataKey="lineNeg"
+            stroke={CHART_NEG_LINE}
+            strokeWidth={variant === "mini" ? 1.8 : 2}
+            dot={false}
+            activeDot={false}
+            connectNulls={false}
             isAnimationActive={false}
           />
           <Line
             type="linear"
             dataKey="value"
-            stroke={CHART_LINE_COLOR}
-            strokeWidth={variant === "mini" ? 1.8 : 2}
-            dot={Dot}
-            activeDot={ActiveDot}
+            stroke="transparent"
+            strokeWidth={variant === "mini" ? 8 : 10}
+            dot={false}
+            activeDot={EquityCurveActiveDot}
             isAnimationActive={false}
+            legendType="none"
           />
         </AreaChart>
       </ResponsiveContainer>

@@ -129,8 +129,12 @@ export function WatchlistCard({
     const slot = shellRef.current?.closest(".dashboard-widget-slot");
     if (!slot) return;
     slot.classList.toggle("dashboard-widget-slot--watchlist-settings-open", settingsOpen);
-    return () => slot.classList.remove("dashboard-widget-slot--watchlist-settings-open");
-  }, [settingsOpen]);
+    slot.classList.toggle("dashboard-widget-slot--watchlist-list-menu-open", listMenuOpen && !settingsOpen);
+    return () => {
+      slot.classList.remove("dashboard-widget-slot--watchlist-settings-open");
+      slot.classList.remove("dashboard-widget-slot--watchlist-list-menu-open");
+    };
+  }, [settingsOpen, listMenuOpen]);
 
   useEffect(() => {
     if (!settingsOpen) {
@@ -162,7 +166,11 @@ export function WatchlistCard({
   return (
     <div
       ref={shellRef}
-      className={cn("watchlist-shell", settingsOpen && "watchlist-shell--settings-open")}
+      className={cn(
+        "watchlist-shell",
+        settingsOpen && "watchlist-shell--settings-open",
+        listMenuOpen && !settingsOpen && "watchlist-shell--list-menu-open",
+      )}
       style={
         settingsShiftPx > 0
           ? { transform: `translateX(-${settingsShiftPx}px)` }
@@ -236,9 +244,20 @@ export function WatchlistCard({
         className={cn("atlas-glass watchlist-card", listMenuOpen && !settingsOpen && "watchlist-card--list-menu-open")}
       >
         <div className={dragCn}>
-          <div className="watchlist-list-select-spacer" aria-hidden="true">
-            <span className="watchlist-list-select-spacer-label">{activeListTitle}</span>
-          </div>
+          <WatchlistListSelectMenu
+            open={settingsOpen ? false : listMenuOpen}
+            options={listOptions}
+            activeId={activeListId}
+            headerTitle={activeListTitle}
+            onToggle={() => {
+              if (settingsOpen) return;
+              setListMenuOpen((open) => !open);
+            }}
+            onSelect={onListSelect}
+            onRename={onListRename}
+            onAdd={onListAdd}
+            onClose={() => setListMenuOpen(false)}
+          />
         </div>
 
         <div className="watchlist-divider" />
@@ -283,24 +302,6 @@ export function WatchlistCard({
             })}
           </ul>
         ) : null}
-
-        <div className="watchlist-list-popover-layer">
-          <WatchlistListSelectMenu
-            open={settingsOpen ? false : listMenuOpen}
-            anchorRef={cardRef}
-            options={listOptions}
-            activeId={activeListId}
-            headerTitle={activeListTitle}
-            onToggle={() => {
-              if (settingsOpen) return;
-              setListMenuOpen((open) => !open);
-            }}
-            onSelect={onListSelect}
-            onRename={onListRename}
-            onAdd={onListAdd}
-            onClose={() => setListMenuOpen(false)}
-          />
-        </div>
       </div>
     </div>
   );

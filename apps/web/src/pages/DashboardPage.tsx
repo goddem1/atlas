@@ -89,6 +89,7 @@ type DraggableWidgetProps = {
   onWatchlistChange?: (id: string, state: WatchlistWidgetState) => void;
   onIndexIdChange?: (id: string, indexId: MarketIndexId) => void;
   onOpenIndexChart?: (indexId: MarketIndexId) => void;
+  galleryPreview?: boolean;
 };
 
 function cn(...parts: Array<string | undefined | false>): string {
@@ -96,7 +97,7 @@ function cn(...parts: Array<string | undefined | false>): string {
 }
 
 function draggableWidgetPropsEqual(prev: DraggableWidgetProps, next: DraggableWidgetProps): boolean {
-  return prev.widget === next.widget && prev.gridSize === next.gridSize;
+  return prev.widget === next.widget && prev.gridSize === next.gridSize && prev.galleryPreview === next.galleryPreview;
 }
 
 const DraggableWidget = memo(function DraggableWidget({
@@ -114,6 +115,7 @@ const DraggableWidget = memo(function DraggableWidget({
   onWatchlistChange,
   onIndexIdChange,
   onOpenIndexChart,
+  galleryPreview = false,
 }: DraggableWidgetProps) {
   const nodeRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -238,7 +240,7 @@ const DraggableWidget = memo(function DraggableWidget({
         ) : widget.type === "index-board" ? (
           <IndexBoardWidget dragHandleClassName="drag-handle" onDeleteWidget={handleDelete} />
         ) : (
-          <PortfolioWidget onDeleteWidget={handleDelete} />
+          <PortfolioWidget onDeleteWidget={handleDelete} galleryPreview={galleryPreview} />
         )}
       </div>
     </Draggable>
@@ -482,8 +484,6 @@ export function DashboardPage() {
 
   const addWidget = useCallback(
     (type: DashboardWidgetType, options?: { indexId?: MarketIndexId }) => {
-    if (type === "portfolio" && !isLoggedIn) return;
-
     const el = boardRef.current;
     const vw = window.innerWidth;
     const rect = el?.getBoundingClientRect();
@@ -508,7 +508,7 @@ export function DashboardPage() {
       return layoutAllWidgetsSequential(next, bw, bh, vw);
     });
   },
-    [isLoggedIn],
+    [],
   );
 
   const openMacroCalendar = useCallback(() => setMacroOpen(true), []);
@@ -732,6 +732,7 @@ export function DashboardPage() {
                 onWatchlistChange={setWatchlistState}
                 onIndexIdChange={setIndexId}
                 onOpenIndexChart={openKlineChartForIndex}
+                galleryPreview={!isLoggedIn}
               />
             ) : null,
           )}

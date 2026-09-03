@@ -21,31 +21,36 @@
   height: 530px;
   display: flex;
   flex-direction: column;
-  overflow: visible;
+  overflow: hidden;
   border-radius: 25px 10px 25px 25px;
   color: var(--atlas-fg-primary);
+}
+
+.watchlist-shell--list-menu-open {
+  isolation: auto;
+  overflow: visible;
 }
 
 .watchlist-card--list-menu-open {
   overflow: visible;
   clip-path: none;
-  contain: layout;
+  contain: none;
+  isolation: auto;
 }
 
-.watchlist-list-popover-layer {
-  position: absolute;
-  inset: 0;
+.watchlist-card--list-menu-open .watchlist-head {
+  z-index: 430;
+}
+
+.watchlist-list-select-wrap {
+  position: relative;
   z-index: 50;
-  pointer-events: none;
+  display: inline-flex;
+  align-items: center;
 }
 
-.watchlist-list-menu-portal-root {
-  position: fixed;
-  z-index: 420;
-  box-sizing: border-box;
-  margin: 0;
-  overflow: visible;
-  pointer-events: none;
+.watchlist-list-select-wrap.is-open {
+  z-index: 430;
 }
 
 .watchlist-list-menu-panel,
@@ -54,7 +59,8 @@
 }
 
 .watchlist-list-menu-panel--portal {
-  position: relative;
+  position: absolute;
+  z-index: 420;
   box-sizing: border-box;
   margin: 0;
   border-radius: 20px;
@@ -62,11 +68,15 @@
   pointer-events: auto;
 }
 
-.watchlist-list-select--floating {
+.watchlist-list-select.watchlist-list-select-overlay {
   position: absolute;
-  z-index: 2;
+  z-index: 500;
   margin: 0;
-  pointer-events: auto;
+}
+
+.watchlist-list-select--anchor {
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .watchlist-list-menu-backdrop.atlas-glass {
@@ -75,6 +85,13 @@
   border-radius: inherit;
   pointer-events: none;
   z-index: 0;
+  background-color: var(--atlas-glass-bg);
+  border: var(--atlas-glass-border);
+  box-shadow: var(--atlas-glass-shadow);
+  backdrop-filter: var(--atlas-glass-backdrop);
+  -webkit-backdrop-filter: var(--atlas-glass-backdrop);
+  contain: none;
+  isolation: auto;
 }
 
 .watchlist-list-menu-backdrop.atlas-glass::before {
@@ -101,6 +118,7 @@
 
 .watchlist-list-menu-header-slot {
   flex-shrink: 0;
+  height: 38px;
 }
 
 .watchlist-head {
@@ -125,32 +143,9 @@
   pointer-events: none;
 }
 
-.watchlist-list-select-spacer {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  visibility: hidden;
-  pointer-events: none;
-  font-size: 20px;
-  font-weight: 500;
-  line-height: 1.25;
-  letter-spacing: -0.01em;
-}
-
-.watchlist-list-select-spacer-label::after {
-  content: "";
-  display: inline-block;
-  width: 14px;
-  height: 14px;
-  margin-left: 6px;
-  vertical-align: middle;
-}
-
 .watchlist-list-select {
-  position: absolute;
-  top: 23px;
-  left: 30px;
-  z-index: 2;
+  position: relative;
+  z-index: 431;
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -165,7 +160,6 @@
   letter-spacing: -0.01em;
   color: var(--atlas-fg-primary);
   cursor: pointer;
-  pointer-events: auto;
 }
 
 .watchlist-list-select[aria-expanded="true"] .watchlist-list-select-icon {

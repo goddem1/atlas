@@ -68,6 +68,17 @@
   overflow: hidden;
 }
 
+.portfolio-chart-wrap .equity-curve-chart--full {
+  height: 100%;
+  min-height: 0;
+}
+
+.portfolio-chart-wrap .equity-curve-chart-plot {
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+}
+
 .portfolio-chart-wrap .recharts-tooltip-wrapper {
   z-index: 12;
 }

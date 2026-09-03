@@ -318,6 +318,7 @@ export function layoutAllWidgetsSequential(
 export const GUEST_DASHBOARD_WIDGETS: DashboardWidget[] = [
   { id: "guest-btc", type: "price-sparkline", symbol: "BTC", x: 0, y: 0 },
   { id: "guest-eth", type: "price-sparkline", symbol: "ETH", x: 0, y: 0 },
+  { id: "guest-portfolio", type: "portfolio", x: 0, y: 0 },
   { id: "guest-macro", type: "macro-calendar", x: 0, y: 0 },
 ];
 
