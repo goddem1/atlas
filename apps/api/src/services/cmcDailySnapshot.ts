@@ -6,6 +6,7 @@ import {
   fetchFearGreedLatest,
   fetchFundingRates,
   fetchGlobalMetrics,
+  hasCmcApiKey,
 } from "./cmcDailyFetch.js";
 
 export type CmcMarketIndicesBundle = {
@@ -41,13 +42,25 @@ type JobLog = {
 };
 
 export async function fetchCmcMarketIndicesBundle(): Promise<CmcMarketIndicesBundle> {
-  const [fearGreed, globalMetrics, altcoinSeason, btcEthMcap, fundingRates] = await Promise.all([
+  // Fear&Greed / GlobalMetrics / AltcoinSeason — публичные (без ключа).
+  // BTC/ETH mcap и funding — только с CMC_API_KEY; без ключа не валим весь bundle.
+  const [fearGreed, globalMetrics, altcoinSeason] = await Promise.all([
     fetchFearGreedLatest(),
     fetchGlobalMetrics(),
     fetchAltcoinSeasonIndex(),
-    fetchBtcEthMarketCap(),
-    fetchFundingRates(),
   ]);
+
+  let btcEthMcap = {
+    btcMarketCap: (globalMetrics.totalMarketCap * globalMetrics.btcDominance) / 100,
+    ethMarketCap: (globalMetrics.totalMarketCap * globalMetrics.ethDominance) / 100,
+  };
+  let fundingRates: FundingRateEntry[] = [];
+
+  if (hasCmcApiKey()) {
+    const [quotes, funding] = await Promise.all([fetchBtcEthMarketCap(), fetchFundingRates()]);
+    btcEthMcap = quotes;
+    fundingRates = funding;
+  }
 
   const total3MarketCap = Math.max(
     0,

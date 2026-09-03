@@ -3,6 +3,10 @@ import type { FundingRateEntry } from "@atlas-v1/shared";
 const CMC_BASE = "https://pro-api.coinmarketcap.com";
 const CMC_KEYLESS = "https://pro-api.coinmarketcap.com/public-api";
 
+export function hasCmcApiKey(): boolean {
+  return Boolean(process.env.CMC_API_KEY?.trim());
+}
+
 function getCmcApiKey(): string {
   const key = process.env.CMC_API_KEY?.trim();
   if (!key) {
