@@ -101,6 +101,9 @@ services:
       R2_SECRET_ACCESS_KEY: ${R2_SECRET_ACCESS_KEY:-}
       R2_BUCKET_NAME: ${R2_BUCKET_NAME:-}
       R2_PUBLIC_URL: ${R2_PUBLIC_URL:-}
+      # Без R2: картинки заметок на диск (том atlas_api_data → data/notes-media)
+      NOTES_LOCAL_MEDIA: ${NOTES_LOCAL_MEDIA:-true}
+      NOTES_MEDIA_PUBLIC_PREFIX: ${NOTES_MEDIA_PUBLIC_PREFIX:-/api}
     volumes:
       - atlas_api_data:/app/apps/api/data
 

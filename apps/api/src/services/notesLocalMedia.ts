@@ -12,6 +12,7 @@ const ALLOWED_IMAGE_TYPES = new Set([
 ]);
 
 export function isLocalNotesMediaEnabled(): boolean {
+  if (process.env.NOTES_LOCAL_MEDIA === "true") return true;
   return process.env.NODE_ENV !== "production";
 }
 
