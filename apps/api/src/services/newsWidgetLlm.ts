@@ -165,13 +165,15 @@ export function resolveNewsWidgetMskDay(now = new Date()): string {
     month: "2-digit",
     day: "2-digit",
     hour: "2-digit",
-    hour12: false,
+    hourCycle: "h23",
   }).formatToParts(now);
   const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
   const y = Number(get("year"));
   const m = Number(get("month"));
   const d = Number(get("day"));
-  const hour = Number(get("hour"));
+  // ICU sometimes still emits "24" for midnight; treat as 0.
+  const hourRaw = Number(get("hour"));
+  const hour = hourRaw === 24 ? 0 : hourRaw;
   const today = `${String(y).padStart(4, "0")}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
   if (hour >= 23) return today;
   const utc = Date.UTC(y, m - 1, d);
