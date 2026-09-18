@@ -279,6 +279,11 @@ async function resetTelegramClient(): Promise<void> {
   await new Promise((resolve) => setTimeout(resolve, 3000));
 }
 
+/** Сброс shared MTProto-клиента (после таймаута catch-up / AUTH_KEY_DUPLICATED). */
+export async function resetTelegramMtprotoClient(): Promise<void> {
+  await resetTelegramClient();
+}
+
 /** Serialize MTProto calls and recover from duplicate session errors. */
 function runTelegramOp<T>(op: () => Promise<T>): Promise<T> {
   const exec = async (): Promise<T> => {

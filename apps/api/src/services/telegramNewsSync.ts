@@ -9,6 +9,7 @@ import {
   isTelegramMtprotoConfigured,
   listTelegramNewsChannels,
   mapApiMessageToNewsMessage,
+  resetTelegramMtprotoClient,
   resolveChannelUsernameFromPeer,
 } from "./telegramMtproto.js";
 import {
@@ -29,8 +30,30 @@ import { isTelegramDisabled } from "./telegramFeature.js";
 type Log = Pick<FastifyBaseLogger, "info" | "warn" | "error" | "debug">;
 
 let syncRunning = false;
+let syncStartedAt = 0;
 let listenerStarted = false;
 let catchUpTimer: ReturnType<typeof setInterval> | null = null;
+
+/** Макс. длительность одного catch-up; иначе сбрасываем клиент и флаг. */
+function catchUpTimeoutMs(): number {
+  const raw = Number.parseInt(process.env.TELEGRAM_NEWS_CATCHUP_TIMEOUT_MS ?? "240000", 10);
+  if (!Number.isFinite(raw)) return 240_000;
+  return Math.min(900_000, Math.max(60_000, raw));
+}
+
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  return Promise.race([
+    promise.finally(() => {
+      if (timer) clearTimeout(timer);
+    }),
+    new Promise<never>((_, reject) => {
+      timer = setTimeout(() => {
+        reject(new Error(`${label} timed out after ${ms}ms`));
+      }, ms);
+    }),
+  ]);
+}
 
 async function syncOneChannel(
   prisma: PrismaClient,
@@ -52,76 +75,118 @@ async function syncOneChannel(
   return n;
 }
 
+async function runTelegramNewsCatchUpBody(
+  prisma: PrismaClient,
+  log: Log,
+  usernames?: string[],
+): Promise<void> {
+  if (usernames && usernames.length > 0) {
+    await ensureWatchedChannels(prisma, usernames);
+  } else {
+    const existing = await listWatchedUsernames(prisma);
+    if (existing.length === 0) {
+      await ensureWatchedChannels(prisma, getDefaultTelegramChannels());
+    }
+  }
+
+  const channels = await listWatchedUsernames(prisma);
+
+  try {
+    const meta = await listTelegramNewsChannels(channels);
+    for (const ch of meta) {
+      await updateChannelMeta(prisma, ch.username, {
+        title: ch.title,
+        hasPhoto: ch.hasPhoto,
+      });
+      if (ch.hasPhoto) {
+        try {
+          await ensureChannelPhotoCached(ch.username);
+        } catch (err) {
+          log.warn({ err, username: ch.username }, "[telegram-news] channel photo cache failed");
+        }
+      }
+    }
+  } catch (err) {
+    log.warn({ err }, "[telegram-news] channel meta refresh failed");
+  }
+
+  let total = 0;
+  for (const username of channels) {
+    try {
+      total += await syncOneChannel(prisma, log, username);
+    } catch (err) {
+      log.warn({ err, username }, "[telegram-news] channel sync failed");
+    }
+  }
+
+  // Догрузить медиа для постов, уже лежащих в БД (первый запуск / после деплоя).
+  for (const username of channels) {
+    try {
+      const recent = await getStoredTelegramNewsMessages(prisma, username, { limit: 30 });
+      const needsMedia = recent.filter(
+        (m) => m.hasImage || m.hasVideoThumb || m.hasVideo,
+      );
+      if (needsMedia.length > 0) {
+        await prefetchTelegramMessageMedia(username, needsMedia, log);
+      }
+    } catch (err) {
+      log.debug({ err, username }, "[telegram-news] backlog media prefetch skipped");
+    }
+  }
+
+  const pruned = await pruneOldTelegramNewsPosts(prisma);
+  log.info({ channels: channels.length, upserted: total, pruned }, "[telegram-news] catch-up done");
+}
+
 export async function runTelegramNewsCatchUp(
   prisma: PrismaClient,
   log: Log,
   usernames?: string[],
 ): Promise<void> {
   if (!isTelegramMtprotoConfigured()) return;
+
+  const timeoutMs = catchUpTimeoutMs();
   if (syncRunning) {
-    log.debug("[telegram-news] catch-up skipped (already running)");
-    return;
-  }
-  syncRunning = true;
-  try {
-    if (usernames && usernames.length > 0) {
-      await ensureWatchedChannels(prisma, usernames);
+    const runningFor = syncStartedAt > 0 ? Date.now() - syncStartedAt : 0;
+    if (runningFor > timeoutMs) {
+      log.warn(
+        { runningForMs: runningFor, timeoutMs },
+        "[telegram-news] catch-up stuck — force reset",
+      );
+      syncRunning = false;
+      syncStartedAt = 0;
+      void resetTelegramMtprotoClient().catch((err) => {
+        log.warn({ err }, "[telegram-news] force client reset failed");
+      });
     } else {
-      const existing = await listWatchedUsernames(prisma);
-      if (existing.length === 0) {
-        await ensureWatchedChannels(prisma, getDefaultTelegramChannels());
-      }
+      log.debug("[telegram-news] catch-up skipped (already running)");
+      return;
     }
+  }
 
-    const channels = await listWatchedUsernames(prisma);
-
-    try {
-      const meta = await listTelegramNewsChannels(channels);
-      for (const ch of meta) {
-        await updateChannelMeta(prisma, ch.username, {
-          title: ch.title,
-          hasPhoto: ch.hasPhoto,
-        });
-        if (ch.hasPhoto) {
-          try {
-            await ensureChannelPhotoCached(ch.username);
-          } catch (err) {
-            log.warn({ err, username: ch.username }, "[telegram-news] channel photo cache failed");
-          }
-        }
-      }
-    } catch (err) {
-      log.warn({ err }, "[telegram-news] channel meta refresh failed");
-    }
-
-    let total = 0;
-    for (const username of channels) {
+  syncRunning = true;
+  syncStartedAt = Date.now();
+  try {
+    await withTimeout(
+      runTelegramNewsCatchUpBody(prisma, log, usernames),
+      timeoutMs,
+      "[telegram-news] catch-up",
+    );
+  } catch (err) {
+    const timedOut = err instanceof Error && err.message.includes("timed out");
+    if (timedOut) {
+      log.warn({ err, timeoutMs }, "[telegram-news] catch-up timed out — resetting MTProto client");
       try {
-        total += await syncOneChannel(prisma, log, username);
-      } catch (err) {
-        log.warn({ err, username }, "[telegram-news] channel sync failed");
+        await resetTelegramMtprotoClient();
+      } catch (resetErr) {
+        log.warn({ err: resetErr }, "[telegram-news] client reset after timeout failed");
       }
+    } else {
+      throw err;
     }
-
-    // Догрузить медиа для постов, уже лежащих в БД (первый запуск / после деплоя).
-    for (const username of channels) {
-      try {
-        const recent = await getStoredTelegramNewsMessages(prisma, username, { limit: 30 });
-        const needsMedia = recent.filter(
-          (m) => m.hasImage || m.hasVideoThumb || m.hasVideo,
-        );
-        if (needsMedia.length > 0) {
-          await prefetchTelegramMessageMedia(username, needsMedia, log);
-        }
-      } catch (err) {
-        log.debug({ err, username }, "[telegram-news] backlog media prefetch skipped");
-      }
-    }
-
-    const pruned = await pruneOldTelegramNewsPosts(prisma);
-    log.info({ channels: channels.length, upserted: total, pruned }, "[telegram-news] catch-up done");
   } finally {
     syncRunning = false;
+    syncStartedAt = 0;
   }
 }
 
@@ -176,6 +241,7 @@ export async function startTelegramNewsAutoSync(
 
   const intervalMin = Number.parseInt(process.env.TELEGRAM_NEWS_CATCHUP_MINUTES ?? "5", 10);
   const minutes = Math.max(2, Number.isFinite(intervalMin) ? intervalMin : 5);
+  const timeoutMs = catchUpTimeoutMs();
   catchUpTimer = setInterval(() => {
     void runTelegramNewsCatchUp(prisma, log).catch((err) => {
       log.warn({ err }, "[telegram-news] scheduled catch-up failed");
@@ -194,7 +260,10 @@ export async function startTelegramNewsAutoSync(
     log.info("[telegram-news] live listener disabled (TELEGRAM_NEWS_LIVE_LISTENER_DISABLED)");
   }
 
-  log.info({ catchUpMinutes: minutes }, "[telegram-news] auto-sync started (live events + catch-up)");
+  log.info(
+    { catchUpMinutes: minutes, catchUpTimeoutMs: timeoutMs },
+    "[telegram-news] auto-sync started (live events + catch-up)",
+  );
 
   return () => {
     if (catchUpTimer) {
