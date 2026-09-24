@@ -264,19 +264,28 @@ function isAuthKeyDuplicated(err: unknown): boolean {
   return code === 406 || errorMessage === "AUTH_KEY_DUPLICATED";
 }
 
+/**
+ * Сброс shared-клиента и очереди MTProto.
+ * Не ждём зависший connect/pending — иначе catch-up timeout сам залипает.
+ */
 async function resetTelegramClient(): Promise<void> {
   const pending = clientPromise;
   clientPromise = null;
+  opQueue = Promise.resolve();
   if (pending) {
-    try {
-      const client = await pending;
-      await client.disconnect();
-    } catch {
-      // ignore
-    }
+    void Promise.race([
+      pending.then(async (client) => {
+        try {
+          await client.disconnect();
+        } catch {
+          // ignore
+        }
+      }),
+      new Promise<void>((resolve) => setTimeout(resolve, 5_000)),
+    ]).catch(() => undefined);
   }
-  // Telegram needs a moment to release the auth key after disconnect.
-  await new Promise((resolve) => setTimeout(resolve, 3000));
+  // Короткий зазор, чтобы Telegram отпустил auth key.
+  await new Promise((resolve) => setTimeout(resolve, 1_500));
 }
 
 /** Сброс shared MTProto-клиента (после таймаута catch-up / AUTH_KEY_DUPLICATED). */

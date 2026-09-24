@@ -176,11 +176,10 @@ export async function runTelegramNewsCatchUp(
     const timedOut = err instanceof Error && err.message.includes("timed out");
     if (timedOut) {
       log.warn({ err, timeoutMs }, "[telegram-news] catch-up timed out — resetting MTProto client");
-      try {
-        await resetTelegramMtprotoClient();
-      } catch (resetErr) {
+      // Не блокируем finally на зависшем disconnect — иначе syncRunning залипает на часы.
+      void resetTelegramMtprotoClient().catch((resetErr) => {
         log.warn({ err: resetErr }, "[telegram-news] client reset after timeout failed");
-      }
+      });
     } else {
       throw err;
     }
