@@ -286,7 +286,7 @@
   .price-widget-shell,
   .price-widget-card {
     width: 100%;
-    max-width: 100%;
+    max-width: 350px;
   }
 
   .price-widget-card {
@@ -367,49 +367,3 @@
 }
 
 /* Статика только при ширине ровно 430px */
-@media (width: 430px) {
-  .price-widget-shell,
-  .price-widget-card {
-    width: 410px;
-    max-width: 410px;
-  }
-
-  .price-widget-chart-wrap {
-    width: 370px;
-    max-width: 370px;
-  }
-
-  .price-widget-svg {
-    height: 120px;
-    max-height: 120px;
-    aspect-ratio: auto;
-  }
-
-  .price-widget-axis-svg {
-    width: 100%;
-    max-width: none;
-  }
-}
-
-/* 390 и 430: иконка 30px, тикер 18px, цена 22px */
-@media (min-width: 390px) and (max-width: 430px) {
-  .price-widget-icon-button,
-  .price-widget-icon-button .price-widget-asset-icon,
-  .price-widget-icon-button .price-widget-default-icon {
-    width: 30px;
-    height: 30px;
-  }
-
-  .price-widget-icon-button .price-widget-default-icon {
-    font-size: 12px;
-  }
-
-  .price-widget-symbol,
-  .price-widget-symbol-btn {
-    font-size: 18px;
-  }
-
-  .price-widget-price {
-    font-size: 22px;
-  }
-}

@@ -58,6 +58,7 @@
     display: flex;
     flex-direction: row;
     flex-wrap: wrap;
+    justify-content: center;
     align-items: flex-start;
     align-content: flex-start;
     gap: 10px;
@@ -74,9 +75,9 @@
     left: auto !important;
     top: auto !important;
     transform: none !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    flex: 0 0 100%;
+    width: min(350px, calc(100vw - 20px)) !important;
+    max-width: min(350px, calc(100vw - 20px)) !important;
+    flex: 0 0 auto;
   }
 
   .dashboard-widget-board .dashboard-widget-slot--macro-calendar {
@@ -84,8 +85,6 @@
   }
 
   .dashboard-widget-board .dashboard-widget-slot--price-sparkline {
-    width: 100% !important;
-    max-width: 100% !important;
     height: 196px !important;
   }
 
@@ -102,6 +101,8 @@
   }
 
   .dashboard-widget-board .dashboard-widget-slot--index-board {
+    width: min(280px, calc(100vw - 20px)) !important;
+    max-width: min(280px, calc(100vw - 20px)) !important;
     height: 228px !important;
   }
 
@@ -116,13 +117,6 @@
     max-width: min(130px, calc(100vw * 130 / 430)) !important;
     height: auto !important;
     flex: 0 0 auto;
-  }
-}
-
-@media (width: 430px) {
-  .dashboard-widget-board .dashboard-widget-slot--price-sparkline {
-    width: 410px !important;
-    max-width: 410px !important;
   }
 }
 
