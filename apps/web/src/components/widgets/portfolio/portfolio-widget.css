@@ -1207,6 +1207,12 @@ html[data-dashboard-theme="dark"] .portfolio-timeframe-switcher > .btn-on-glass.
 }
 
 @media (max-width: 430px) {
+  .portfolio-widget-shell,
+  .portfolio-widget-card {
+    width: 100%;
+    max-width: 100%;
+  }
+
   .portfolio-total {
     font-size: 24px;
   }
