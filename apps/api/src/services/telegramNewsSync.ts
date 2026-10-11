@@ -55,6 +55,13 @@ function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise
   ]);
 }
 
+function withSoftTimeout<T>(promise: Promise<T>, ms: number): Promise<T | "timeout"> {
+  return Promise.race([
+    promise.then((v) => v as T | "timeout"),
+    new Promise<"timeout">((resolve) => setTimeout(() => resolve("timeout"), ms)),
+  ]);
+}
+
 async function syncOneChannel(
   prisma: PrismaClient,
   log: Log,
@@ -70,7 +77,10 @@ async function syncOneChannel(
   }
   const n = await upsertTelegramNewsMessages(prisma, fresh);
   await updateChannelMeta(prisma, username, {});
-  await prefetchTelegramMessageMedia(username, fresh, log);
+  // Медиа не блокирует catch-up: картинки подтянутся по запросу / в фоне.
+  void prefetchTelegramMessageMedia(username, fresh, log).catch((err) => {
+    log.debug({ err, username }, "[telegram-news] media prefetch skipped");
+  });
   log.debug({ username, upserted: n, latestId }, "[telegram-news] channel sync");
   return n;
 }
@@ -99,10 +109,9 @@ async function runTelegramNewsCatchUpBody(
         hasPhoto: ch.hasPhoto,
       });
       if (ch.hasPhoto) {
-        try {
-          await ensureChannelPhotoCached(ch.username);
-        } catch (err) {
-          log.warn({ err, username: ch.username }, "[telegram-news] channel photo cache failed");
+        const photoResult = await withSoftTimeout(ensureChannelPhotoCached(ch.username), 12_000);
+        if (photoResult === "timeout") {
+          log.warn({ username: ch.username }, "[telegram-news] channel photo cache timed out");
         }
       }
     }
@@ -119,20 +128,20 @@ async function runTelegramNewsCatchUpBody(
     }
   }
 
-  // Догрузить медиа для постов, уже лежащих в БД (первый запуск / после деплоя).
-  for (const username of channels) {
-    try {
-      const recent = await getStoredTelegramNewsMessages(prisma, username, { limit: 30 });
-      const needsMedia = recent.filter(
-        (m) => m.hasImage || m.hasVideoThumb || m.hasVideo,
-      );
-      if (needsMedia.length > 0) {
-        await prefetchTelegramMessageMedia(username, needsMedia, log);
+  // Backlog-медиа не ждём: иначе catch-up залипает на видео через SOCKS и текст не обновляется.
+  void (async () => {
+    for (const username of channels) {
+      try {
+        const recent = await getStoredTelegramNewsMessages(prisma, username, { limit: 15 });
+        const needsMedia = recent.filter((m) => m.hasImage || m.hasVideoThumb);
+        if (needsMedia.length > 0) {
+          await prefetchTelegramMessageMedia(username, needsMedia, log);
+        }
+      } catch (err) {
+        log.debug({ err, username }, "[telegram-news] backlog media prefetch skipped");
       }
-    } catch (err) {
-      log.debug({ err, username }, "[telegram-news] backlog media prefetch skipped");
     }
-  }
+  })();
 
   const pruned = await pruneOldTelegramNewsPosts(prisma);
   log.info({ channels: channels.length, upserted: total, pruned }, "[telegram-news] catch-up done");

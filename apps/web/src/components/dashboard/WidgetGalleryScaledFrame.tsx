@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import {
-  dashboardWidgetOuterSize,
+  dashboardWidgetGalleryOuterSize,
   type DashboardWidgetType,
 } from "../../lib/dashboardWidgets";
 
@@ -9,11 +9,18 @@ type Props = {
   children: ReactNode;
 };
 
-/** Вписывает виджет в рамку превью: 1:1 если влезает, иначе scale вниз. */
+/**
+ * Рендерит виджет в каноническом размере и равномерно scale'ит под ширину хоста,
+ * сохраняя реальные пропорции.
+ *
+ * Виджеты «на всю колонку» (≥280px) растягиваются/сжимаются до ширины карточки,
+ * чтобы в мобильной галерее края совпадали. Компактные (index и т.п.) только сжимаются.
+ */
 export function WidgetGalleryScaledFrame({ widgetType, children }: Props) {
   const hostRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
-  const { w: naturalW, h: naturalH } = dashboardWidgetOuterSize(widgetType, 1280);
+  const { w: naturalW, h: naturalH } = dashboardWidgetGalleryOuterSize(widgetType);
+  const fillHostWidth = naturalW >= 280;
 
   useLayoutEffect(() => {
     const host = hostRef.current;
@@ -22,9 +29,9 @@ export function WidgetGalleryScaledFrame({ widgetType, children }: Props) {
     let rafId = 0;
     const measure = () => {
       const cw = host.clientWidth;
-      const ch = host.clientHeight;
-      if (cw <= 0 || ch <= 0) return;
-      const next = Math.min(cw / naturalW, ch / naturalH, 1);
+      if (cw <= 0) return;
+      const ratio = cw / naturalW;
+      const next = fillHostWidth ? ratio : Math.min(ratio, 1);
       setScale((prev) => (Math.abs(prev - next) < 0.0001 ? prev : next));
     };
 
@@ -46,20 +53,26 @@ export function WidgetGalleryScaledFrame({ widgetType, children }: Props) {
       ro.disconnect();
       window.removeEventListener("resize", schedule);
     };
-  }, [naturalW, naturalH]);
+  }, [naturalW, naturalH, fillHostWidth]);
 
-  const stageW = naturalW * scale;
-  const stageH = naturalH * scale;
+  const stageH = Math.ceil(naturalH * scale) + 2;
 
   return (
     <div ref={hostRef} className="widget-gallery-live-host">
-      <div className="widget-gallery-live-stage" style={{ width: stageW, height: stageH }}>
+      <div
+        className="widget-gallery-live-stage"
+        style={
+          fillHostWidth
+            ? { width: "100%", height: stageH }
+            : { width: Math.ceil(naturalW * scale) + 2, height: stageH }
+        }
+      >
         <div
           className="widget-gallery-live-inner"
           style={{
             width: naturalW,
             height: naturalH,
-            transform: scale < 1 ? `scale(${scale})` : undefined,
+            transform: Math.abs(scale - 1) < 0.0001 ? undefined : `scale(${scale})`,
             transformOrigin: "top left",
           }}
         >

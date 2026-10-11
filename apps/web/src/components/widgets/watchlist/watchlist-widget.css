@@ -22,7 +22,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border-radius: 25px 10px 25px 25px;
+  border-radius: var(--atlas-widget-radius);
   color: var(--atlas-fg-primary);
 }
 
@@ -55,7 +55,7 @@
 
 .watchlist-list-menu-panel,
 .watchlist-list-menu-panel--portal {
-  width: 146px;
+  width: 124px;
 }
 
 .watchlist-list-menu-panel--portal {
@@ -317,6 +317,9 @@
   font-weight: 400;
   line-height: 1.25;
   letter-spacing: -0.01em;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -327,6 +330,7 @@
   letter-spacing: -0.01em;
   font-variant-numeric: tabular-nums;
   text-align: right;
+  flex-shrink: 0;
   white-space: nowrap;
 }
 
@@ -336,6 +340,7 @@
   align-items: flex-end;
   gap: 2px;
   min-width: 72px;
+  flex-shrink: 0;
   font-size: 14px;
   line-height: 1.15;
   font-variant-numeric: tabular-nums;
@@ -363,4 +368,46 @@
 
 .watchlist-msg--err {
   color: #ef4444;
+}
+
+@media (max-width: 430px) {
+  .watchlist-shell,
+  .watchlist-card {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .watchlist-card {
+    height: 454px;
+  }
+
+  .watchlist-head {
+    padding: 13px 10px 10px;
+  }
+
+  .watchlist-list-select {
+    font-size: 16px;
+  }
+
+  .watchlist-list-menu-option-item.is-active .watchlist-list-menu-option,
+  .watchlist-list-menu-option.active {
+    font-size: 16px;
+  }
+
+  .watchlist-list {
+    padding: 0 10px 10px 10px;
+  }
+
+  .watchlist-symbol {
+    font-size: 16px;
+  }
+
+  .watchlist-asset-icon {
+    width: 28px;
+    height: 28px;
+  }
+
+  .watchlist-change.watchlist-change--up {
+    font-size: 12px;
+  }
 }

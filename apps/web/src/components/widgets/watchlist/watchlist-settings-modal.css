@@ -279,3 +279,195 @@ html[data-dashboard-theme="dark"] .watchlist-settings-list-drag {
 .watchlist-settings-combobox-menu .portfolio-asset-option--active {
   color: #f2f2f7;
 }
+
+.watchlist-settings-sheet-handle {
+  display: none;
+}
+
+@keyframes watchlist-settings-sheet-in {
+  from {
+    transform: translateY(110%);
+  }
+
+  to {
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 430px) {
+  .watchlist-settings-backdrop-layer {
+    z-index: 480;
+  }
+
+  .watchlist-settings-backdrop {
+    background:
+      linear-gradient(rgba(255, 255, 255, 0.45)),
+      linear-gradient(135deg, #daecff 0%, #f6d6ff 100%);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    animation: none;
+  }
+
+  html[data-dashboard-theme="dark"] .watchlist-settings-backdrop {
+    background:
+      linear-gradient(rgba(0, 0, 0, 0.72)),
+      linear-gradient(45deg, #b3423c 0%, #478c58 100%);
+  }
+
+  .watchlist-settings-dialog {
+    --watchlist-settings-inset: 0px;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    max-width: none;
+    max-height: none;
+    height: 100%;
+    padding: 12px 14px calc(1rem + 50px + 12px);
+    border-radius: 0;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    animation-name: watchlist-settings-sheet-in;
+    z-index: 481;
+  }
+
+  .watchlist-settings-dialog.atlas-glass {
+    position: fixed;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .watchlist-settings-sheet-handle {
+    display: none;
+  }
+
+  .watchlist-settings-header {
+    height: 48px;
+    margin: 0 -14px 16px;
+    padding: 0 8px 0 14px;
+  }
+
+  .watchlist-settings-header-backdrop.atlas-glass {
+    border-radius: 0;
+    background: transparent;
+    border: 0;
+    border-bottom: var(--atlas-glass-border);
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .watchlist-settings-title {
+    font-size: 18px;
+  }
+
+  .watchlist-settings-close {
+    width: 36px;
+    height: 36px;
+  }
+
+  .watchlist-settings-close-icon {
+    width: 16px;
+    height: 16px;
+  }
+
+  .watchlist-settings-body {
+    gap: 22px;
+  }
+
+  .watchlist-settings-field {
+    gap: 8px;
+  }
+
+  .watchlist-settings-field-label {
+    font-size: 14px;
+  }
+
+  .watchlist-settings-lists {
+    gap: 6px;
+  }
+
+  .watchlist-settings-list-drag {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+  }
+
+  .watchlist-settings-list-drag-icon {
+    width: 15px;
+    height: 15px;
+  }
+
+  .watchlist-settings-list-field .portfolio-input-ghost {
+    height: 45px;
+    font-size: 16px;
+    border-radius: 12px;
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .watchlist-settings-list-field.is-floated .portfolio-input-ghost,
+  .watchlist-settings-list-field:focus-within .portfolio-input-ghost {
+    padding-top: 12px;
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .watchlist-settings-list-field .portfolio-ghost-label {
+    left: 12px;
+    font-size: 16px;
+  }
+
+  .watchlist-settings-combobox-field .portfolio-input-ghost {
+    height: 45px;
+    border-radius: 12px;
+    font-size: 16px;
+  }
+
+  .watchlist-settings-combobox-field.is-floated .portfolio-input-ghost,
+  .watchlist-settings-combobox-field:focus-within .portfolio-input-ghost {
+    padding-top: 12px;
+  }
+}
+
+@media (max-width: 360px) {
+  .watchlist-settings-dialog {
+    padding: 10px 12px calc(1rem + 50px + 10px);
+  }
+
+  .watchlist-settings-header {
+    height: 44px;
+    margin: 0 -12px 12px;
+    padding: 0 6px 0 12px;
+  }
+
+  .watchlist-settings-title {
+    font-size: 16px;
+  }
+
+  .watchlist-settings-close {
+    width: 32px;
+    height: 32px;
+  }
+
+  .watchlist-settings-field-label {
+    font-size: 13px;
+  }
+
+  .watchlist-settings-list-field .portfolio-input-ghost,
+  .watchlist-settings-combobox-field .portfolio-input-ghost {
+    height: 40px;
+    font-size: 14px;
+  }
+
+  .watchlist-settings-list-field .portfolio-ghost-label {
+    font-size: 14px;
+  }
+}

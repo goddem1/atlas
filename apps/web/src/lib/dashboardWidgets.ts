@@ -22,6 +22,17 @@ export const DASHBOARD_GRID_SIZE = 10;
 export const DASHBOARD_EDGE_INSET = 20;
 /** Минимальный зазор между прямоугольниками виджетов (px). */
 export const DASHBOARD_WIDGET_GAP = 20;
+/**
+ * Телефоны (iPhone 14 Pro Max ~430, Pro ~390, SE/mini ~360):
+ * все виджеты в одну колонку. Покрывает vw ≤ 430.
+ */
+export const DASHBOARD_MOBILE_SINGLE_COL_MAX_WIDTH = 430;
+
+export function isDashboardMobileSingleColumn(
+  viewportWidth: number = typeof window !== "undefined" ? window.innerWidth : 1200,
+): boolean {
+  return viewportWidth <= DASHBOARD_MOBILE_SINGLE_COL_MAX_WIDTH;
+}
 
 export type DashboardWidgetType =
   | "price-sparkline"
@@ -57,6 +68,11 @@ export type DashboardWidget = {
   /** Период изменения цены — только для `watchlist`. */
   watchlistChangePeriod?: WatchlistChangePeriod;
 };
+
+/** Порядок чтения на мобиле: сверху вниз, слева направо по сохранённым координатам. */
+export function sortWidgetsForMobileColumn(widgets: DashboardWidget[]): DashboardWidget[] {
+  return [...widgets].sort((a, b) => a.y - b.y || a.x - b.x || a.id.localeCompare(b.id));
+}
 
 export const WIDGET_CATALOG: {
   type: DashboardWidgetType;
@@ -126,12 +142,207 @@ const NOTES_WIDGET_W = 350;
 const NOTES_WIDGET_H = 326;
 const JOURNAL_WIDGET_W = 570;
 const JOURNAL_WIDGET_H = 300;
-const INDEX_WIDGET_W = 150;
+const INDEX_WIDGET_W = 130;
 const INDEX_WIDGET_H = 100;
+/** Сколько index-виджетов максимум в одной мобильной линии. */
+export const MOBILE_INDEX_ROW_MAX = 3;
 const INDEX_BOARD_WIDGET_W = 280;
-const INDEX_BOARD_WIDGET_H = 260;
+const INDEX_BOARD_WIDGET_H = 228;
 /** ~3rem — согласовано с `calc(100vw - 3rem)` в виджетах. */
 const VIEWPORT_WIDGET_GUTTER = 48;
+
+/** Подпись виджета для мобильного редактора раскладки. */
+export function dashboardWidgetDisplayTitle(widget: DashboardWidget): string {
+  if (widget.type === "watchlist") return "Список монет";
+  return WIDGET_CATALOG.find((c) => c.type === widget.type)?.title ?? widget.type;
+}
+
+/** Есть ли у виджета экран настроек (шестерёнка в мобильном редакторе). */
+export function dashboardWidgetHasSettings(type: DashboardWidgetType): boolean {
+  return type === "watchlist" || type === "fed-curve";
+}
+
+export type MobileLayoutRow =
+  | { kind: "single"; widget: DashboardWidget }
+  | { kind: "index-row"; widgets: DashboardWidget[] };
+
+/** Группирует подряд идущие `index` по 1–3 в ряд (как в макете редактора). */
+export function groupWidgetsForMobileLayout(widgets: DashboardWidget[]): MobileLayoutRow[] {
+  const sorted = sortWidgetsForMobileColumn(widgets);
+  const rows: MobileLayoutRow[] = [];
+  let i = 0;
+  while (i < sorted.length) {
+    const w = sorted[i]!;
+    if (w.type === "index") {
+      const group: DashboardWidget[] = [];
+      while (
+        i < sorted.length &&
+        sorted[i]!.type === "index" &&
+        group.length < MOBILE_INDEX_ROW_MAX
+      ) {
+        group.push(sorted[i]!);
+        i += 1;
+      }
+      rows.push({ kind: "index-row", widgets: group });
+      continue;
+    }
+    rows.push({ kind: "single", widget: w });
+    i += 1;
+  }
+  return rows;
+}
+
+/** Перезаписывает x/y после порядка строк мобильного редактора. */
+export function applyMobileLayoutRows(rows: MobileLayoutRow[]): DashboardWidget[] {
+  const step = DASHBOARD_GRID_SIZE;
+  const indexStepX = INDEX_WIDGET_W + DASHBOARD_WIDGET_GAP;
+  let y = 0;
+  const out: DashboardWidget[] = [];
+  for (const row of rows) {
+    if (row.kind === "single") {
+      out.push({ ...row.widget, x: 0, y });
+      y += step;
+      continue;
+    }
+    row.widgets.forEach((w, j) => {
+      out.push({ ...w, x: j * indexStepX, y });
+    });
+    y += step;
+  }
+  return out;
+}
+
+function mobileRowLength(row: MobileLayoutRow): number {
+  return row.kind === "single" ? 1 : row.widgets.length;
+}
+
+/**
+ * Ищет незаполненную index-линию для дозаписи.
+ * `insertAt === null` — последняя незаполненная; иначе — ближайшая к точке вставки.
+ */
+function findIncompleteIndexRowForInsert(
+  rows: MobileLayoutRow[],
+  insertAt: number | null,
+): number | null {
+  const incomplete: { rowIndex: number; start: number; end: number }[] = [];
+  let flat = 0;
+  for (let r = 0; r < rows.length; r += 1) {
+    const row = rows[r]!;
+    const len = mobileRowLength(row);
+    const start = flat;
+    const end = flat + len;
+    if (row.kind === "index-row" && row.widgets.length < MOBILE_INDEX_ROW_MAX) {
+      incomplete.push({ rowIndex: r, start, end });
+    }
+    flat = end;
+  }
+  if (incomplete.length === 0) return null;
+
+  if (insertAt == null) {
+    return incomplete[incomplete.length - 1]!.rowIndex;
+  }
+
+  const at = Math.max(0, insertAt);
+  // Ближайшая незаполненная линия к точке вставки (при равной дистанции — выше).
+  let best: { rowIndex: number; dist: number } | null = null;
+  for (const item of incomplete) {
+    const dist =
+      at < item.start ? item.start - at : at > item.end ? at - item.end : 0;
+    if (!best || dist < best.dist || (dist === best.dist && item.rowIndex < best.rowIndex)) {
+      best = { rowIndex: item.rowIndex, dist };
+    }
+  }
+  return best?.rowIndex ?? null;
+}
+
+/** Вставляет index в незаполненную линию (макс. 3) или создаёт новую. */
+function insertIndexInMobileOrder(
+  widgets: DashboardWidget[],
+  newWidget: DashboardWidget,
+  insertAt: number | null,
+): DashboardWidget[] {
+  const ordered = sortWidgetsForMobileColumn(widgets);
+  const rows = groupWidgetsForMobileLayout(ordered);
+  const fillRowIndex = findIncompleteIndexRowForInsert(rows, insertAt);
+
+  if (fillRowIndex != null) {
+    const row = rows[fillRowIndex]!;
+    if (row.kind === "index-row") {
+      const nextRows = rows.slice();
+      nextRows[fillRowIndex] = { kind: "index-row", widgets: [...row.widgets, newWidget] };
+      return applyMobileLayoutRows(nextRows);
+    }
+  }
+
+  const at = Math.max(0, Math.min(insertAt ?? ordered.length, ordered.length));
+  const next = [...ordered.slice(0, at), newWidget, ...ordered.slice(at)];
+  return applyMobileLayoutRows(
+    groupWidgetsForMobileLayout(next.map((w, i) => ({ ...w, y: i, x: 0 }))),
+  );
+}
+
+/** Вставляет виджет в плоский мобильный порядок по индексу (0 = в начало). */
+export function insertWidgetInMobileOrder(
+  widgets: DashboardWidget[],
+  newWidget: DashboardWidget,
+  insertAt: number | null,
+): DashboardWidget[] {
+  if (newWidget.type === "index") {
+    return insertIndexInMobileOrder(widgets, newWidget, insertAt);
+  }
+  const ordered = sortWidgetsForMobileColumn(widgets);
+  const at = Math.max(0, Math.min(insertAt ?? ordered.length, ordered.length));
+  const next = [...ordered.slice(0, at), newWidget, ...ordered.slice(at)];
+  return applyMobileLayoutRows(
+    groupWidgetsForMobileLayout(next.map((w, i) => ({ ...w, y: i, x: 0 }))),
+  );
+}
+
+/** Переставляет строки мобильного редактора. */
+export function reorderMobileLayoutRows(rows: MobileLayoutRow[], from: number, to: number): MobileLayoutRow[] {
+  if (from === to || from < 0 || to < 0 || from >= rows.length || to >= rows.length) return rows;
+  const next = [...rows];
+  const [item] = next.splice(from, 1);
+  if (!item) return rows;
+  next.splice(to, 0, item);
+  return next;
+}
+
+/** Меняет порядок index внутри одной мобильной линии. */
+export function reorderIndexInMobileRow(
+  rows: MobileLayoutRow[],
+  rowIndex: number,
+  fromCol: number,
+  toCol: number,
+): MobileLayoutRow[] {
+  const row = rows[rowIndex];
+  if (!row || row.kind !== "index-row") return rows;
+  if (
+    fromCol === toCol ||
+    fromCol < 0 ||
+    toCol < 0 ||
+    fromCol >= row.widgets.length ||
+    toCol >= row.widgets.length
+  ) {
+    return rows;
+  }
+  const widgets = [...row.widgets];
+  const [item] = widgets.splice(fromCol, 1);
+  if (!item) return rows;
+  widgets.splice(toCol, 0, item);
+  const next = [...rows];
+  next[rowIndex] = { kind: "index-row", widgets };
+  return next;
+}
+
+export function flatIndexBeforeMobileRow(rows: MobileLayoutRow[], rowIndex: number): number {
+  let n = 0;
+  for (let i = 0; i < rowIndex && i < rows.length; i += 1) {
+    const row = rows[i]!;
+    n += row.kind === "single" ? 1 : row.widgets.length;
+  }
+  return n;
+}
 
 export function createWidgetId(): string {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
@@ -177,6 +388,16 @@ export function dashboardWidgetOuterSize(
   const w = Math.min(maxW, Math.max(200, viewportWidth - VIEWPORT_WIDGET_GUTTER));
   const h = type === "portfolio" ? PORTFOLIO_WIDGET_H : PRICE_WIDGET_H;
   return { w, h };
+}
+
+/**
+ * Канонический (desktop) размер виджета для превью галереи.
+ * ScaledFrame равномерно масштабирует его под ширину карточки.
+ */
+export function dashboardWidgetGalleryOuterSize(
+  type: DashboardWidgetType,
+): { w: number; h: number } {
+  return dashboardWidgetOuterSize(type, 1280);
 }
 
 function isWidgetType(v: unknown): v is DashboardWidgetType {

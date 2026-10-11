@@ -1,6 +1,6 @@
 import { lazy, memo, Suspense, useEffect, useMemo, useState } from "react";
 import { useIsBackdropBlurPaused } from "../../../lib/useIsBackdropBlurPaused";
-import { GALLERY_INDEX } from "../../dashboard/widgetGalleryPreviewData";
+import { GALLERY_INDEX, GALLERY_INDEX_BOARD } from "../../dashboard/widgetGalleryPreviewData";
 import { FearGreedGauge } from "../fear-greed/FearGreedGauge";
 import {
   formatIndexChangePercent,
@@ -52,8 +52,13 @@ function IndexWidgetCard({
 }) {
   const meta = getMarketIndexMeta(indexId);
   const snapshot = useMemo(() => {
-    if (galleryPreview && indexId === "total-2") {
-      return { value: GALLERY_INDEX.value, changePercent: GALLERY_INDEX.changePercent };
+    if (galleryPreview) {
+      return (
+        GALLERY_INDEX_BOARD[indexId] ?? {
+          value: GALLERY_INDEX.value,
+          changePercent: GALLERY_INDEX.changePercent,
+        }
+      );
     }
     return resolveMarketIndexSnapshot(indexId, snapshots);
   }, [galleryPreview, indexId, snapshots]);
@@ -124,48 +129,50 @@ export const IndexWidget = memo(function IndexWidget({
 
   return (
     <div className="index-widget-shell">
-      <div
-        className={cn("portfolio-menu-wrap", menuOpen ? "is-open" : undefined)}
-        onMouseEnter={() => setMenuOpen(true)}
-        onMouseLeave={() => setMenuOpen(false)}
-      >
-        <button
-          type="button"
-          className="portfolio-menu-trigger atlas-fg-primary"
-          onClick={() => setMenuOpen((v) => !v)}
-          aria-label="Меню виджета"
-          aria-expanded={menuOpen}
+      {!galleryPreview ? (
+        <div
+          className={cn("portfolio-menu-wrap", menuOpen ? "is-open" : undefined)}
+          onMouseEnter={() => setMenuOpen(true)}
+          onMouseLeave={() => setMenuOpen(false)}
         >
-          <img src="/assets/portfolio-ui/arrow_down.svg" alt="" className="portfolio-menu-trigger-icon" />
-        </button>
-        <div className="portfolio-menu-rail" aria-hidden={!menuOpen}>
-          {!galleryPreview && canOpenExtendedChart ? (
+          <button
+            type="button"
+            className="portfolio-menu-trigger atlas-fg-primary"
+            onClick={() => setMenuOpen((v) => !v)}
+            aria-label="Меню виджета"
+            aria-expanded={menuOpen}
+          >
+            <img src="/assets/portfolio-ui/arrow_down.svg" alt="" className="portfolio-menu-trigger-icon" />
+          </button>
+          <div className="portfolio-menu-rail" aria-hidden={!menuOpen}>
+            {canOpenExtendedChart ? (
+              <button
+                type="button"
+                className="btn-on-glass btn-on-glass--soft"
+                onClick={() => {
+                  setMenuOpen(false);
+                  onOpenExtendedChart?.(indexId);
+                }}
+                aria-label="Открыть расширенный график"
+              >
+                <img src="/assets/portfolio-ui/bars.svg" alt="" className="portfolio-menu-circle-icon" />
+              </button>
+            ) : null}
             <button
               type="button"
               className="btn-on-glass btn-on-glass--soft"
-              onClick={() => {
-                setMenuOpen(false);
-                onOpenExtendedChart?.(indexId);
-              }}
-              aria-label="Открыть расширенный график"
+              onClick={() => onDeleteWidget?.()}
+              aria-label="Удалить виджет"
             >
-              <img src="/assets/portfolio-ui/bars.svg" alt="" className="portfolio-menu-circle-icon" />
+              <img
+                src="/assets/portfolio-ui/close.svg"
+                alt=""
+                className="portfolio-menu-circle-icon portfolio-menu-circle-icon-close"
+              />
             </button>
-          ) : null}
-          <button
-            type="button"
-            className="btn-on-glass btn-on-glass--soft"
-            onClick={() => onDeleteWidget?.()}
-            aria-label="Удалить виджет"
-          >
-            <img
-              src="/assets/portfolio-ui/close.svg"
-              alt=""
-              className="portfolio-menu-circle-icon portfolio-menu-circle-icon-close"
-            />
-          </button>
+          </div>
         </div>
-      </div>
+      ) : null}
 
       <IndexWidgetCard
         indexId={indexId}

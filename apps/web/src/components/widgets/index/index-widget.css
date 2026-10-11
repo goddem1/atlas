@@ -3,7 +3,7 @@
 .index-widget-shell {
   position: relative;
   width: 100%;
-  max-width: 150px;
+  max-width: 130px;
 }
 
 .index-widget-card {
@@ -13,12 +13,12 @@
   display: flex;
   flex-direction: column;
   width: 100%;
-  max-width: 150px;
+  max-width: 130px;
   height: 100px;
   padding: 0 15px 12px;
   border: 0;
   cursor: default;
-  border-radius: 25px 10px 25px 25px;
+  border-radius: var(--atlas-widget-radius);
   overflow: visible;
   text-align: left;
   color: var(--atlas-fg-primary);
@@ -58,7 +58,7 @@
 
 .index-widget-header {
   width: 100%;
-  padding-bottom: 3px;
+  padding-bottom: 0;
 }
 
 .index-widget-header--gauge {
@@ -123,4 +123,35 @@
 .index-widget-shell .portfolio-menu-circle-icon-close {
   width: 14px;
   height: 14px;
+}
+
+@media (max-width: 430px) {
+  .index-widget-shell,
+  .index-widget-card {
+    width: min(130px, calc(100vw * 130 / 430));
+    max-width: min(130px, calc(100vw * 130 / 430));
+  }
+
+  .index-widget-card {
+    height: auto;
+    padding: 0 10px 10px;
+  }
+
+  .index-widget-body {
+    padding-top: 8px;
+    flex: 0 0 auto;
+  }
+
+  .index-widget-name,
+  .index-widget-name-btn {
+    font-size: 12px;
+  }
+
+  .index-widget-value {
+    font-size: 20px;
+  }
+
+  .index-widget-change {
+    font-size: 14px;
+  }
 }

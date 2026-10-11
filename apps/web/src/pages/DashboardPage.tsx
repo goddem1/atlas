@@ -35,13 +35,17 @@ import { getThemeColors, hexToRgba, mergeDashboardPrefs, type DashboardPrefs } f
 import {
   createWidgetId,
   DASHBOARD_GRID_SIZE,
+  DASHBOARD_MOBILE_SINGLE_COL_MAX_WIDTH,
   DASHBOARD_WIDGET_GAP,
   dashboardWidgetOuterSize,
+  insertWidgetInMobileOrder,
+  isDashboardMobileSingleColumn,
   layoutAllWidgetsSequential,
   layoutDashboardWidgetsForBoard,
   normalizeDashboardWidgets,
   resolveCollisions,
   snapAndClampDashboardPosition,
+  sortWidgetsForMobileColumn,
   type DashboardWidget,
   type DashboardWidgetType,
 } from "../lib/dashboardWidgets";
@@ -50,6 +54,11 @@ import { toUserDashboardState } from "../lib/userDashboardStorage";
 
 const WidgetGalleryModal = lazy(() =>
   import("../components/dashboard/WidgetGalleryModal").then((m) => ({ default: m.WidgetGalleryModal })),
+);
+const MobileDashboardLayoutModal = lazy(() =>
+  import("../components/dashboard/MobileDashboardLayoutModal").then((m) => ({
+    default: m.MobileDashboardLayoutModal,
+  })),
 );
 const MacroEventsModal = lazy(() =>
   import("../components/dashboard/MacroEventsModal").then((m) => ({ default: m.MacroEventsModal })),
@@ -77,6 +86,7 @@ const SAVE_DEBOUNCE_MS = 600;
 type DraggableWidgetProps = {
   widget: DashboardWidget;
   gridSize: number;
+  mobileSingleCol?: boolean;
   onMove: (id: string, x: number, y: number) => void;
   onPriceSymbol: (id: string, symbol: string) => void;
   onRemove: (id: string) => void;
@@ -89,6 +99,7 @@ type DraggableWidgetProps = {
   onWatchlistChange?: (id: string, state: WatchlistWidgetState) => void;
   onIndexIdChange?: (id: string, indexId: MarketIndexId) => void;
   onOpenIndexChart?: (indexId: MarketIndexId) => void;
+  openSettingsToken?: number;
   galleryPreview?: boolean;
 };
 
@@ -97,12 +108,19 @@ function cn(...parts: Array<string | undefined | false>): string {
 }
 
 function draggableWidgetPropsEqual(prev: DraggableWidgetProps, next: DraggableWidgetProps): boolean {
-  return prev.widget === next.widget && prev.gridSize === next.gridSize && prev.galleryPreview === next.galleryPreview;
+  return (
+    prev.widget === next.widget &&
+    prev.gridSize === next.gridSize &&
+    prev.galleryPreview === next.galleryPreview &&
+    prev.mobileSingleCol === next.mobileSingleCol &&
+    prev.openSettingsToken === next.openSettingsToken
+  );
 }
 
 const DraggableWidget = memo(function DraggableWidget({
   widget,
   gridSize,
+  mobileSingleCol = false,
   onMove,
   onPriceSymbol,
   onRemove,
@@ -115,6 +133,7 @@ const DraggableWidget = memo(function DraggableWidget({
   onWatchlistChange,
   onIndexIdChange,
   onOpenIndexChart,
+  openSettingsToken = 0,
   galleryPreview = false,
 }: DraggableWidgetProps) {
   const nodeRef = useRef<HTMLDivElement>(null);
@@ -156,20 +175,20 @@ const DraggableWidget = memo(function DraggableWidget({
               : widget.type === "journal"
                 ? "h-[300px] w-[min(570px,100%)]"
                 : widget.type === "index"
-                  ? "h-[100px] w-[min(150px,100%)]"
+                  ? "h-[100px] w-[min(130px,100%)]"
                   : widget.type === "index-board"
-                    ? "h-[260px] w-[min(280px,100%)]"
+                    ? "h-[228px] w-[min(280px,100%)]"
                     : "w-[min(350px,100%)]";
 
   return (
     <Draggable
       nodeRef={nodeRef}
       handle=".drag-handle"
-      disabled={widget.type === "watchlist" && watchlistSettingsOpen}
+      disabled={mobileSingleCol || (widget.type === "watchlist" && watchlistSettingsOpen)}
       cancel=".price-widget-icon-button,.portfolio-menu-trigger,.btn-on-glass,.macro-cal-expand,.fed-curve-settings-popover,.fed-curve-settings-period-btn,.watchlist-list-header-select,.news-widget-row,.news-widget-inline-link,.notes-widget-row,.notes-widget-inline-link,.journal-widget-row,.journal-period-switcher,.index-widget-name-btn"
       bounds="parent"
       grid={[gridSize, gridSize]}
-      position={isDragging ? undefined : { x: widget.x, y: widget.y }}
+      position={mobileSingleCol ? { x: 0, y: 0 } : isDragging ? undefined : { x: widget.x, y: widget.y }}
       onStart={() => setIsDragging(true)}
       onStop={(_, data) => {
         onMove(widget.id, data.x, data.y);
@@ -205,6 +224,7 @@ const DraggableWidget = memo(function DraggableWidget({
             compareDays={widget.compareDays}
             onCompareDaysChange={handleFedCurveCompareDays}
             onDeleteWidget={handleDelete}
+            openSettingsToken={openSettingsToken}
           />
         ) : widget.type === "watchlist" ? (
           <WatchlistWidget
@@ -217,6 +237,7 @@ const DraggableWidget = memo(function DraggableWidget({
             onWatchlistChange={handleWatchlistChange}
             onDeleteWidget={handleDelete}
             onSettingsOpenChange={handleWatchlistSettingsOpenChange}
+            openSettingsToken={openSettingsToken}
           />
         ) : widget.type === "news" ? (
           <NewsWidget
@@ -270,6 +291,9 @@ export function DashboardPage() {
   const [prefs, setPrefs] = useState<DashboardPrefs>(() => guestSnapshot.prefs);
   const [widgets, setWidgets] = useState<DashboardWidget[]>(() => guestSnapshot.widgets);
   const [galleryOpen, setGalleryOpen] = useState(false);
+  const [mobileLayoutOpen, setMobileLayoutOpen] = useState(false);
+  const [openSettingsTokenById, setOpenSettingsTokenById] = useState<Record<string, number>>({});
+  const [galleryInsertAt, setGalleryInsertAt] = useState<number | null>(null);
   const [macroOpen, setMacroOpen] = useState(false);
   const [telegramNewsOpen, setTelegramNewsOpen] = useState(false);
   const [notesOpen, setNotesOpen] = useState(false);
@@ -285,6 +309,9 @@ export function DashboardPage() {
 
   const boardRef = useRef<HTMLDivElement | null>(null);
   const [boundsVersion, setBoundsVersion] = useState(0);
+  const [mobileSingleCol, setMobileSingleCol] = useState(() =>
+    typeof window !== "undefined" ? isDashboardMobileSingleColumn(window.innerWidth) : false,
+  );
   const skipPersistRef = useRef(true);
   /** Сброс гостевого дашборда только после выхода из аккаунта, не при каждой проверке сессии. */
   const wasLoggedInRef = useRef(false);
@@ -365,13 +392,12 @@ export function DashboardPage() {
         const state = await fetchUserDashboardState();
         if (cancelled) return;
         const rect = boardRef.current?.getBoundingClientRect();
+        const normalized = normalizeDashboardWidgets(state.widgets);
+        const vw = window.innerWidth;
         setWidgets(
-          layoutDashboardWidgetsForBoard(
-            normalizeDashboardWidgets(state.widgets),
-            rect?.width,
-            rect?.height,
-            window.innerWidth,
-          ),
+          isDashboardMobileSingleColumn(vw)
+            ? normalized
+            : layoutDashboardWidgetsForBoard(normalized, rect?.width, rect?.height, vw),
         );
         setPrefs(mergeDashboardPrefs(state.prefs));
         setBoundsVersion((v) => v + 1);
@@ -409,7 +435,20 @@ export function DashboardPage() {
     const { width, height } = el.getBoundingClientRect();
     if (width < 1 || height < 1) return;
     const vw = window.innerWidth;
+    // На телефоне колонка через CSS — не перезаписываем desktop x/y в стор.
+    if (isDashboardMobileSingleColumn(vw)) return;
     setWidgets((ws) => layoutDashboardWidgetsForBoard(ws, width, height, vw));
+  }, []);
+
+  useEffect(() => {
+    const mq = window.matchMedia(`(max-width: ${DASHBOARD_MOBILE_SINGLE_COL_MAX_WIDTH}px)`);
+    const sync = () => {
+      setMobileSingleCol(mq.matches);
+      setBoundsVersion((v) => v + 1);
+    };
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
   }, []);
 
   useLayoutEffect(() => {
@@ -426,7 +465,13 @@ export function DashboardPage() {
     relayoutFromBoard();
   }, [boundsVersion, relayoutFromBoard]);
 
+  const widgetsForRender = useMemo(
+    () => (mobileSingleCol ? sortWidgetsForMobileColumn(widgets) : widgets),
+    [mobileSingleCol, widgets],
+  );
+
   const moveWidget = useCallback((id: string, x: number, y: number) => {
+    if (isDashboardMobileSingleColumn(window.innerWidth)) return;
     const el = boardRef.current;
     const vw = window.innerWidth;
     const rect = el?.getBoundingClientRect();
@@ -489,27 +534,38 @@ export function DashboardPage() {
     const rect = el?.getBoundingClientRect();
     const bw = rect && rect.width > 0 ? rect.width : Math.max(DASHBOARD_GRID_SIZE * 4, vw - 40);
     const bh = rect && rect.height > 0 ? rect.height : Math.max(DASHBOARD_GRID_SIZE * 4, window.innerHeight - 40);
+    const insertAt = galleryInsertAt;
 
     setWidgets((ws) => {
       const idx = ws.length;
       const { h } = dashboardWidgetOuterSize(type, vw);
       const stepY = Math.ceil((h + DASHBOARD_WIDGET_GAP) / DASHBOARD_GRID_SIZE) * DASHBOARD_GRID_SIZE;
       const snapped = snapAndClampDashboardPosition(0, idx * stepY, type, bw, bh, vw);
-      const next = [
-        ...ws,
-        {
-          id: createWidgetId(),
-          type,
-          x: snapped.x,
-          y: snapped.y,
-          ...(type === "index" && options?.indexId ? { indexId: options.indexId } : {}),
-        },
-      ];
+      const created: DashboardWidget = {
+        id: createWidgetId(),
+        type,
+        x: snapped.x,
+        y: snapped.y,
+        ...(type === "index" && options?.indexId ? { indexId: options.indexId } : {}),
+      };
+      if (isDashboardMobileSingleColumn(vw)) {
+        if (type === "index" || insertAt != null) {
+          return insertWidgetInMobileOrder(ws, created, insertAt);
+        }
+        return [...ws, created];
+      }
+      const next = [...ws, created];
       return layoutAllWidgetsSequential(next, bw, bh, vw);
     });
+    setGalleryInsertAt(null);
   },
-    [],
+    [galleryInsertAt],
   );
+
+  const openGalleryAt = useCallback((flatIndex: number | null = null) => {
+    setGalleryInsertAt(flatIndex);
+    setGalleryOpen(true);
+  }, []);
 
   const openMacroCalendar = useCallback(() => setMacroOpen(true), []);
   const openNotes = useCallback((noteId?: string) => {
@@ -704,8 +760,11 @@ export function DashboardPage() {
 
       <main className="dashboard-main-surface" style={mainStyle}>
         {/* Область виджетов: inset 20px — вне этой зоны нельзя ставить (bounds родителя для Draggable). */}
-        <div ref={boardRef} className="pointer-events-none absolute inset-5">
-          {widgets.map((w) =>
+        <div
+          ref={boardRef}
+          className={cn("dashboard-widget-board", mobileSingleCol && "dashboard-widget-board--mobile-col")}
+        >
+          {widgetsForRender.map((w) =>
             w.type === "price-sparkline" ||
             w.type === "portfolio" ||
             w.type === "macro-calendar" ||
@@ -720,6 +779,7 @@ export function DashboardPage() {
                 key={w.id}
                 widget={w}
                 gridSize={DASHBOARD_GRID_SIZE}
+                mobileSingleCol={mobileSingleCol}
                 onMove={moveWidget}
                 onPriceSymbol={setPriceWidgetSymbol}
                 onRemove={removeWidget}
@@ -732,6 +792,7 @@ export function DashboardPage() {
                 onWatchlistChange={setWatchlistState}
                 onIndexIdChange={setIndexId}
                 onOpenIndexChart={openKlineChartForIndex}
+                openSettingsToken={openSettingsTokenById[w.id] ?? 0}
                 galleryPreview={!isLoggedIn}
               />
             ) : null,
@@ -739,7 +800,13 @@ export function DashboardPage() {
         </div>
       </main>
 
-      <div className="dashboard-floating-actions">
+      <div
+          className={cn(
+          "dashboard-floating-actions",
+          mobileLayoutOpen && "dashboard-floating-actions--layout-open",
+          galleryOpen && "dashboard-floating-actions--gallery-open",
+        )}
+      >
         <DashboardSettings
           prefs={prefs}
           onChange={setPrefs}
@@ -747,6 +814,22 @@ export function DashboardPage() {
           user={dashboardUser}
           onOpenAuth={() => setAuthOpen(true)}
           onUserUpdated={handleUserUpdated}
+          onOpenMobileLayout={() => setMobileLayoutOpen(true)}
+          onCloseMobileLayout={() => setMobileLayoutOpen(false)}
+          onCloseGallery={() => {
+            setGalleryOpen(false);
+            setGalleryInsertAt(null);
+          }}
+          onAddWidget={() => {
+            if (galleryOpen) {
+              setGalleryOpen(false);
+              setGalleryInsertAt(null);
+              return;
+            }
+            openGalleryAt(null);
+          }}
+          mobileLayoutOpen={mobileLayoutOpen}
+          galleryOpen={galleryOpen}
           onSignOut={() =>
             void authClient.signOut().then(() => {
               resetToGuestDashboard();
@@ -756,22 +839,51 @@ export function DashboardPage() {
         />
         <button
           type="button"
-          className="dashboard-floating-action-btn btn-glass"
+          className="dashboard-floating-action-btn btn-glass dashboard-floating-action-btn--add-desktop"
           aria-label="Добавить виджет"
           aria-haspopup="dialog"
           aria-expanded={galleryOpen}
-          onClick={() => setGalleryOpen(true)}
+          onClick={() => {
+            if (galleryOpen) {
+              setGalleryOpen(false);
+              setGalleryInsertAt(null);
+              return;
+            }
+            openGalleryAt(null);
+          }}
         >
           <PlusIcon />
         </button>
       </div>
+
+      {mobileLayoutOpen ? (
+        <Suspense fallback={null}>
+          <MobileDashboardLayoutModal
+            open
+            widgets={widgets}
+            onChange={setWidgets}
+            onClose={() => setMobileLayoutOpen(false)}
+            onInsertAt={(flatIndex) => openGalleryAt(flatIndex)}
+            onRemove={removeWidget}
+            onOpenSettings={(widget) => {
+              setOpenSettingsTokenById((prev) => ({
+                ...prev,
+                [widget.id]: (prev[widget.id] ?? 0) + 1,
+              }));
+            }}
+          />
+        </Suspense>
+      ) : null}
 
       {galleryOpen ? (
         <Suspense fallback={null}>
           <WidgetGalleryModal
             open
             isLoggedIn={isLoggedIn}
-            onClose={() => setGalleryOpen(false)}
+            onClose={() => {
+              setGalleryOpen(false);
+              setGalleryInsertAt(null);
+            }}
             onPick={addWidget}
           />
         </Suspense>

@@ -14,6 +14,8 @@ import { exec } from "node:child_process";
 import QRCode from "qrcode";
 import { TelegramClient } from "telegram";
 import { StringSession } from "telegram/sessions/index.js";
+import { parseOutboundProxyUrl } from "../lib/httpProxy.js";
+import type { TelegramSocksProxy } from "../lib/httpProxy.js";
 
 const apiId = Number.parseInt(process.env.TELEGRAM_API_ID?.trim() ?? "", 10);
 const apiHash = process.env.TELEGRAM_API_HASH?.trim() ?? "";
@@ -22,6 +24,44 @@ const twoFa = process.env.TELEGRAM_2FA_PASSWORD?.trim() ?? "";
 if (!Number.isFinite(apiId) || apiId <= 0 || !apiHash) {
   console.error("Задайте TELEGRAM_API_ID и TELEGRAM_API_HASH в apps/api/.env");
   process.exit(1);
+}
+
+/** Только явный TELEGRAM_PROXY_* — без угадывания SOCKS из HTTP RapidAPI. */
+function readAuthProxy(): TelegramSocksProxy | undefined {
+  const explicitUrl = process.env.TELEGRAM_PROXY_URL?.trim();
+  if (explicitUrl) {
+    const parsed = parseOutboundProxyUrl(explicitUrl);
+    if (parsed && (parsed.protocol === "socks4" || parsed.protocol === "socks5")) {
+      return {
+        ip: parsed.host,
+        port: parsed.port,
+        socksType: parsed.protocol === "socks4" ? 4 : 5,
+        username: parsed.username,
+        password: parsed.password,
+      };
+    }
+  }
+  const host = process.env.TELEGRAM_PROXY_HOST?.trim();
+  const portRaw = process.env.TELEGRAM_PROXY_PORT?.trim();
+  if (!host || !portRaw) return undefined;
+  const port = Number.parseInt(portRaw, 10);
+  if (!Number.isFinite(port)) return undefined;
+  const type = (process.env.TELEGRAM_PROXY_TYPE ?? "socks5").toLowerCase();
+  if (type !== "socks4" && type !== "socks5") return undefined;
+  return {
+    ip: host,
+    port,
+    socksType: type === "socks4" ? 4 : 5,
+    username: process.env.TELEGRAM_PROXY_USERNAME?.trim() || undefined,
+    password: process.env.TELEGRAM_PROXY_PASSWORD?.trim() || undefined,
+  };
+}
+
+const proxy = readAuthProxy();
+if (proxy) {
+  console.log(`Прокси: socks${proxy.socksType}://${proxy.ip}:${proxy.port}`);
+} else {
+  console.log("Прокси не задан — прямое подключение к Telegram.");
 }
 
 const apiDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
@@ -56,6 +96,7 @@ function openFile(filePath: string): void {
 
 const client = new TelegramClient(new StringSession(""), apiId, apiHash, {
   connectionRetries: 5,
+  ...(proxy ? { proxy } : {}),
 });
 
 console.log("Подключение к Telegram…");

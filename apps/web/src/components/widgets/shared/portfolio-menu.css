@@ -83,3 +83,9 @@ html[data-dashboard-theme="dark"] .portfolio-menu-circle-icon {
 .portfolio-menu-circle-icon-arrow {
   transform: rotate(45deg);
 }
+
+@media (max-width: 430px) {
+  .portfolio-menu-wrap {
+    display: none;
+  }
+}

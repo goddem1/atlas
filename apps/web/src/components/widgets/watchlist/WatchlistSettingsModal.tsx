@@ -184,7 +184,11 @@ export function WatchlistSettingsModal({
     };
 
     const onAnimationEnd = (e: AnimationEvent) => {
-      if (e.target === dialog && e.animationName === "watchlist-settings-drawer-in") {
+      if (
+        e.target === dialog &&
+        (e.animationName === "watchlist-settings-drawer-in" ||
+          e.animationName === "watchlist-settings-sheet-in")
+      ) {
         notifyReady();
       }
     };
@@ -205,10 +209,12 @@ export function WatchlistSettingsModal({
       return;
     }
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key !== "Escape") return;
+      e.stopPropagation();
+      onClose();
     };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
+    document.addEventListener("keydown", onKey, true);
+    return () => document.removeEventListener("keydown", onKey, true);
   }, [open, onClose]);
 
   const finishDrag = () => {
@@ -277,6 +283,7 @@ export function WatchlistSettingsModal({
         className="watchlist-settings-dialog atlas-glass"
         onClick={(e) => e.stopPropagation()}
       >
+        <span className="watchlist-settings-sheet-handle" aria-hidden />
         <div className="watchlist-settings-header">
           <div className="watchlist-settings-header-backdrop atlas-glass" aria-hidden="true" />
           <h2 id="watchlist-settings-title" className="watchlist-settings-title">

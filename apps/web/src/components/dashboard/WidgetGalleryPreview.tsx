@@ -24,8 +24,14 @@ function LiveWidgetPreview({
   widgetType: DashboardWidgetType;
   children: React.ReactNode;
 }) {
+  const previewMod =
+    widgetType === "price-sparkline"
+      ? " widget-gallery-preview--price"
+      : widgetType === "index-board"
+        ? " widget-gallery-preview--index-board"
+        : "";
   return (
-    <div className="widget-gallery-preview widget-gallery-preview--live" aria-hidden>
+    <div className={`widget-gallery-preview widget-gallery-preview--live${previewMod}`} aria-hidden>
       <WidgetGalleryScaledFrame widgetType={widgetType}>{children}</WidgetGalleryScaledFrame>
     </div>
   );

@@ -1,3 +1,5 @@
+/* Desktop (default): прежняя галерея в стеклянном диалоге. */
+
 .widget-gallery-overlay {
   position: fixed;
   inset: 0;
@@ -77,6 +79,8 @@ html[data-dashboard-theme="dark"] .widget-gallery-sidebar {
 .widget-gallery-search {
   position: relative;
   display: block;
+  border-radius: 15px;
+  overflow: hidden;
 }
 
 .widget-gallery-search-icon {
@@ -99,6 +103,9 @@ html[data-dashboard-theme="dark"] .widget-gallery-sidebar {
   padding-left: 42px;
   padding-right: 14px;
   font-size: 20px;
+  height: 36px;
+  border-radius: 15px;
+  background: var(--atlas-list-on-glass-hover-bg);
 }
 
 .widget-gallery-search-input::placeholder {
@@ -287,22 +294,24 @@ html[data-dashboard-theme="dark"] .widget-gallery-category-btn.is-active {
   width: 100%;
   height: 100%;
   min-height: 0;
-  border-radius: 20px;
+  border-radius: 0;
   color: var(--atlas-fg-primary);
-  overflow: hidden;
+  /* visible: иначе scale + overflow подрезает скругления «уголками» */
+  overflow: visible;
 }
 
 .widget-gallery-preview--live {
   padding: 0;
-  overflow: hidden;
+  overflow: visible;
   background: transparent;
+  text-align: left;
 }
 
 .widget-gallery-live-host {
   width: 100%;
   height: 100%;
   min-height: 0;
-  overflow: hidden;
+  overflow: visible;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -312,11 +321,405 @@ html[data-dashboard-theme="dark"] .widget-gallery-category-btn.is-active {
 .widget-gallery-live-stage {
   position: relative;
   flex-shrink: 0;
+  overflow: visible;
 }
 
 .widget-gallery-live-inner {
   position: relative;
   flex-shrink: 0;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+/*
+  clip-path + transform:scale в галерее ломает углы.
+  Скругление — через overflow/border-radius на карточке.
+*/
+.widget-gallery-preview .price-widget-shell > .atlas-glass,
+.widget-gallery-preview .macro-cal-shell > .atlas-glass,
+.widget-gallery-preview .portfolio-widget-shell > .atlas-glass,
+.widget-gallery-preview .notes-widget-shell > .atlas-glass,
+.widget-gallery-preview .news-widget-shell > .atlas-glass,
+.widget-gallery-preview .watchlist-shell > .atlas-glass,
+.widget-gallery-preview .journal-widget-card-elevated > .atlas-glass,
+.widget-gallery-preview .index-widget-shell > .atlas-glass,
+.widget-gallery-preview .index-board-shell > .atlas-glass,
+.widget-gallery-preview .fed-curve-widget-shell > .atlas-glass,
+.widget-gallery-preview .fear-greed-widget-shell > .atlas-glass {
+  clip-path: none !important;
+  overflow: hidden !important;
+  border: var(--atlas-glass-border) !important;
+  background-color: var(--atlas-glass-bg) !important;
+  box-shadow: var(--atlas-glass-shadow-inner) !important;
+}
+
+.widget-gallery-preview .price-widget-shell > .atlas-glass::before,
+.widget-gallery-preview .macro-cal-shell > .atlas-glass::before,
+.widget-gallery-preview .portfolio-widget-shell > .atlas-glass::before,
+.widget-gallery-preview .notes-widget-shell > .atlas-glass::before,
+.widget-gallery-preview .news-widget-shell > .atlas-glass::before,
+.widget-gallery-preview .watchlist-shell > .atlas-glass::before,
+.widget-gallery-preview .journal-widget-card-elevated > .atlas-glass::before,
+.widget-gallery-preview .index-widget-shell > .atlas-glass::before,
+.widget-gallery-preview .index-board-shell > .atlas-glass::before,
+.widget-gallery-preview .fed-curve-widget-shell > .atlas-glass::before,
+.widget-gallery-preview .fear-greed-widget-shell > .atlas-glass::before {
+  border: none !important;
+}
+
+/* Канонические высоты виджетов — ScaledFrame масштабирует целиком. */
+.widget-gallery-preview .watchlist-shell,
+.widget-gallery-preview .watchlist-card {
+  height: 530px !important;
+}
+
+.widget-gallery-preview .news-widget-shell,
+.widget-gallery-preview .news-widget-card {
+  height: 494px !important;
+}
+
+.widget-gallery-preview .notes-widget-shell,
+.widget-gallery-preview .notes-widget-card {
+  height: 326px !important;
+}
+
+.widget-gallery-preview .portfolio-widget-shell,
+.widget-gallery-preview .portfolio-widget-card {
+  width: 500px !important;
+  max-width: 500px !important;
+  height: 250px !important;
+}
+
+.widget-gallery-preview .portfolio-widget-left {
+  padding: 20px 10px 20px 20px !important;
+}
+
+.widget-gallery-preview .portfolio-widget-right {
+  padding: 20px 20px 20px 10px !important;
+  text-align: left !important;
+}
+
+.widget-gallery-preview .portfolio-total {
+  font-size: 34px !important;
+}
+
+.widget-gallery-preview .portfolio-total-pnl,
+.widget-gallery-preview .portfolio-total-pnl.portfolio-pnl-positive {
+  font-size: 18px !important;
+}
+
+.widget-gallery-preview .portfolio-pnl-positive {
+  font-size: 20px !important;
+}
+
+.widget-gallery-preview .portfolio-chart-block {
+  margin-top: 2px !important;
+  --portfolio-chart-height: 120px;
+}
+
+.widget-gallery-preview .portfolio-chart-wrap {
+  width: 100% !important;
+  max-width: 100% !important;
+  height: var(--portfolio-chart-height) !important;
+}
+
+.widget-gallery-preview .portfolio-timeframe-switcher {
+  gap: 10px !important;
+  margin-top: 12px !important;
+}
+
+.widget-gallery-preview .portfolio-timeframe-switcher > .btn-on-glass {
+  width: auto !important;
+  min-width: 40px !important;
+  max-width: none !important;
+  height: 28px !important;
+}
+
+.widget-gallery-preview .portfolio-asset-icon {
+  width: 34px !important;
+  height: 34px !important;
+}
+
+.widget-gallery-preview .portfolio-asset-row {
+  grid-template-columns: 34px 1fr auto !important;
+}
+
+.widget-gallery-preview .portfolio-asset-symbol {
+  font-size: 18px !important;
+  text-align: left !important;
+}
+
+.widget-gallery-preview .portfolio-asset-values {
+  text-align: right !important;
+}
+
+.widget-gallery-preview .portfolio-asset-value-positive,
+.widget-gallery-preview .portfolio-asset-value-negative {
+  font-size: 20px !important;
+  font-variant-numeric: tabular-nums;
+}
+
+.widget-gallery-preview .portfolio-asset-pnl-positive,
+.widget-gallery-preview .portfolio-asset-pnl-negative {
+  font-size: 12px !important;
+  margin-top: 2px !important;
+}
+
+.widget-gallery-preview .journal-widget-shell,
+.widget-gallery-preview .journal-widget-card-elevated,
+.widget-gallery-preview .journal-widget-card {
+  width: 570px !important;
+  max-width: 570px !important;
+  height: 300px !important;
+}
+
+.widget-gallery-preview .journal-widget-left {
+  padding: 20px 10px 16px 20px !important;
+  text-align: left !important;
+}
+
+.widget-gallery-preview .journal-widget-right {
+  padding: 20px !important;
+  font-size: 20px !important;
+  line-height: 24px !important;
+  text-align: left !important;
+}
+
+.widget-gallery-preview .journal-widget-balance {
+  font-size: 34px !important;
+}
+
+.widget-gallery-preview .journal-widget-total-pnl,
+.widget-gallery-preview .journal-widget-total-pnl.journal-widget-pnl-positive {
+  font-size: 18px !important;
+}
+
+.widget-gallery-preview .journal-widget-pnl-positive {
+  color: #34c759 !important;
+  font-size: inherit !important;
+}
+
+.widget-gallery-preview .journal-widget-chart-block {
+  margin-top: 2px !important;
+  --portfolio-chart-height: 100px;
+}
+
+.widget-gallery-preview .journal-widget-chart-wrap {
+  flex: 1 1 auto !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  height: auto !important;
+  min-height: 0 !important;
+}
+
+.widget-gallery-preview .journal-widget-period {
+  display: block !important;
+}
+
+.widget-gallery-preview .journal-widget-chart-block .portfolio-timeframe-switcher {
+  width: 100% !important;
+  gap: 8px !important;
+  margin-top: 12px !important;
+}
+
+.widget-gallery-preview .journal-widget-chart-block .portfolio-timeframe-switcher > .btn-on-glass {
+  flex: 1 1 0 !important;
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  height: 28px !important;
+}
+
+.widget-gallery-preview .journal-widget-list {
+  gap: 15px !important;
+}
+
+.widget-gallery-preview .journal-widget-list > li:nth-child(n + 6):not(:last-child) {
+  display: list-item !important;
+}
+
+.widget-gallery-preview .journal-widget-row {
+  gap: 8px !important;
+  grid-template-columns: 22px 52px minmax(0, 1fr) auto !important;
+}
+
+.widget-gallery-preview .journal-widget-direction,
+.widget-gallery-preview .journal-widget-row-date,
+.widget-gallery-preview .journal-widget-row-symbol,
+.widget-gallery-preview .journal-widget-row-pnl {
+  font-size: 20px !important;
+  line-height: 24px !important;
+}
+
+.widget-gallery-preview .journal-widget-row--view-all {
+  font-size: 18px !important;
+  line-height: 1.2 !important;
+}
+
+.widget-gallery-preview .journal-widget-row-pnl {
+  font-variant-numeric: tabular-nums;
+  text-align: right !important;
+}
+
+.widget-gallery-preview .macro-cal-shell,
+.widget-gallery-preview .macro-cal-card {
+  height: 300px !important;
+}
+
+.widget-gallery-preview .fed-curve-widget-shell {
+  width: 100% !important;
+  max-width: none !important;
+  height: 200px !important;
+}
+
+.widget-gallery-preview .fear-greed-widget-shell,
+.widget-gallery-preview .fear-greed-widget-card {
+  height: 100px !important;
+}
+
+.widget-gallery-preview .index-widget-shell,
+.widget-gallery-preview .index-widget-card {
+  width: 130px !important;
+  max-width: 130px !important;
+  height: 100px !important;
+  padding: 0 15px 12px !important;
+}
+
+.widget-gallery-preview .index-widget-body {
+  padding-top: 12px !important;
+  flex: 1 1 auto !important;
+}
+
+.widget-gallery-preview .index-widget-name,
+.widget-gallery-preview .index-widget-name-btn {
+  font-size: 14px !important;
+}
+
+.widget-gallery-preview .index-widget-value {
+  font-size: 24px !important;
+}
+
+.widget-gallery-preview .index-widget-change {
+  font-size: 16px !important;
+  padding-top: 6px !important;
+}
+
+.widget-gallery-preview .index-board-shell,
+.widget-gallery-preview .index-board-card {
+  width: 100% !important;
+  max-width: none !important;
+  height: 228px !important;
+}
+
+.widget-gallery-preview .index-board-body {
+  padding: 12px 20px 16px !important;
+  text-align: left !important;
+}
+
+.widget-gallery-preview .index-board-label {
+  font-size: 16px !important;
+  line-height: 1.2 !important;
+  font-weight: 400 !important;
+  text-align: left !important;
+}
+
+.widget-gallery-preview .index-board-value {
+  font-size: 20px !important;
+  line-height: 1.2 !important;
+  font-weight: 400 !important;
+}
+
+.widget-gallery-preview .index-board-list {
+  gap: 7px !important;
+}
+
+/* Десктопный вид: мобильные @media (≤430 / width:430) иначе раздувают до 410px и обрезают. */
+.widget-gallery-preview .price-widget-shell {
+  width: 100% !important;
+  max-width: none !important;
+  height: 200px !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.widget-gallery-preview .price-widget-card {
+  width: 100% !important;
+  max-width: none !important;
+  height: 200px !important;
+  padding: 12px 14px 10px !important;
+  box-sizing: border-box !important;
+}
+
+.widget-gallery-preview .price-widget-header,
+.widget-gallery-preview .price-widget-header.price-widget-drag-handle {
+  padding: 0 0 10px !important;
+  column-gap: 10px !important;
+}
+
+.widget-gallery-preview .price-widget-asset-head {
+  gap: 4px !important;
+}
+
+.widget-gallery-preview .price-widget-icon-button,
+.widget-gallery-preview .price-widget-icon-button .price-widget-asset-icon,
+.widget-gallery-preview .price-widget-icon-button .price-widget-default-icon,
+.widget-gallery-preview .price-widget-asset-icon,
+.widget-gallery-preview .price-widget-default-icon {
+  width: 36px !important;
+  height: 36px !important;
+}
+
+.widget-gallery-preview .price-widget-default-icon {
+  font-size: 14px !important;
+}
+
+.widget-gallery-preview .price-widget-symbol,
+.widget-gallery-preview .price-widget-symbol-btn {
+  font-size: 18px !important;
+}
+
+.widget-gallery-preview .price-widget-price {
+  font-size: 24px !important;
+}
+
+.widget-gallery-preview .price-widget-change-badge {
+  height: auto !important;
+  padding: 2px 4px !important;
+  border-radius: 6px !important;
+  font-size: 12px !important;
+}
+
+.widget-gallery-preview .price-widget-chart-wrap {
+  flex: 1 1 auto !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  height: auto !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 6px 0 !important;
+  align-self: stretch !important;
+}
+
+.widget-gallery-preview .price-widget-svg {
+  width: 100% !important;
+  height: auto !important;
+  max-height: none !important;
+  aspect-ratio: auto !important;
+}
+
+.widget-gallery-preview .price-widget-axis-svg {
+  width: 100% !important;
+  max-width: none !important;
+  margin: -4px 0 0 !important;
+  overflow: visible !important;
+}
+
+.widget-gallery-preview .price-widget-axis-text {
+  font-size: 11px !important;
+}
+
+.widget-gallery-preview .price-widget-shell > .portfolio-menu-wrap {
+  display: none !important;
 }
 
 @media (max-width: 1320px) {
@@ -341,7 +744,7 @@ html[data-dashboard-theme="dark"] .widget-gallery-category-btn.is-active {
   }
 }
 
-@media (max-width: 720px) {
+@media (max-width: 720px) and (min-width: 431px) {
   .widget-gallery-layout {
     flex-direction: column;
   }
@@ -362,5 +765,296 @@ html[data-dashboard-theme="dark"] .widget-gallery-category-btn.is-active {
     grid-template-columns: 296px;
     grid-auto-rows: 316px;
     justify-content: center;
+  }
+}
+
+/* Mobile ≤430: новый полноэкранный экран добавления. */
+@media (max-width: 430px) {
+  .widget-gallery-overlay {
+    z-index: 470;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    padding: 0;
+    background:
+      linear-gradient(rgba(255, 255, 255, 0.45)),
+      linear-gradient(135deg, #daecff 0%, #f6d6ff 100%);
+    overflow: hidden;
+  }
+
+  html[data-dashboard-theme="dark"] .widget-gallery-overlay {
+    background:
+      linear-gradient(rgba(0, 0, 0, 0.72)),
+      linear-gradient(45deg, #b3423c 0%, #478c58 100%);
+  }
+
+  .widget-gallery-backdrop {
+    display: none;
+  }
+
+  .widget-gallery-dialog {
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    border-radius: 0;
+    overflow: hidden;
+    padding: 12px 14px calc(1rem + 50px + 24px);
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .widget-gallery-dialog.atlas-glass {
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+  }
+
+  .widget-gallery-layout {
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .widget-gallery-sidebar.widget-gallery-header {
+    position: relative;
+    isolation: isolate;
+    width: 100%;
+    flex: 0 0 auto;
+    gap: 10px;
+    margin-bottom: 16px;
+    padding: 10px;
+    border: var(--atlas-glass-border);
+    border-radius: 24px;
+    border-right: var(--atlas-glass-border);
+    border-bottom: var(--atlas-glass-border);
+    background-color: var(--atlas-glass-bg);
+    box-shadow: var(--atlas-glass-shadow);
+    backdrop-filter: var(--atlas-glass-backdrop);
+    -webkit-backdrop-filter: var(--atlas-glass-backdrop);
+    overflow: hidden;
+  }
+
+  html[data-dashboard-theme="dark"] .widget-gallery-sidebar.widget-gallery-header {
+    background-color: var(--atlas-glass-bg);
+  }
+
+  .widget-gallery-search {
+    position: relative;
+    z-index: 1;
+    border-radius: 15px;
+    background: transparent;
+    overflow: hidden;
+  }
+
+  .widget-gallery-search-icon {
+    left: 16px;
+  }
+
+  .widget-gallery-search-input {
+    box-sizing: border-box;
+    width: 100%;
+    height: 36px;
+    margin: 0;
+    padding: 0 16px 0 46px;
+    border: 0;
+    border-radius: 15px;
+    background: var(--atlas-list-on-glass-hover-bg);
+    box-shadow: none;
+    font-size: 16px;
+    line-height: 1.2;
+  }
+
+  .widget-gallery-search-input::placeholder {
+    font-size: 16px;
+    color: var(--atlas-second-color);
+    opacity: 0.9;
+  }
+
+  .widget-gallery-categories {
+    position: relative;
+    z-index: 1;
+    flex: 0 0 auto;
+    max-height: none;
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+  }
+
+  .widget-gallery-categories-list {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    width: max-content;
+    min-width: 100%;
+  }
+
+  .widget-gallery-categories-list > li {
+    height: auto;
+    flex: 0 0 auto;
+  }
+
+  .widget-gallery-category-btn {
+    width: auto;
+    height: 40px;
+    padding: 0 16px;
+    border-radius: 15px;
+    background: transparent;
+    font-size: 14px;
+    line-height: 1.2;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  .widget-gallery-category-btn:hover {
+    background: transparent;
+  }
+
+  .widget-gallery-category-btn.is-active {
+    background: var(--atlas-list-on-glass-hover-bg);
+  }
+
+  .widget-gallery-category-btn:disabled:hover {
+    background: transparent;
+  }
+
+  html[data-dashboard-theme="dark"] .widget-gallery-category-btn {
+    background: transparent;
+  }
+
+  html[data-dashboard-theme="dark"] .widget-gallery-category-btn:hover {
+    background: transparent;
+  }
+
+  html[data-dashboard-theme="dark"] .widget-gallery-category-btn.is-active {
+    background: var(--atlas-list-on-glass-hover-bg);
+  }
+
+  html[data-dashboard-theme="dark"] .widget-gallery-category-btn:disabled:hover {
+    background: transparent;
+  }
+
+  .widget-gallery-content {
+    width: 100%;
+    padding: 0;
+    overflow-x: hidden;
+  }
+
+  .widget-gallery-grid {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    grid-template-columns: none;
+    grid-auto-rows: auto;
+    gap: 20px;
+    padding: 0 0 12px;
+  }
+
+  .widget-gallery-grid > li {
+    width: 100%;
+    max-width: 360px;
+    height: auto;
+  }
+
+  .widget-gallery-card {
+    width: 100%;
+    height: auto;
+    align-items: stretch;
+    text-align: center;
+  }
+
+  .widget-gallery-card-preview {
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+  }
+
+  .widget-gallery-card-text {
+    width: 100%;
+    margin-top: 12px;
+    padding: 0 8px;
+    box-sizing: border-box;
+  }
+
+  .widget-gallery-card-desc {
+    margin: 6px 0 0;
+  }
+
+  .widget-gallery-preview--live {
+    width: 100%;
+  }
+
+  .widget-gallery-live-host {
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /*
+    Только «График цены»: без scale, на всю ширину карточки —
+    как у кривой ФРС. Остальные виджеты не трогаем.
+  */
+  .widget-gallery-preview--price .widget-gallery-live-stage {
+    width: 100% !important;
+    height: 200px !important;
+  }
+
+  .widget-gallery-preview--price .widget-gallery-live-inner {
+    width: 100% !important;
+    height: 200px !important;
+    transform: none !important;
+  }
+
+  .widget-gallery-preview--price .price-widget-shell,
+  .widget-gallery-preview--price .price-widget-card {
+    width: 100% !important;
+    max-width: none !important;
+    height: 200px !important;
+  }
+
+  /*
+    «Список индексов»: без scale (иначе 280→360 раздувает шрифты),
+    размеры как у мобильного виджета на дашборде.
+  */
+  .widget-gallery-preview--index-board .widget-gallery-live-stage {
+    width: 100% !important;
+    height: 228px !important;
+  }
+
+  .widget-gallery-preview--index-board .widget-gallery-live-inner {
+    width: 100% !important;
+    height: 228px !important;
+    transform: none !important;
+  }
+
+  .widget-gallery-preview--index-board .index-board-shell,
+  .widget-gallery-preview--index-board .index-board-card {
+    width: 100% !important;
+    max-width: none !important;
+    height: 228px !important;
+  }
+
+  .widget-gallery-preview--index-board .index-board-body {
+    padding: 10px !important;
+    text-align: left !important;
+  }
+
+  .widget-gallery-preview--index-board .index-board-label {
+    font-size: 16px !important;
+  }
+
+  .widget-gallery-preview--index-board .index-board-value {
+    font-size: 20px !important;
+  }
+
+  .widget-gallery-preview--index-board .index-board-list {
+    gap: 7px !important;
   }
 }

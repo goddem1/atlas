@@ -1,0 +1,257 @@
+.mdl-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 470;
+  display: flex;
+  flex-direction: column;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.45)),
+    linear-gradient(135deg, #daecff 0%, #f6d6ff 100%);
+  overflow: hidden;
+}
+
+html[data-dashboard-theme="dark"] .mdl-overlay {
+  background:
+    linear-gradient(rgba(0, 0, 0, 0.72)),
+    linear-gradient(45deg, #b3423c 0%, #478c58 100%);
+}
+
+.mdl-dialog {
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 12px 14px calc(1rem + 50px + 12px);
+  overflow: hidden;
+}
+
+.mdl-body {
+  flex: 1;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding-bottom: 12px;
+  scrollbar-width: none;
+}
+
+.mdl-body::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+.mdl-block {
+  display: flex;
+  flex-direction: column;
+}
+
+.mdl-row {
+  border-radius: 16px;
+}
+
+.mdl-row.is-dragging {
+  opacity: 0.55;
+}
+
+.mdl-drop-line {
+  height: 3px;
+  margin: 4px 2px;
+  border-radius: 999px;
+  background: #64a9e8;
+  box-shadow: 0 0 0 2px rgba(100, 169, 232, 0.25);
+  pointer-events: none;
+}
+
+.mdl-index-cell.is-dragging {
+  opacity: 0.55;
+}
+
+.mdl-drop-line-v {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 3px;
+  border-radius: 999px;
+  background: #64a9e8;
+  box-shadow: 0 0 0 2px rgba(100, 169, 232, 0.25);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.mdl-drop-line-v--after {
+  left: auto;
+  right: 0;
+}
+
+.mdl-move-handle {
+  touch-action: none;
+  cursor: grab;
+}
+
+.mdl-move-handle:active {
+  cursor: grabbing;
+}
+
+.mdl-pill-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.mdl-pill {
+  flex: 1;
+  min-width: 0;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  min-height: 48px;
+  padding: 12px 18px;
+  border-radius: 15px;
+}
+
+.mdl-pill--index {
+  justify-content: center;
+  width: 100%;
+  min-height: 42px;
+  padding: 10px 12px;
+}
+
+.mdl-index-grid {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 8px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.mdl-index-cell {
+  position: relative;
+  width: min(130px, calc(100vw * 130 / 430));
+  max-width: 130px;
+  min-width: 0;
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  box-sizing: border-box;
+}
+
+.mdl-pill-label {
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.2;
+  color: var(--atlas-fg-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mdl-pill-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.mdl-pill-actions--below {
+  justify-content: center;
+  margin-top: 8px;
+}
+
+.mdl-pill-actions--index {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.mdl-pill-actions-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mdl-action-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+}
+
+.mdl-action-icon {
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+  filter: var(--atlas-search-icon-filter);
+}
+
+.mdl-action-icon--settings {
+  width: 24px;
+  height: 24px;
+}
+
+.mdl-action-icon--close {
+  width: 20px;
+  height: 20px;
+}
+
+.mdl-insert {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0;
+}
+
+.mdl-insert-line {
+  flex: 1;
+  height: 0;
+  border-top: 1.5px dashed rgba(120, 120, 128, 0.45);
+}
+
+html[data-dashboard-theme="dark"] .mdl-insert-line {
+  border-top-color: rgba(235, 235, 245, 0.28);
+}
+
+.mdl-insert-btn {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border: 1.5px solid rgba(120, 120, 128, 0.45);
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+html[data-dashboard-theme="dark"] .mdl-insert-btn {
+  border-color: rgba(235, 235, 245, 0.28);
+  background: transparent;
+}
+
+.mdl-insert-plus {
+  width: 12px;
+  height: 12px;
+  object-fit: contain;
+  filter: var(--atlas-search-icon-filter);
+}

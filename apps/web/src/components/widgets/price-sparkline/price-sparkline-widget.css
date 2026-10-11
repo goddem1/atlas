@@ -15,7 +15,7 @@
   height: 200px;
   flex-direction: column;
   overflow: visible;
-  border-radius: 25px 10px 25px 25px;
+  border-radius: var(--atlas-widget-radius);
   color: #171717;
 }
 
@@ -24,7 +24,13 @@
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
   column-gap: 12px;
-  padding: 15px 15px 5px 15px;
+  padding: 0;
+}
+
+@media (min-width: 431px) {
+  .price-widget-header {
+    padding: 15px 15px 5px 15px;
+  }
 }
 
 .price-widget-default-icon {
@@ -160,12 +166,25 @@
 
 .price-widget-chart-wrap {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
   flex: 1;
-  padding: 0 20px 4px;
+  align-self: center;
+  width: 100%;
+  margin: 0;
+  padding: 0 5px 4px;
   cursor: crosshair;
 }
 
+@media (min-width: 1280px) and (max-width: 1920px) {
+  .price-widget-chart-wrap {
+    padding: 0 20px 4px;
+  }
+}
+
 .price-widget-svg {
+  display: block;
   width: 100%;
 }
 
@@ -238,7 +257,7 @@
 .price-widget-axis-svg {
   display: block;
   width: 100%;
-  margin-top: -12px;
+  margin: -12px 0 0;
   overflow: visible;
 }
 
@@ -260,4 +279,137 @@
   text-align: center;
   color: #b45309;
   font-size: 11px;
+}
+
+/* Мобильные оверрайды — после базовых правил, иначе каскад их перебивает. */
+@media (max-width: 430px) {
+  .price-widget-shell,
+  .price-widget-card {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .price-widget-card {
+    box-sizing: border-box;
+    height: 196px;
+    padding: 10px;
+  }
+
+  .price-widget-header.price-widget-drag-handle,
+  .price-widget-header {
+    padding: 0 0 15px;
+    column-gap: 8px;
+  }
+
+  .price-widget-asset-head {
+    gap: 5px;
+  }
+
+  .price-widget-icon-button,
+  .price-widget-icon-button .price-widget-asset-icon,
+  .price-widget-icon-button .price-widget-default-icon {
+    width: 25px;
+    height: 25px;
+  }
+
+  .price-widget-icon-button .price-widget-default-icon {
+    font-size: 11px;
+  }
+
+  .price-widget-symbol,
+  .price-widget-symbol-btn {
+    font-size: 16px;
+  }
+
+  .price-widget-price {
+    font-size: 20px;
+  }
+
+  .price-widget-change-badge {
+    box-sizing: border-box;
+    height: 17px;
+    padding: 0 4px;
+    border-radius: 4.5px;
+    font-size: 10px;
+  }
+
+  .price-widget-chart-wrap {
+    box-sizing: border-box;
+    flex: 0 1 auto;
+    align-self: center;
+    width: 100%;
+    max-width: 370px;
+    height: auto;
+    margin: 0;
+    padding: 0 5px 4px;
+  }
+
+  .price-widget-svg {
+    width: 100%;
+    height: 120px;
+    max-height: 120px;
+    aspect-ratio: auto;
+  }
+
+  .price-widget-axis-svg {
+    width: 100%;
+    max-width: none;
+    margin: -12px 0 0;
+  }
+
+  .price-widget-axis-text {
+    font-size: 10px;
+  }
+
+  .price-widget-status {
+    padding: 0;
+  }
+}
+
+/* Статика только при ширине ровно 430px */
+@media (width: 430px) {
+  .price-widget-shell,
+  .price-widget-card {
+    width: 410px;
+    max-width: 410px;
+  }
+
+  .price-widget-chart-wrap {
+    width: 370px;
+    max-width: 370px;
+  }
+
+  .price-widget-svg {
+    height: 120px;
+    max-height: 120px;
+    aspect-ratio: auto;
+  }
+
+  .price-widget-axis-svg {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+/* 390 и 430: иконка 30px, тикер 18px, цена 22px */
+@media (min-width: 390px) and (max-width: 430px) {
+  .price-widget-icon-button,
+  .price-widget-icon-button .price-widget-asset-icon,
+  .price-widget-icon-button .price-widget-default-icon {
+    width: 30px;
+    height: 30px;
+  }
+
+  .price-widget-icon-button .price-widget-default-icon {
+    font-size: 12px;
+  }
+
+  .price-widget-symbol,
+  .price-widget-symbol-btn {
+    font-size: 18px;
+  }
+
+  .price-widget-price {
+    font-size: 22px;
+  }
 }

@@ -30,6 +30,108 @@
   overflow: hidden;
 }
 
+.dashboard-widget-board {
+  pointer-events: none;
+  position: absolute;
+  inset: 1.25rem; /* = Tailwind inset-5 / DASHBOARD_EDGE_INSET */
+}
+
+/* Телефоны ≤430px (360 / 390 / 430): одна колонка, скролл по вертикали. */
+@media (max-width: 430px) {
+  .dashboard-main-surface {
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .dashboard-main-surface::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;
+  }
+
+  .dashboard-widget-board {
+    position: relative;
+    inset: auto;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    align-content: flex-start;
+    gap: 10px;
+    width: 100%;
+    min-height: 100%;
+    box-sizing: border-box;
+    padding: 10px; /* 430 и 390 */
+  }
+
+  .dashboard-widget-board .dashboard-widget-slot,
+  .dashboard-widget-board .react-draggable {
+    position: relative !important;
+    inset: auto !important;
+    left: auto !important;
+    top: auto !important;
+    transform: none !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    flex: 0 0 100%;
+  }
+
+  .dashboard-widget-board .dashboard-widget-slot--macro-calendar {
+    height: 203px !important;
+  }
+
+  .dashboard-widget-board .dashboard-widget-slot--price-sparkline {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 196px !important;
+  }
+
+  .dashboard-widget-board .dashboard-widget-slot--portfolio {
+    height: 187px !important;
+  }
+
+  .dashboard-widget-board .dashboard-widget-slot--journal {
+    height: 187px !important;
+  }
+
+  .dashboard-widget-board .dashboard-widget-slot--watchlist {
+    height: 454px !important;
+  }
+
+  .dashboard-widget-board .dashboard-widget-slot--index-board {
+    height: 228px !important;
+  }
+
+  .dashboard-widget-board .dashboard-widget-slot--notes {
+    height: 260px !important;
+  }
+
+  .dashboard-widget-board .dashboard-widget-slot--index,
+  .dashboard-widget-board .dashboard-widget-slot--index.react-draggable,
+  .dashboard-widget-board .dashboard-widget-slot--index .react-draggable {
+    width: min(130px, calc(100vw * 130 / 430)) !important;
+    max-width: min(130px, calc(100vw * 130 / 430)) !important;
+    height: auto !important;
+    flex: 0 0 auto;
+  }
+}
+
+@media (width: 430px) {
+  .dashboard-widget-board .dashboard-widget-slot--price-sparkline {
+    width: 410px !important;
+    max-width: 410px !important;
+  }
+}
+
+@media (max-width: 360px) {
+  .dashboard-widget-board {
+    padding: 5px;
+  }
+}
+
 .dashboard-quick-tabs {
   --dashboard-quick-tabs-hitbox-width: 40px;
   --dashboard-quick-tabs-hitbox-height: calc(100dvh * 2 / 3);
@@ -185,6 +287,12 @@
   background: var(--atlas-btn-glass-active-bg);
 }
 
+@media (max-width: 430px) {
+  .dashboard-quick-tabs {
+    display: none;
+  }
+}
+
 /* Плавающая панель: настройки, «+», макро (бывший Tailwind: fixed right-4 top-4 z-[300] flex …). */
 .dashboard-floating-actions {
   pointer-events: auto;
@@ -196,6 +304,10 @@
   flex-direction: row-reverse;
   align-items: flex-start;
   gap: 0.5rem;
+}
+
+.dashboard-floating-actions--gallery-open {
+  z-index: 480;
 }
 
 /* Обёртка блока настроек (кнопка + выпадающая панель). */
@@ -280,7 +392,8 @@
 
 /* Hover на всю обёртку настроек (включая мост до панели). */
 .dashboard-floating-actions-settings:hover:not(.dashboard-floating-actions-settings--panel-open) .dashboard-floating-actions-settings-stack,
-.dashboard-floating-actions-settings:focus-within:not(.dashboard-floating-actions-settings--panel-open) .dashboard-floating-actions-settings-stack {
+.dashboard-floating-actions-settings:focus-within:not(.dashboard-floating-actions-settings--panel-open) .dashboard-floating-actions-settings-stack,
+.dashboard-floating-actions-settings.is-menu-open:not(.dashboard-floating-actions-settings--panel-open) .dashboard-floating-actions-settings-stack {
   border-radius: 50px;
   background-color: var(--atlas-glass-bg);
   border: none;
@@ -292,12 +405,14 @@
 }
 
 html[data-dashboard-theme="dark"] .dashboard-floating-actions-settings:hover:not(.dashboard-floating-actions-settings--panel-open) .dashboard-floating-actions-settings-stack,
-html[data-dashboard-theme="dark"] .dashboard-floating-actions-settings:focus-within:not(.dashboard-floating-actions-settings--panel-open) .dashboard-floating-actions-settings-stack {
+html[data-dashboard-theme="dark"] .dashboard-floating-actions-settings:focus-within:not(.dashboard-floating-actions-settings--panel-open) .dashboard-floating-actions-settings-stack,
+html[data-dashboard-theme="dark"] .dashboard-floating-actions-settings.is-menu-open:not(.dashboard-floating-actions-settings--panel-open) .dashboard-floating-actions-settings-stack {
   outline-color: rgba(255, 255, 255, 0.15);
 }
 
 .dashboard-floating-actions-settings:hover:not(.dashboard-floating-actions-settings--panel-open) .dashboard-floating-action-btn,
-.dashboard-floating-actions-settings:focus-within:not(.dashboard-floating-actions-settings--panel-open) .dashboard-floating-action-btn {
+.dashboard-floating-actions-settings:focus-within:not(.dashboard-floating-actions-settings--panel-open) .dashboard-floating-action-btn,
+.dashboard-floating-actions-settings.is-menu-open:not(.dashboard-floating-actions-settings--panel-open) .dashboard-floating-action-btn {
   background-color: transparent;
   border: 1px solid transparent;
   box-shadow: none;
@@ -334,7 +449,8 @@ html[data-dashboard-theme="dark"] .dashboard-floating-actions-settings:focus-wit
 }
 
 .dashboard-floating-actions-settings:hover:not(.dashboard-floating-actions-settings--panel-open) .dashboard-floating-action-expanded,
-.dashboard-floating-actions-settings:focus-within:not(.dashboard-floating-actions-settings--panel-open) .dashboard-floating-action-expanded {
+.dashboard-floating-actions-settings:focus-within:not(.dashboard-floating-actions-settings--panel-open) .dashboard-floating-action-expanded,
+.dashboard-floating-actions-settings.is-menu-open:not(.dashboard-floating-actions-settings--panel-open) .dashboard-floating-action-expanded {
   max-height: 320px;
   opacity: 1;
   pointer-events: auto;
@@ -406,6 +522,23 @@ html[data-dashboard-theme="dark"] .dashboard-floating-actions-settings .dashboar
 }
 
 .dashboard-floating-action-expanded-logout-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  object-fit: contain;
+  filter: var(--atlas-search-icon-filter);
+}
+
+.dashboard-floating-action-expanded-btn--add,
+.dashboard-floating-action-expanded-btn--layout {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 3px;
+}
+
+.dashboard-floating-action-expanded-add-icon,
+.dashboard-floating-action-expanded-layout-icon {
   width: 20px;
   height: 20px;
   flex-shrink: 0;
@@ -568,6 +701,134 @@ html[data-dashboard-theme="dark"] .dashboard-theme-toggle--panel .dashboard-them
 .dashboard-floating-action-icon--settings {
   width: 1.5rem;
   height: 1.5rem;
+  object-fit: contain;
+  filter: var(--atlas-search-icon-filter);
+}
+
+.dashboard-floating-action-btn--settings-mobile {
+  display: none;
+}
+
+@media (max-width: 430px) {
+  .dashboard-floating-action-btn--add-desktop {
+    display: none;
+  }
+
+  .dashboard-floating-actions {
+    top: auto;
+    bottom: 1rem;
+    right: 1rem;
+    align-items: flex-end;
+  }
+
+  .dashboard-floating-actions--layout-open {
+    z-index: 480;
+  }
+
+  .dashboard-floating-actions--gallery-open {
+    z-index: 480;
+  }
+
+  /* Закрыть + авторизация в один ряд с gap 10px. */
+  .dashboard-floating-actions--layout-open .dashboard-floating-actions-settings-slot,
+  .dashboard-floating-actions--gallery-open .dashboard-floating-actions-settings-slot {
+    width: auto;
+    max-width: none;
+  }
+
+  .dashboard-floating-actions--layout-open .dashboard-floating-actions-settings-stack,
+  .dashboard-floating-actions--gallery-open .dashboard-floating-actions-settings-stack {
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    width: auto;
+    max-width: none;
+    min-width: 0;
+    border-radius: 0;
+    background: transparent;
+    border: none;
+    outline: none;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    overflow: visible;
+  }
+
+  .dashboard-floating-actions--layout-open .dashboard-floating-actions-settings:hover .dashboard-floating-actions-settings-stack,
+  .dashboard-floating-actions--layout-open .dashboard-floating-actions-settings:focus-within .dashboard-floating-actions-settings-stack,
+  .dashboard-floating-actions--layout-open .dashboard-floating-actions-settings.is-menu-open .dashboard-floating-actions-settings-stack,
+  .dashboard-floating-actions--gallery-open .dashboard-floating-actions-settings:hover .dashboard-floating-actions-settings-stack,
+  .dashboard-floating-actions--gallery-open .dashboard-floating-actions-settings:focus-within .dashboard-floating-actions-settings-stack,
+  .dashboard-floating-actions--gallery-open .dashboard-floating-actions-settings.is-menu-open .dashboard-floating-actions-settings-stack {
+    border-radius: 0;
+    background: transparent;
+    border: none;
+    outline: none;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .dashboard-floating-actions--layout-open .dashboard-floating-action-btn,
+  .dashboard-floating-actions--layout-open .dashboard-floating-actions-settings:hover .dashboard-floating-action-btn,
+  .dashboard-floating-actions--layout-open .dashboard-floating-actions-settings:focus-within .dashboard-floating-action-btn,
+  .dashboard-floating-actions--layout-open .dashboard-floating-actions-settings.is-menu-open .dashboard-floating-action-btn,
+  .dashboard-floating-actions--gallery-open .dashboard-floating-action-btn,
+  .dashboard-floating-actions--gallery-open .dashboard-floating-actions-settings:hover .dashboard-floating-action-btn,
+  .dashboard-floating-actions--gallery-open .dashboard-floating-actions-settings:focus-within .dashboard-floating-action-btn,
+  .dashboard-floating-actions--gallery-open .dashboard-floating-actions-settings.is-menu-open .dashboard-floating-action-btn {
+    background-color: var(--atlas-glass-bg);
+    border: var(--atlas-glass-border);
+    box-shadow: var(--atlas-glass-shadow);
+    backdrop-filter: var(--atlas-glass-backdrop);
+    -webkit-backdrop-filter: var(--atlas-glass-backdrop);
+  }
+
+  .dashboard-floating-actions--layout-open .dashboard-floating-action-expanded,
+  .dashboard-floating-actions--gallery-open .dashboard-floating-action-expanded {
+    display: none;
+  }
+
+  .dashboard-floating-action-icon--layout-close {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+    filter: var(--atlas-search-icon-filter);
+  }
+
+  /* В экране раскладки / галереи в меню только аккаунт — без + и настроек виджетов. */
+  .dashboard-floating-actions--layout-open .dashboard-floating-action-expanded-btn--add,
+  .dashboard-floating-actions--layout-open .dashboard-floating-action-expanded-btn--layout,
+  .dashboard-floating-actions--gallery-open .dashboard-floating-action-expanded-btn--add,
+  .dashboard-floating-actions--gallery-open .dashboard-floating-action-expanded-btn--layout {
+    display: none;
+  }
+
+  /* Меню раскрывается вверх над кнопкой. */
+  .dashboard-floating-actions-settings-stack {
+    flex-direction: column-reverse;
+  }
+
+  .dashboard-floating-actions-settings .dashboard-floating-action-expanded {
+    flex-direction: column-reverse;
+    padding-bottom: 0;
+    transition:
+      max-height 0.28s ease,
+      opacity 0.2s ease,
+      padding-top 0.28s ease;
+  }
+
+  .dashboard-floating-actions-settings:hover:not(.dashboard-floating-actions-settings--panel-open) .dashboard-floating-action-expanded,
+  .dashboard-floating-actions-settings:focus-within:not(.dashboard-floating-actions-settings--panel-open) .dashboard-floating-action-expanded,
+  .dashboard-floating-actions-settings.is-menu-open:not(.dashboard-floating-actions-settings--panel-open) .dashboard-floating-action-expanded {
+    padding-bottom: 0;
+    padding-top: 8px;
+  }
+
+  .dashboard-floating-actions-settings-hover-bridge {
+    top: auto;
+    bottom: 100%;
+  }
 }
 
 .dashboard-floating-action-icon--user {
@@ -753,11 +1014,11 @@ html[data-dashboard-theme="dark"] .dashboard-theme-toggle--panel .dashboard-them
 }
 
 .dashboard-widget-slot--index {
-  contain-intrinsic-size: 150px 100px;
+  contain-intrinsic-size: 130px 100px;
 }
 
 .dashboard-widget-slot--index-board {
-  contain-intrinsic-size: 280px 260px;
+  contain-intrinsic-size: 280px 228px;
 }
 
 .dashboard-widget-slot--watchlist-settings-open,

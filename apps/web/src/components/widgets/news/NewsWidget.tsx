@@ -11,6 +11,11 @@ import {
   GALLERY_NEWS_ITEMS,
   GALLERY_NEWS_SENTIMENT,
 } from "../../dashboard/widgetGalleryPreviewData";
+import {
+  DEV_NEWS_EXPLANATION,
+  DEV_NEWS_ITEMS,
+  DEV_NEWS_SENTIMENT,
+} from "./newsWidgetDevFixtures";
 import { sentimentTone, sentimentMeterColor, toNewsWidgetItem, type NewsWidgetItem } from "./newsClassify";
 import "../shared/portfolio-menu.css";
 import "./news-widget.css";
@@ -20,6 +25,9 @@ const TelegramNewsModal = lazy(() =>
 );
 
 const POLL_MS = 5 * 60_000;
+
+/** Локальные тестовые новости: только Vite DEV. На проде не применяются. */
+const USE_DEV_NEWS_FIXTURES = import.meta.env.DEV;
 
 export type NewsWidgetExplainPayload = {
   sentiment: number;
@@ -52,12 +60,20 @@ export const NewsWidget = memo(function NewsWidget({
 }: Props) {
   const overlayOpen = useIsBackdropBlurPaused();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [loading, setLoading] = useState(() => !galleryPreview);
+  const [loading, setLoading] = useState(() => !galleryPreview && !USE_DEV_NEWS_FIXTURES);
   const [err, setErr] = useState<string | null>(null);
-  const [items, setItems] = useState<NewsWidgetItem[]>(() => (galleryPreview ? GALLERY_NEWS_ITEMS : []));
-  const [sentiment, setSentiment] = useState(() => (galleryPreview ? GALLERY_NEWS_SENTIMENT : 50));
+  const [items, setItems] = useState<NewsWidgetItem[]>(() =>
+    galleryPreview ? GALLERY_NEWS_ITEMS : USE_DEV_NEWS_FIXTURES ? DEV_NEWS_ITEMS : [],
+  );
+  const [sentiment, setSentiment] = useState(() =>
+    galleryPreview ? GALLERY_NEWS_SENTIMENT : USE_DEV_NEWS_FIXTURES ? DEV_NEWS_SENTIMENT : 50,
+  );
   const [explanation, setExplanation] = useState<TelegramNewsWidgetExplanation>(() =>
-    galleryPreview ? GALLERY_NEWS_EXPLANATION : EMPTY_EXPLANATION,
+    galleryPreview
+      ? GALLERY_NEWS_EXPLANATION
+      : USE_DEV_NEWS_FIXTURES
+        ? DEV_NEWS_EXPLANATION
+        : EMPTY_EXPLANATION,
   );
   const [day, setDay] = useState<string | undefined>(undefined);
   const [candidateCount, setCandidateCount] = useState<number | undefined>(undefined);
@@ -70,7 +86,21 @@ export const NewsWidget = memo(function NewsWidget({
 
   const load = useCallback(() => {
     if (galleryPreview) return;
+
+    const applyDevFixtures = () => {
+      if (!USE_DEV_NEWS_FIXTURES) return false;
+      setItems(DEV_NEWS_ITEMS);
+      setSentiment(DEV_NEWS_SENTIMENT);
+      setExplanation(DEV_NEWS_EXPLANATION);
+      setDay(undefined);
+      setCandidateCount(DEV_NEWS_ITEMS.length);
+      setErr(null);
+      setLoading(false);
+      return true;
+    };
+
     if (!isTelegramEnabled()) {
+      if (applyDevFixtures()) return;
       setItems([]);
       setSentiment(50);
       setExplanation({
@@ -86,6 +116,7 @@ export const NewsWidget = memo(function NewsWidget({
     const stored = loadTelegramChannels();
     const usernames = stored && stored.length > 0 ? stored : [];
     if (usernames.length === 0) {
+      if (applyDevFixtures()) return;
       setItems([]);
       setSentiment(50);
       setExplanation({
@@ -110,6 +141,7 @@ export const NewsWidget = memo(function NewsWidget({
           const key = `${msg.channelUsername}:${msg.id}`;
           return toNewsWidgetItem(msg, noteById.get(key)?.category);
         });
+        if (mapped.length === 0 && applyDevFixtures()) return;
         setItems(mapped);
         setSentiment(Math.round(Math.min(100, Math.max(0, data.sentiment))));
         setExplanation(
@@ -126,6 +158,7 @@ export const NewsWidget = memo(function NewsWidget({
         setCandidateCount(data.candidateCount);
       })
       .catch((e: unknown) => {
+        if (applyDevFixtures()) return;
         setErr(e instanceof Error ? e.message : "Не удалось загрузить новости");
         setItems([]);
         setExplanation(EMPTY_EXPLANATION);

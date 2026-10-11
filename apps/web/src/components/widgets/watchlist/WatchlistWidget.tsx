@@ -85,6 +85,8 @@ type Props = {
   onWatchlistChange?: (state: WatchlistWidgetState) => void;
   onDeleteWidget?: () => void;
   onSettingsOpenChange?: (open: boolean) => void;
+  /** Инкремент снаружи открывает настройки (мобильный редактор раскладки). */
+  openSettingsToken?: number;
   /** Статичное превью для галереи виджетов — без API. */
   galleryPreview?: boolean;
 };
@@ -113,6 +115,7 @@ const WatchlistWidgetLive = memo(function WatchlistWidgetLive({
   onWatchlistChange,
   onDeleteWidget,
   onSettingsOpenChange,
+  openSettingsToken = 0,
 }: Props) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -164,6 +167,11 @@ const WatchlistWidgetLive = memo(function WatchlistWidgetLive({
   useEffect(() => {
     return () => onSettingsOpenChange?.(false);
   }, [onSettingsOpenChange]);
+
+  useEffect(() => {
+    if (!openSettingsToken) return;
+    setSettingsOpen(true);
+  }, [openSettingsToken]);
 
   const emitWatchlistChange = (
     patch: Partial<Pick<WatchlistWidgetState, "watchlistLists" | "activeWatchlistListId">> & {

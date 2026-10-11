@@ -261,13 +261,14 @@ export function FedCurveCard({
             <img src="/assets/portfolio-ui/close.svg" alt="" className="portfolio-menu-circle-icon portfolio-menu-circle-icon-close" />
           </button>
         </div>
-        <FedCurvePeriodSettings
-          open={settingsOpen}
-          compareDays={compareDays}
-          onSelect={(days) => onCompareDaysChange?.(days)}
-          onClose={() => onSettingsOpenChange(false)}
-        />
       </div>
+
+      <FedCurvePeriodSettings
+        open={settingsOpen}
+        compareDays={compareDays}
+        onSelect={(days) => onCompareDaysChange?.(days)}
+        onClose={() => onSettingsOpenChange(false)}
+      />
 
       <div className="atlas-glass fed-curve-chart-panel">
         <div

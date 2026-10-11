@@ -1,6 +1,6 @@
 import { lazy, memo, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import type { CryptocurrencyListItem } from "@atlas-v1/shared";
-import type { TradeRecord } from "../../../services/api";
+import type { TradePeriod, TradeRecord } from "../../../services/api";
 import { fetchCryptocurrencies, fetchTradeEquityCurve, fetchTrades } from "../../../services/api";
 import {
   GALLERY_JOURNAL_CURVE,
@@ -19,6 +19,7 @@ import {
   pnlTone,
   stripSymbolUsdt,
 } from "./journalFormat";
+import { JournalPeriodSwitcher } from "./JournalPeriodSwitcher";
 import "./journal-widget.css";
 
 const JournalModal = lazy(() => import("./JournalModal").then((m) => ({ default: m.JournalModal })));
@@ -44,6 +45,7 @@ export const JournalWidget = memo(function JournalWidget({
 }: Props) {
   const overlayOpen = useIsBackdropBlurPaused();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [period, setPeriod] = useState<TradePeriod>("all");
   const [trades, setTrades] = useState<TradeRecord[]>(() =>
     galleryPreview ? [...GALLERY_JOURNAL_TRADES] : [],
   );
@@ -83,7 +85,11 @@ export const JournalWidget = memo(function JournalWidget({
     if (galleryPreview) return;
     setLoading(true);
     setErr(null);
-    void Promise.all([fetchTrades({ period: "all" }), fetchTradeEquityCurve("all"), fetchCryptocurrencies()])
+    void Promise.all([
+      fetchTrades({ period }),
+      fetchTradeEquityCurve(period),
+      fetchCryptocurrencies(),
+    ])
       .then(([nextTrades, nextCurve, nextAssets]) => {
         setTrades(nextTrades);
         setCurve(nextCurve.map((p) => ({ date: p.date, value: p.cumulativePnl })));
@@ -95,7 +101,7 @@ export const JournalWidget = memo(function JournalWidget({
         setCurve([]);
       })
       .finally(() => setLoading(false));
-  }, [galleryPreview]);
+  }, [galleryPreview, period]);
 
   useEffect(() => {
     if (galleryPreview || overlayOpen) return;
@@ -104,41 +110,43 @@ export const JournalWidget = memo(function JournalWidget({
 
   return (
     <div className="journal-widget-shell">
-      <div
-        className={cn("portfolio-menu-wrap", menuOpen ? "is-open" : undefined)}
-        onMouseEnter={() => setMenuOpen(true)}
-        onMouseLeave={() => setMenuOpen(false)}
-      >
-        <button
-          type="button"
-          className="portfolio-menu-trigger atlas-fg-primary"
-          onClick={() => setMenuOpen((v) => !v)}
-          aria-label="Меню виджета"
-          aria-expanded={menuOpen}
+      {!galleryPreview ? (
+        <div
+          className={cn("portfolio-menu-wrap", menuOpen ? "is-open" : undefined)}
+          onMouseEnter={() => setMenuOpen(true)}
+          onMouseLeave={() => setMenuOpen(false)}
         >
-          <img src="/assets/portfolio-ui/arrow_down.svg" alt="" className="portfolio-menu-trigger-icon" />
-        </button>
-        <div className="portfolio-menu-rail" aria-hidden={!menuOpen}>
           <button
             type="button"
-            className="btn-on-glass btn-on-glass--soft"
-            onClick={() => {
-              setMenuOpen(false);
-              openJournal();
-            }}
-            aria-label="Открыть журнал"
+            className="portfolio-menu-trigger atlas-fg-primary"
+            onClick={() => setMenuOpen((v) => !v)}
+            aria-label="Меню виджета"
+            aria-expanded={menuOpen}
           >
-            <img
-              src="/assets/portfolio-ui/book.svg"
-              alt=""
-              className="portfolio-menu-circle-icon"
-            />
+            <img src="/assets/portfolio-ui/arrow_down.svg" alt="" className="portfolio-menu-trigger-icon" />
           </button>
-          <button type="button" className="btn-on-glass btn-on-glass--soft" onClick={() => onDeleteWidget?.()} aria-label="Удалить виджет">
-            <img src="/assets/portfolio-ui/close.svg" alt="" className="portfolio-menu-circle-icon portfolio-menu-circle-icon-close" />
-          </button>
+          <div className="portfolio-menu-rail" aria-hidden={!menuOpen}>
+            <button
+              type="button"
+              className="btn-on-glass btn-on-glass--soft"
+              onClick={() => {
+                setMenuOpen(false);
+                openJournal();
+              }}
+              aria-label="Открыть журнал"
+            >
+              <img
+                src="/assets/portfolio-ui/book.svg"
+                alt=""
+                className="portfolio-menu-circle-icon"
+              />
+            </button>
+            <button type="button" className="btn-on-glass btn-on-glass--soft" onClick={() => onDeleteWidget?.()} aria-label="Удалить виджет">
+              <img src="/assets/portfolio-ui/close.svg" alt="" className="portfolio-menu-circle-icon portfolio-menu-circle-icon-close" />
+            </button>
+          </div>
         </div>
-      </div>
+      ) : null}
 
       <div className="atlas-glass-elevated journal-widget-card-elevated">
         <button
@@ -152,6 +160,13 @@ export const JournalWidget = memo(function JournalWidget({
           <div className="journal-widget-chart-block">
             <div className="journal-widget-chart-wrap">
               <EquityCurveChart points={curve} variant="full" />
+            </div>
+            <div
+              className="journal-widget-period"
+              onClick={(e) => e.stopPropagation()}
+              onKeyDown={(e) => e.stopPropagation()}
+            >
+              <JournalPeriodSwitcher value={period} onChange={setPeriod} />
             </div>
           </div>
         </div>
@@ -201,7 +216,7 @@ export const JournalWidget = memo(function JournalWidget({
                     openJournal();
                   }}
                 >
-                  Посмотреть все сделки
+                  Все сделки
                   <span className="journal-widget-row--view-all-arrow" aria-hidden>
                     <svg viewBox="0 0 32 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                       <path

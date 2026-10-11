@@ -19,7 +19,7 @@
   display: flex;
   flex-direction: column;
   overflow: visible;
-  border-radius: 25px 10px 25px 25px;
+  border-radius: var(--atlas-widget-radius);
   color: var(--atlas-fg-primary);
 }
 
@@ -222,5 +222,40 @@
   50% {
     opacity: 1;
     transform: translateY(-1px);
+  }
+}
+
+@media (max-width: 430px) {
+  .macro-cal-date {
+    font-size: 16px;
+  }
+
+  .macro-cal-col-labels {
+    font-size: 16px;
+  }
+
+  .macro-cal-row {
+    font-size: 16px;
+  }
+
+  .macro-cal-head {
+    padding: 10px 10px 0;
+  }
+
+  .macro-cal-divider--rotated {
+    position: relative;
+    left: auto;
+    top: auto;
+    width: calc(100% - 20px);
+    margin: 7px auto 0;
+    transform: none;
+  }
+
+  .macro-cal-list {
+    padding: 6px 10px 10px;
+  }
+
+  .macro-cal-footer {
+    padding: 0 10px 10px;
   }
 }

@@ -7,7 +7,7 @@ services:
       POSTGRES_PASSWORD: atlas
       POSTGRES_DB: atlas_v1
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - atlas_v1_pg_data:/var/lib/postgresql/data
     healthcheck:

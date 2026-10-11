@@ -9,7 +9,7 @@
 .journal-widget-card-elevated {
   width: 100%;
   max-width: 570px;
-  border-radius: 25px 10px 25px 25px;
+  border-radius: var(--atlas-widget-radius);
 }
 
 .journal-widget-card {
@@ -22,7 +22,7 @@
   height: 300px;
   padding: 0;
   border: 0;
-  border-radius: 25px 10px 25px 25px;
+  border-radius: var(--atlas-widget-radius);
   overflow: visible;
   text-align: left;
   color: var(--atlas-fg-primary);
@@ -128,6 +128,11 @@
 
 .journal-widget-chart-wrap .recharts-tooltip-wrapper {
   z-index: 12;
+}
+
+/* Период Д/М/Г/Все — только на мобилке (как у портфеля). */
+.journal-widget-period {
+  display: none;
 }
 
 .journal-widget-list {
@@ -245,4 +250,96 @@
 .journal-widget-shell .portfolio-menu-circle-icon-close {
   width: 14px;
   height: 14px;
+}
+
+@media (max-width: 430px) {
+  .journal-widget-shell,
+  .journal-widget-card-elevated,
+  .journal-widget-card {
+    width: 100%;
+    max-width: 100%;
+    height: 187px;
+  }
+
+  .journal-widget-balance {
+    font-size: 24px;
+  }
+
+  .journal-widget-total-pnl,
+  .journal-widget-total-pnl.journal-widget-pnl-positive {
+    font-size: 16px;
+  }
+
+  .journal-widget-pnl-positive {
+    color: var(--atlas-fg-primary);
+    font-size: 16px;
+    line-height: 1;
+  }
+
+  .journal-widget-left,
+  .journal-widget-right {
+    padding: 10px;
+  }
+
+  .journal-widget-right {
+    font-size: 16px;
+    line-height: 1;
+  }
+
+  .journal-widget-chart-block {
+    margin-top: 10px;
+    --portfolio-chart-height: 79px;
+  }
+
+  .journal-widget-chart-wrap {
+    flex: none;
+    width: min(188px, calc(100vw * 188 / 430));
+    max-width: 188px;
+    height: var(--portfolio-chart-height);
+  }
+
+  .journal-widget-period {
+    display: block;
+  }
+
+  .journal-widget-chart-block .portfolio-timeframe-switcher {
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .journal-widget-chart-block .portfolio-timeframe-switcher > .btn-on-glass {
+    min-width: 0;
+    width: min(40px, calc(100vw * 40 / 430));
+    max-width: 40px;
+    height: 21px;
+    box-sizing: border-box;
+  }
+
+  .journal-widget-list {
+    gap: 5px;
+  }
+
+  /* 5 сделок + «Все сделки» */
+  .journal-widget-list > li:nth-child(n + 6):not(:last-child) {
+    display: none;
+  }
+
+  .journal-widget-row {
+    gap: 0;
+  }
+
+  .journal-widget-direction,
+  .journal-widget-row-date,
+  .journal-widget-row-symbol,
+  .journal-widget-row-pnl,
+  .journal-widget-row--view-all {
+    font-size: 16px;
+    line-height: 1;
+  }
+
+  .journal-widget-row-symbol {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 }

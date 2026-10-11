@@ -5,7 +5,6 @@ import {
   downloadTelegramMessageImage,
   downloadTelegramMessageVideo,
   downloadTelegramMessageVideoThumb,
-  TELEGRAM_VIDEO_MAX_BYTES,
 } from "./telegramMtproto.js";
 import {
   readCachedChannelPhoto,
@@ -66,7 +65,7 @@ export async function ensureMessageVideoCached(
   return live;
 }
 
-/** Скачивает медиа для недавних постов в фоне sync (не блокирует надолго). */
+/** Скачивает медиа для недавних постов (картинки/превью; видео — по запросу). */
 export async function prefetchTelegramMessageMedia(
   username: string,
   messages: TelegramNewsMessage[],
@@ -80,14 +79,7 @@ export async function prefetchTelegramMessageMedia(
       if (msg.hasVideoThumb) {
         await ensureVideoThumbCached(username, msg.id);
       }
-      if (
-        msg.hasVideo &&
-        msg.videoSize != null &&
-        msg.videoSize > 0 &&
-        msg.videoSize <= TELEGRAM_VIDEO_MAX_BYTES
-      ) {
-        await ensureMessageVideoCached(username, msg.id);
-      }
+      // Полные видео в prefetch не качаем — через SOCKS это вешает catch-up на минуты.
     } catch (err) {
       log?.debug?.({ err, username, messageId: msg.id }, "[telegram-news] media prefetch skipped");
     }

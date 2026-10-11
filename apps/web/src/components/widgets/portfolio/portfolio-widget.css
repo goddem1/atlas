@@ -16,7 +16,7 @@
   max-width: 500px;
   min-width: 0;
   height: 250px;
-  border-radius: 25px 10px 25px 25px;
+  border-radius: var(--atlas-widget-radius);
   overflow: visible;
   cursor: grab;
 }
@@ -66,17 +66,6 @@
   height: var(--portfolio-chart-height);
   max-width: 100%;
   overflow: hidden;
-}
-
-.portfolio-chart-wrap .equity-curve-chart--full {
-  height: 100%;
-  min-height: 0;
-}
-
-.portfolio-chart-wrap .equity-curve-chart-plot {
-  flex: 1;
-  min-height: 0;
-  height: 100%;
 }
 
 .portfolio-chart-wrap .recharts-tooltip-wrapper {
@@ -184,16 +173,22 @@ html[data-dashboard-theme="dark"] .portfolio-timeframe-switcher > .btn-on-glass.
   font-size: 18px;
   line-height: 1;
   color: var(--atlas-fg-primary);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .portfolio-asset-values {
   text-align: right;
+  flex-shrink: 0;
 }
 
 .portfolio-asset-value-positive,
 .portfolio-asset-value-negative {
   font-size: 20px;
   line-height: 1;
+  font-variant-numeric: tabular-nums;
 }
 
 .portfolio-asset-value-positive {
@@ -1211,16 +1206,81 @@ html[data-dashboard-theme="dark"] .portfolio-timeframe-switcher > .btn-on-glass.
   gap: 10px;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 430px) {
+  .portfolio-total {
+    font-size: 24px;
+  }
+
+  .portfolio-total-pnl,
+  .portfolio-total-pnl.portfolio-pnl-positive {
+    font-size: 16px;
+  }
+
+  .portfolio-widget-left,
+  .portfolio-widget-right {
+    padding: 10px;
+  }
+
+  .portfolio-chart-block {
+    margin-top: 10px;
+    --portfolio-chart-height: 79px;
+  }
+
+  .portfolio-widget-shell,
   .portfolio-widget-card {
-    grid-template-columns: 1fr;
+    height: 187px;
   }
 
-  .portfolio-widget-left {
-    border-right: 0;
-    border-bottom: 1px solid #e5e7eb;
+  .portfolio-asset-icon {
+    width: 28px;
+    height: 28px;
   }
 
+  .portfolio-asset-row {
+    grid-template-columns: 28px 1fr auto;
+  }
+
+  .portfolio-asset-symbol {
+    font-size: 16px;
+  }
+
+  .portfolio-asset-value-positive {
+    font-size: 18px;
+  }
+
+  .portfolio-asset-pnl-positive {
+    font-size: 10px;
+    margin-top: 5px;
+  }
+
+  /* Стартовая ширина 188 на 430; ниже vw — пропорционально сжимается */
+  .portfolio-chart-wrap {
+    width: min(188px, calc(100vw * 188 / 430));
+    max-width: 188px;
+  }
+
+  /* Кнопки Д/М/Г/Все: старт 40px на 430, дальше сжимаются */
+  .portfolio-timeframe-switcher {
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .portfolio-timeframe-switcher > .btn-on-glass {
+    min-width: 0;
+    width: min(40px, calc(100vw * 40 / 430));
+    max-width: 40px;
+    height: 21px;
+    box-sizing: border-box;
+  }
+}
+
+@media (max-width: 360px) {
+  .portfolio-timeframe-switcher {
+    gap: 4px;
+  }
+}
+
+@media (max-width: 640px) {
   .portfolio-row {
     grid-template-columns: 1fr;
   }

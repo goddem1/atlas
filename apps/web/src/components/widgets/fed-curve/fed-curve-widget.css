@@ -11,6 +11,13 @@
   box-sizing: border-box;
 }
 
+.fed-curve-settings-popover-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
 .fed-curve-settings-popover-title {
   margin: 0 0 8px;
   font-size: 11px;
@@ -46,6 +53,140 @@
   font-weight: 500;
 }
 
+.fed-curve-settings-sheet-root {
+  position: fixed;
+  inset: 0;
+  z-index: 490;
+  pointer-events: none;
+}
+
+.fed-curve-settings-sheet-backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(0, 0, 0, 0.18);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  pointer-events: auto;
+  animation: fed-curve-settings-backdrop-in 0.24s ease;
+}
+
+.fed-curve-settings-popover--sheet,
+.fed-curve-settings-popover--sheet.atlas-glass {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  top: auto;
+  width: auto;
+  max-width: none;
+  z-index: 491;
+  padding: 10px 16px 16px;
+  border-radius: 22px;
+  pointer-events: auto;
+  animation: fed-curve-settings-sheet-in 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.fed-curve-settings-sheet-handle {
+  display: block;
+  width: 36px;
+  height: 4px;
+  margin: 0 auto 12px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.45);
+}
+
+.fed-curve-settings-popover--sheet .fed-curve-settings-popover-head {
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.fed-curve-settings-popover--sheet .fed-curve-settings-popover-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--atlas-fg-primary);
+}
+
+.fed-curve-settings-sheet-close {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.fed-curve-settings-sheet-close.btn-glass:not(:hover):not(:active) {
+  border-color: transparent;
+  background-color: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.fed-curve-settings-sheet-close-icon {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  filter: var(--atlas-search-icon-filter);
+}
+
+.fed-curve-settings-popover--sheet .fed-curve-settings-period-list {
+  gap: 6px;
+}
+
+.fed-curve-settings-popover--sheet .fed-curve-settings-period-btn {
+  min-height: 45px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-size: 16px;
+  box-sizing: border-box;
+}
+
+@keyframes fed-curve-settings-backdrop-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fed-curve-settings-sheet-in {
+  from {
+    transform: translateY(110%);
+  }
+
+  to {
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 360px) {
+  .fed-curve-settings-popover--sheet {
+    left: 8px;
+    right: 8px;
+    bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+    padding: 8px 12px 12px;
+    border-radius: 20px;
+  }
+
+  .fed-curve-settings-popover--sheet .fed-curve-settings-popover-title {
+    font-size: 15px;
+  }
+
+  .fed-curve-settings-popover--sheet .fed-curve-settings-period-btn {
+    min-height: 40px;
+    padding: 10px 12px;
+    font-size: 14px;
+  }
+}
+
 .fed-curve-widget-shell {
   position: relative;
   width: 100%;
@@ -63,7 +204,7 @@
   position: relative;
   width: 100%;
   height: 100%;
-  border-radius: 20px 10px 20px 20px;
+  border-radius: var(--atlas-widget-radius-fed-curve);
   box-sizing: border-box;
   overflow: visible;
 }
@@ -200,3 +341,11 @@ html[data-dashboard-theme="dark"] .fed-curve-y-label {
 .fed-curve-line--past {
   stroke: #9ca3af;
 }
+
+@media (max-width: 430px) {
+  .fed-curve-widget-shell {
+    width: 100%;
+    max-width: 100%;
+  }
+}
+

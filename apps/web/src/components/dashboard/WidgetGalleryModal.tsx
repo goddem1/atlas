@@ -75,7 +75,7 @@ export function WidgetGalleryModal({ open, onClose, onPick }: Props) {
           Добавить виджет
         </h2>
         <div className="widget-gallery-layout">
-          <aside className="widget-gallery-sidebar">
+          <aside className="widget-gallery-sidebar widget-gallery-header">
             <label className="widget-gallery-search">
               <span className="widget-gallery-sr-only">Поиск виджета</span>
               <span className="widget-gallery-search-icon" aria-hidden />
@@ -118,25 +118,25 @@ export function WidgetGalleryModal({ open, onClose, onPick }: Props) {
             ) : (
               <ul className="widget-gallery-grid">
                 {items.map((item) => (
-                    <li key={item.id}>
-                      <button
-                        type="button"
-                        className="widget-gallery-card"
-                        onClick={() => {
-                          onPick(item.widgetType, item.indexId ? { indexId: item.indexId } : undefined);
-                          onClose();
-                        }}
-                      >
-                        <div className="widget-gallery-card-preview">
-                          <WidgetGalleryPreview widgetType={item.widgetType} indexId={item.indexId} />
-                        </div>
-                        <div className="widget-gallery-card-text">
-                          <p className="widget-gallery-card-title">{item.title}</p>
-                          <p className="widget-gallery-card-desc">{item.description}</p>
-                        </div>
-                      </button>
-                    </li>
-                  ))}
+                  <li key={item.id}>
+                    <button
+                      type="button"
+                      className="widget-gallery-card"
+                      onClick={() => {
+                        onPick(item.widgetType, item.indexId ? { indexId: item.indexId } : undefined);
+                        onClose();
+                      }}
+                    >
+                      <div className="widget-gallery-card-preview">
+                        <WidgetGalleryPreview widgetType={item.widgetType} indexId={item.indexId} />
+                      </div>
+                      <div className="widget-gallery-card-text">
+                        <p className="widget-gallery-card-title">{item.title}</p>
+                        <p className="widget-gallery-card-desc">{item.description}</p>
+                      </div>
+                    </button>
+                  </li>
+                ))}
               </ul>
             )}
           </div>

@@ -1,7 +1,8 @@
-import { lazy, Suspense, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { dashboardUserAvatarBackground, dashboardUserAvatarLetter } from "../auth/auth-utils";
 import type { DashboardPrefs, DashboardTheme } from "../../lib/dashboardPrefs";
 import { clampGridOpacity } from "../../lib/dashboardPrefs";
+import { DASHBOARD_MOBILE_SINGLE_COL_MAX_WIDTH } from "../../lib/dashboardWidgets";
 import { profileAvatarUrl, type ProfileUserResponse } from "../../services/api";
 
 const ProfileSettingsModal = lazy(() =>
@@ -22,6 +23,12 @@ type Props = {
   } | null;
   onSignOut?: () => void;
   onUserUpdated?: (user: ProfileUserResponse) => void;
+  onOpenMobileLayout?: () => void;
+  onCloseMobileLayout?: () => void;
+  onAddWidget?: () => void;
+  onCloseGallery?: () => void;
+  mobileLayoutOpen?: boolean;
+  galleryOpen?: boolean;
 };
 
 function GearIcon({ className }: { className?: string }) {
@@ -78,6 +85,24 @@ function ThemeToggle({
   );
 }
 
+function useIsMobileFloating(): boolean {
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== "undefined"
+      ? window.matchMedia(`(max-width: ${DASHBOARD_MOBILE_SINGLE_COL_MAX_WIDTH}px)`).matches
+      : false,
+  );
+
+  useEffect(() => {
+    const mq = window.matchMedia(`(max-width: ${DASHBOARD_MOBILE_SINGLE_COL_MAX_WIDTH}px)`);
+    const onChange = () => setIsMobile(mq.matches);
+    onChange();
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+
+  return isMobile;
+}
+
 export function DashboardSettings({
   prefs,
   onChange,
@@ -86,6 +111,12 @@ export function DashboardSettings({
   user,
   onSignOut,
   onUserUpdated,
+  onOpenMobileLayout,
+  onCloseMobileLayout,
+  onAddWidget,
+  onCloseGallery,
+  mobileLayoutOpen = false,
+  galleryOpen = false,
 }: Props) {
   const avatarLetter = isLoggedIn ? dashboardUserAvatarLetter(user?.name, user?.email) : null;
   const avatarImageUrl = useMemo(
@@ -97,7 +128,26 @@ export function DashboardSettings({
     [isLoggedIn, user?.id, user?.email],
   );
   const [profileOpen, setProfileOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
+  const isMobile = useIsMobileFloating();
+  const showOverlayClose = isMobile && (mobileLayoutOpen || galleryOpen);
+
+  useEffect(() => {
+    if (!isMobile) setMenuOpen(false);
+  }, [isMobile]);
+
+  useEffect(() => {
+    if (!menuOpen || !isMobile) return;
+    const onPointerDown = (e: PointerEvent) => {
+      const root = wrapRef.current;
+      if (!root) return;
+      if (e.target instanceof Node && root.contains(e.target)) return;
+      setMenuOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, [menuOpen, isMobile]);
 
   const patch = (partial: Partial<DashboardPrefs>) => {
     onChange({
@@ -117,93 +167,175 @@ export function DashboardSettings({
     image: null,
   };
 
+  const handleAccountClick = () => {
+    if (isMobile) {
+      if (!menuOpen) {
+        setMenuOpen(true);
+        return;
+      }
+      if (!isLoggedIn) {
+        onOpenAuth();
+        return;
+      }
+      setMenuOpen(false);
+      return;
+    }
+    if (!isLoggedIn) onOpenAuth();
+  };
+
   return (
-    <div
-      ref={wrapRef}
-      className={`dashboard-floating-actions-settings${profileOpen ? " dashboard-floating-actions-settings--panel-open" : ""}`}
-    >
-      <div className="dashboard-floating-actions-settings-slot">
-        <div className="dashboard-floating-actions-settings-stack">
-          <button
-            type="button"
-            className="dashboard-floating-action-btn btn-glass"
-            aria-label={isLoggedIn ? "Аккаунт" : "Войти"}
-            onClick={() => {
-              if (!isLoggedIn) onOpenAuth();
-            }}
-          >
-            {isLoggedIn && avatarImageUrl ? (
-              <img
-                src={avatarImageUrl}
-                alt=""
-                aria-hidden
-                className="dashboard-floating-action-avatar-image"
-              />
-            ) : isLoggedIn && avatarLetter ? (
-              <span
-                className="dashboard-floating-action-avatar"
-                style={{ backgroundColor: avatarBackground }}
-                aria-hidden
-              >
-                {avatarLetter}
-              </span>
-            ) : (
-              <img
-                src="/assets/portfolio-ui/user-circle.svg"
-                alt=""
-                aria-hidden
-                className="dashboard-floating-action-icon dashboard-floating-action-icon--user"
-              />
-            )}
-          </button>
-          <div className="dashboard-floating-action-expanded" role="menu" aria-label="Быстрые настройки">
-            {isLoggedIn ? (
+    <>
+      <div
+        ref={wrapRef}
+        className={[
+          "dashboard-floating-actions-settings",
+          profileOpen ? "dashboard-floating-actions-settings--panel-open" : "",
+          menuOpen ? "is-menu-open" : "",
+        ]
+          .filter(Boolean)
+          .join(" ")}
+      >
+        <div className="dashboard-floating-actions-settings-slot">
+          <div className="dashboard-floating-actions-settings-stack">
+            {showOverlayClose ? (
               <button
                 type="button"
-                role="menuitem"
-                className="dashboard-floating-action-expanded-btn dashboard-floating-action-expanded-btn--settings"
-                aria-label="Настройки"
-                onClick={() => setProfileOpen(true)}
-              >
-                <GearIcon className="dashboard-floating-action-expanded-gear" />
-              </button>
-            ) : null}
-            <ThemeToggle theme={prefs.theme} onSelect={(theme) => patch({ theme })} />
-            {isLoggedIn ? (
-              <button
-                type="button"
-                role="menuitem"
-                className="dashboard-floating-action-expanded-btn dashboard-floating-action-expanded-btn--logout"
-                aria-label="Выйти"
-                onClick={() => onSignOut?.()}
+                className="dashboard-floating-action-btn btn-glass dashboard-floating-action-btn--layout-close"
+                aria-label="Закрыть"
+                onClick={() => {
+                  if (galleryOpen) onCloseGallery?.();
+                  else onCloseMobileLayout?.();
+                }}
               >
                 <img
-                  src="/assets/portfolio-ui/log_out.svg"
+                  src="/assets/portfolio-ui/close.svg"
                   alt=""
                   aria-hidden
-                  className="dashboard-floating-action-expanded-logout-icon"
+                  className="dashboard-floating-action-icon dashboard-floating-action-icon--layout-close"
                 />
               </button>
             ) : null}
+            <button
+              type="button"
+              className="dashboard-floating-action-btn btn-glass"
+              aria-label={isLoggedIn ? "Аккаунт" : menuOpen ? "Войти" : "Меню аккаунта"}
+              aria-expanded={isMobile ? menuOpen : undefined}
+              aria-haspopup={isMobile ? "menu" : undefined}
+              onClick={handleAccountClick}
+            >
+              {isLoggedIn && avatarImageUrl ? (
+                <img
+                  src={avatarImageUrl}
+                  alt=""
+                  aria-hidden
+                  className="dashboard-floating-action-avatar-image"
+                />
+              ) : isLoggedIn && avatarLetter ? (
+                <span
+                  className="dashboard-floating-action-avatar"
+                  style={{ backgroundColor: avatarBackground }}
+                  aria-hidden
+                >
+                  {avatarLetter}
+                </span>
+              ) : (
+                <img
+                  src="/assets/portfolio-ui/user-circle.svg"
+                  alt=""
+                  aria-hidden
+                  className="dashboard-floating-action-icon dashboard-floating-action-icon--user"
+                />
+              )}
+            </button>
+            <div className="dashboard-floating-action-expanded" role="menu" aria-label="Быстрые настройки">
+              {isMobile ? (
+                <>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="dashboard-floating-action-expanded-btn dashboard-floating-action-expanded-btn--add"
+                    aria-label="Добавить виджет"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      onAddWidget?.();
+                    }}
+                  >
+                    <img
+                      src="/assets/portfolio-ui/plus.svg"
+                      alt=""
+                      aria-hidden
+                      className="dashboard-floating-action-expanded-add-icon"
+                    />
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="dashboard-floating-action-expanded-btn dashboard-floating-action-expanded-btn--layout"
+                    aria-label="Настройки виджетов"
+                    aria-haspopup="dialog"
+                    aria-expanded={mobileLayoutOpen}
+                    onClick={() => {
+                      setMenuOpen(false);
+                      onOpenMobileLayout?.();
+                    }}
+                  >
+                    <img
+                      src="/assets/portfolio-ui/settings.svg"
+                      alt=""
+                      aria-hidden
+                      className="dashboard-floating-action-expanded-layout-icon"
+                    />
+                  </button>
+                </>
+              ) : null}
+              {isLoggedIn ? (
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="dashboard-floating-action-expanded-btn dashboard-floating-action-expanded-btn--settings"
+                  aria-label="Настройки"
+                  onClick={() => setProfileOpen(true)}
+                >
+                  <GearIcon className="dashboard-floating-action-expanded-gear" />
+                </button>
+              ) : null}
+              <ThemeToggle theme={prefs.theme} onSelect={(theme) => patch({ theme })} />
+              {isLoggedIn ? (
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="dashboard-floating-action-expanded-btn dashboard-floating-action-expanded-btn--logout"
+                  aria-label="Выйти"
+                  onClick={() => onSignOut?.()}
+                >
+                  <img
+                    src="/assets/portfolio-ui/log_out.svg"
+                    alt=""
+                    aria-hidden
+                    className="dashboard-floating-action-expanded-logout-icon"
+                  />
+                </button>
+              ) : null}
+            </div>
           </div>
         </div>
+
+        {profileOpen ? <div className="dashboard-floating-actions-settings-hover-bridge" aria-hidden /> : null}
+
+        {profileOpen ? (
+          <Suspense fallback={null}>
+            <ProfileSettingsModal
+              open
+              prefs={prefs}
+              user={profileUser}
+              canPersistProfile={isLoggedIn && user != null && user.id !== "guest-preview"}
+              onClose={() => setProfileOpen(false)}
+              onPrefsChange={onChange}
+              onUserUpdated={onUserUpdated}
+            />
+          </Suspense>
+        ) : null}
       </div>
-
-      {profileOpen ? <div className="dashboard-floating-actions-settings-hover-bridge" aria-hidden /> : null}
-
-      {profileOpen ? (
-        <Suspense fallback={null}>
-          <ProfileSettingsModal
-            open
-            prefs={prefs}
-            user={profileUser}
-            canPersistProfile={isLoggedIn && user != null && user.id !== "guest-preview"}
-            onClose={() => setProfileOpen(false)}
-            onPrefsChange={onChange}
-            onUserUpdated={onUserUpdated}
-          />
-        </Suspense>
-      ) : null}
-    </div>
+    </>
   );
 }

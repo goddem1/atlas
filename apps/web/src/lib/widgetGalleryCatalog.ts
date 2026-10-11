@@ -96,19 +96,19 @@ export const WIDGET_GALLERY_ITEMS: WidgetGalleryItem[] = [
     widgetType: "notes",
   },
   {
-    id: "index",
-    categoryId: "indices",
-    title: "Индекс",
-    description: "Один рыночный показатель и дневное изменение — тип выбирается в виджете",
-    widgetType: "index",
-    indexId: "total-2",
-  },
-  {
     id: "index-board",
     categoryId: "indices",
-    title: "Индексы",
-    description: "Сводка ключевых показателей: F&G, доминация, Total, VIX, DXY",
+    title: "Список индексов",
+    description: "Следите за изменениями всех индексов сразу",
     widgetType: "index-board",
+  },
+  {
+    id: "index",
+    categoryId: "indices",
+    title: "Один индекс",
+    description: "Сфокусируйтесь на том, что важно для вас",
+    widgetType: "index",
+    indexId: "vix",
   },
 ];
 

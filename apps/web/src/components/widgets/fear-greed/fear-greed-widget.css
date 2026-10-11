@@ -1,4 +1,4 @@
-@import url("../shared/portfolio-menu.css");
+﻿@import url("../shared/portfolio-menu.css");
 
 .fear-greed-widget-shell {
   position: relative;
@@ -17,7 +17,7 @@
   height: 100px;
   padding: 15px;
   border: 0;
-  border-radius: 25px 10px 25px 25px;
+  border-radius: var(--atlas-widget-radius);
   overflow: visible;
   text-align: center;
   color: var(--atlas-fg-primary);
