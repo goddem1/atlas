@@ -13,7 +13,7 @@ import {
   normalizeMarketIndexId,
   type MarketIndexId,
 } from "./marketIndexCatalog";
-import { hasMarketIndexKlineChart } from "./marketIndexKlineTarget";
+import { hasMarketIndexKlineChart } from "./marketIndexKlineSupport";
 import { resolveMarketIndexSnapshot } from "./marketIndexFromApi";
 import { setMarketIndicesPollingPaused, useMarketIndicesData } from "./useMarketIndicesData";
 import "../portfolio/portfolio-widget.css";

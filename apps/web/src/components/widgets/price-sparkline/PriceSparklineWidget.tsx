@@ -4,7 +4,7 @@ import { fetchCandles, fetchCryptocurrencies } from "../../../services/api";
 import { formatPriceTicker, formatRuDayMonth, percentChangeLast } from "../../../lib/formatChart";
 import { GALLERY_PRICE_SPARKLINE } from "../../dashboard/widgetGalleryPreviewData";
 import { PriceSparklineCard } from "./PriceSparklineCard";
-import { pairForCryptocurrency } from "./atlasCryptoDatafeed";
+import { pairForCryptocurrency } from "../../../lib/pairForCryptocurrency";
 import "./price-sparkline-widget.css";
 
 const CryptoPickerModal = lazy(() =>

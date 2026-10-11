@@ -59,9 +59,28 @@ async function parseJson<T>(res: Response): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+let cryptocurrenciesCache: { at: number; data: CryptocurrencyListItem[] } | null = null;
+let cryptocurrenciesInflight: Promise<CryptocurrencyListItem[]> | null = null;
+const CRYPTOCURRENCIES_TTL_MS = 30_000;
+
 export async function fetchCryptocurrencies(): Promise<CryptocurrencyListItem[]> {
-  const res = await fetch(`${apiBase()}/cryptocurrencies`, { cache: "no-store" });
-  return parseJson<CryptocurrencyListItem[]>(res);
+  if (cryptocurrenciesCache && Date.now() - cryptocurrenciesCache.at < CRYPTOCURRENCIES_TTL_MS) {
+    return cryptocurrenciesCache.data;
+  }
+  if (cryptocurrenciesInflight) return cryptocurrenciesInflight;
+
+  cryptocurrenciesInflight = (async () => {
+    try {
+      const res = await fetch(`${apiBase()}/cryptocurrencies`, { cache: "no-store" });
+      const data = await parseJson<CryptocurrencyListItem[]>(res);
+      cryptocurrenciesCache = { at: Date.now(), data };
+      return data;
+    } finally {
+      cryptocurrenciesInflight = null;
+    }
+  })();
+
+  return cryptocurrenciesInflight;
 }
 
 export async function fetchCandles(pair: string, days = 7): Promise<CandleApiRow[]> {

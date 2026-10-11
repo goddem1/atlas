@@ -102,6 +102,4 @@ export function resolveMarketIndexKlineTarget(indexId: MarketIndexId): MarketInd
   }
 }
 
-export function hasMarketIndexKlineChart(indexId: MarketIndexId): boolean {
-  return resolveMarketIndexKlineTarget(indexId) != null;
-}
+export { hasMarketIndexKlineChart } from "./marketIndexKlineSupport";

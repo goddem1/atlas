@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { CandleApiRow, CryptocurrencyListItem, WatchlistListData } from "@atlas-v1/shared";
 import { formatPriceTicker, percentChangeLast } from "../../../lib/formatChart";
 import { fetchCandles } from "../../../services/api";
-import { pairForCryptocurrency } from "./atlasCryptoDatafeed";
+import { pairForCryptocurrency } from "../../../lib/pairForCryptocurrency";
 import { generateBtcTestCandleRows, isBtcTestKlinePair } from "./btcKlineTestSeries";
 
 const POLL_MS = 30 * 1000;

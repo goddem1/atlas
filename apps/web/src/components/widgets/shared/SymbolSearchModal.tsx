@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import type { CryptocurrencyListItem, WatchlistListData } from "@atlas-v1/shared";
 import { normalizeSymbolList, WATCHLIST_MAX_SYMBOLS } from "@atlas-v1/shared";
 import { fetchMarketIndicesLatest, fetchMarketIndexDailyBars, fetchTelegramNewsDailyIndex } from "../../../services/api";
-import { pairForCryptocurrency } from "../price-sparkline/atlasCryptoDatafeed";
+import { pairForCryptocurrency } from "../../../lib/pairForCryptocurrency";
 import { isDashboardDarkTheme } from "../price-sparkline/candleKlineUtils";
 import { BTC_DOMINANCE_CHART_SYMBOL } from "../price-sparkline/btcDominanceChartSymbol";
 import { NEWS_INDEX_CHART_SYMBOL } from "../price-sparkline/newsIndexChartSymbol";

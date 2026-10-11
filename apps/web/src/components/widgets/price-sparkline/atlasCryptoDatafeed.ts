@@ -1,6 +1,7 @@
 import type { CandleApiRow, CryptocurrencyListItem } from "@atlas-v1/shared";
 import type { Datafeed, Period, SymbolInfo } from "@klinecharts/pro";
 import type { KLineData } from "klinecharts";
+import { pairForCryptocurrency } from "../../../lib/pairForCryptocurrency";
 import { fetchCandles, fetchFearGreedDailyBars, fetchMarketIndexDailyBars, fetchTelegramNewsDailyIndex } from "../../../services/api";
 import {
   generateBtcTestCandleRows,
@@ -80,10 +81,6 @@ import {
 
 const CANDLES_POLL_MS = 30 * 1000;
 const INDEX_DAILY_POLL_MS = 5 * 60 * 1000;
-
-export function pairForCryptocurrency(c: Pick<CryptocurrencyListItem, "symbol" | "pairSymbol">): string {
-  return (c.pairSymbol?.trim() || `${c.symbol}USDT`).toUpperCase();
-}
 
 type CatalogEntry = {
   crypto: CryptocurrencyListItem;

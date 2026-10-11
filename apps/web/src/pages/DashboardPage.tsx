@@ -19,7 +19,7 @@ import { NewsWidgetExplainModal } from "../components/widgets/news/NewsWidgetExp
 import { PortfolioWidget } from "../components/widgets/portfolio/PortfolioWidget";
 import { FedCurveWidget } from "../components/widgets/fed-curve/FedCurveWidget";
 import { PriceSparklineWidget } from "../components/widgets/price-sparkline/PriceSparklineWidget";
-import { pairForCryptocurrency } from "../components/widgets/price-sparkline/atlasCryptoDatafeed";
+import { pairForCryptocurrency } from "../lib/pairForCryptocurrency";
 import { isTelegramEnabled } from "../lib/telegramFeature";
 import { WatchlistWidget, type WatchlistWidgetState } from "../components/widgets/watchlist/WatchlistWidget";
 import {
@@ -211,12 +211,14 @@ const DraggableWidget = memo(function DraggableWidget({
             preferredSymbol={widget.symbol ?? null}
             onPreferredSymbolChange={handlePriceSymbol}
             onDeleteWidget={handleDelete}
+            galleryPreview={galleryPreview}
           />
         ) : widget.type === "macro-calendar" ? (
           <MacroCalendarWidget
             dragHandleClassName="drag-handle"
             onDeleteWidget={handleDelete}
             onOpenFullCalendar={onOpenMacroCalendar}
+            galleryPreview={galleryPreview}
           />
         ) : widget.type === "fed-curve" ? (
           <FedCurveWidget
