@@ -12,7 +12,8 @@ body,
 
 html,
 body {
-  font-family: "Rubik", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  /* System stack first: Google Fonts often stalls Safari on RU mobile networks */
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   overscroll-behavior: none;
 }
 
