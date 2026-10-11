@@ -24,7 +24,7 @@
   z-index: 1;
   width: min(1820px, calc(100vw - 24px));
   height: auto;
-  max-height: min(920px, calc(100vh - 24px));
+  max-height: min(920px, calc(100dvh - 24px));
   margin: auto;
   display: flex;
   flex-direction: column;

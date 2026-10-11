@@ -478,6 +478,12 @@ html[data-dashboard-theme="dark"] .auth-banner-success {
 }
 
 @media (max-width: 430px) {
+  .auth-modal-overlay .asset-picker-backdrop {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: rgba(0, 0, 0, 0.35);
+  }
+
   .auth-modal-title {
     font-size: 28px;
   }

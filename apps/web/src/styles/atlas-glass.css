@@ -417,5 +417,20 @@ html[data-backdrop-blur-pause] .dashboard-page-root .dashboard-quick-tabs * {
   :root {
     --atlas-widget-radius: 15px 7px 15px 15px;
     --atlas-widget-radius-fed-curve: 15px 7px 15px 15px;
+    /* Safari/iOS: многослойный backdrop-blur на дашборде подвешивает UI */
+    --atlas-glass-backdrop: none;
+    --atlas-glass-bg: rgba(255, 255, 255, 0.78);
+  }
+
+  html[data-dashboard-theme="dark"] {
+    --atlas-glass-bg: rgba(18, 22, 30, 0.88);
+  }
+
+  .dashboard-page-root,
+  .dashboard-page-root *,
+  .dashboard-page-root *::before,
+  .dashboard-page-root *::after {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
   }
 }

@@ -27,7 +27,8 @@
   z-index: 1;
   box-sizing: border-box;
   width: min(1320px, calc(100vw - 48px));
-  height: min(760px, calc(100vh - 48px));
+  height: min(760px, calc(100dvh - 48px));
+  max-height: -webkit-fill-available;
   display: flex;
   flex-direction: column;
   overflow: hidden;

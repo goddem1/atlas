@@ -1,9 +1,16 @@
 import path from "node:path";
+import legacy from "@vitejs/plugin-legacy";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    legacy({
+      targets: ["defaults", "safari >= 14", "iOS >= 14"],
+      additionalLegacyPolyfills: ["regenerator-runtime/runtime"],
+    }),
+  ],
   resolve: {
     alias: {
       "@atlas-v1/shared": path.resolve(__dirname, "../../packages/shared/src/index.ts"),
