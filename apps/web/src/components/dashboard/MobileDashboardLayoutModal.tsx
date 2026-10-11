@@ -248,7 +248,7 @@ export function MobileDashboardLayoutModal({
     setColDropTarget(null);
   };
 
-  const startRowMove = (rowIndex: number, clientY: number, pointerId: number, target: HTMLElement) => {
+  const startRowMove = (rowIndex: number, pointerId: number, target: HTMLElement) => {
     dragFromRowRef.current = rowIndex;
     dragFromColRef.current = null;
     dragAxisRef.current = "y";
@@ -452,8 +452,8 @@ export function MobileDashboardLayoutModal({
                           <SettingsButton onClick={() => onOpenSettings(row.widget)} />
                         ) : null}
                         <MoveHandle
-                          onMoveStart={(x, y, pointerId, target) =>
-                            startRowMove(rowIndex, y, pointerId, target)
+                          onMoveStart={(_x, _y, pointerId, target) =>
+                            startRowMove(rowIndex, pointerId, target)
                           }
                         />
                       </div>
