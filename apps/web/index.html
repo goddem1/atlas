@@ -9,5 +9,23 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <script>
+      window.onerror = function(msg, src, line, col, err) {
+        document.body.style.background = '#111';
+        document.body.innerHTML = '<div style="color:red;padding:20px;font-size:14px;word-break:break-all">' +
+          '<b>ERROR:</b> ' + msg + '<br><br>' +
+          '<b>File:</b> ' + src + '<br>' +
+          '<b>Line:</b> ' + line +
+          (err && err.stack ? '<br><br><b>Stack:</b><br>' + err.stack.replace(/\n/g,'<br>') : '') +
+          '</div>';
+      };
+      window.addEventListener('unhandledrejection', function(e) {
+        document.body.style.background = '#111';
+        document.body.innerHTML = '<div style="color:orange;padding:20px;font-size:14px;word-break:break-all">' +
+          '<b>PROMISE ERROR:</b><br>' + String(e.reason) +
+          (e.reason && e.reason.stack ? '<br><br>' + e.reason.stack.replace(/\n/g,'<br>') : '') +
+          '</div>';
+      });
+    </script>
   </body>
 </html>
