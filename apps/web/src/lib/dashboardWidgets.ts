@@ -24,39 +24,46 @@ export const DASHBOARD_EDGE_INSET = 20;
 export const DASHBOARD_WIDGET_GAP = 20;
 /**
  * Телефоны (iPhone 14 Pro Max ~440, Pro ~390, SE/mini ~360):
- * все виджеты в одну колонку. Покрывает vw ≤ 440.
+ * все виджеты в одну колонку. Покрывает layout viewport ≤ 440.
+ *
+ * Важно: не подмешивать «грубый» pointer / max-width:1023 — в Safari
+ * «Версия для компьютера» layout ~980px, а mobile-CSS заточен под ~390.
+ * Смесь даёт «кривую» вёрстку. Desktop-site детектим отдельно.
  */
 export const DASHBOARD_MOBILE_SINGLE_COL_MAX_WIDTH = 440;
 
-/**
- * Safari «Версия для компьютера» даёт layout ~980px при том же iPhone —
- * тогда один max-width: 440px не срабатывает. Доп. сигнал: coarse pointer.
- */
-export const DASHBOARD_MOBILE_COARSE_MAX_WIDTH = 1023;
-
-/** Media query для sync JS ↔ CSS (включая Safari desktop-site на телефоне). */
-export const DASHBOARD_MOBILE_MEDIA_QUERY = `(max-width: ${DASHBOARD_MOBILE_SINGLE_COL_MAX_WIDTH}px), ((hover: none) and (pointer: coarse) and (max-width: ${DASHBOARD_MOBILE_COARSE_MAX_WIDTH}px))`;
+/** Media query = тот же порог, что и CSS `@media (max-width: 440px)`. */
+export const DASHBOARD_MOBILE_MEDIA_QUERY = `(max-width: ${DASHBOARD_MOBILE_SINGLE_COL_MAX_WIDTH}px)`;
 
 export function getDashboardViewportWidth(): number {
   if (typeof window === "undefined") return 1200;
   const docW = document.documentElement?.clientWidth;
   const parts = [window.innerWidth];
   if (typeof docW === "number" && docW > 0) parts.push(docW);
-  if (window.visualViewport?.width) parts.push(window.visualViewport.width);
   return Math.min(...parts);
+}
+
+/** Реальная CSS-ширина экрана устройства (на iPhone остаётся ~390 даже при desktop-site). */
+export function getDashboardScreenWidth(): number {
+  if (typeof window === "undefined") return 1200;
+  return window.screen?.width > 0 ? window.screen.width : getDashboardViewportWidth();
+}
+
+/**
+ * Safari/Chrome iOS «Запросить веб-сайт для компьютера»:
+ * layout viewport ~980, screen.width остаётся шириной телефона.
+ */
+export function isDesktopSiteOnPhone(): boolean {
+  if (typeof window === "undefined") return false;
+  const layout = getDashboardViewportWidth();
+  const screenW = getDashboardScreenWidth();
+  return screenW <= DASHBOARD_MOBILE_SINGLE_COL_MAX_WIDTH && layout > DASHBOARD_MOBILE_SINGLE_COL_MAX_WIDTH + 80;
 }
 
 export function isDashboardMobileSingleColumn(
   viewportWidth: number = typeof window !== "undefined" ? getDashboardViewportWidth() : 1200,
 ): boolean {
-  if (viewportWidth <= DASHBOARD_MOBILE_SINGLE_COL_MAX_WIDTH) return true;
-  if (typeof window === "undefined") return false;
-  // iPhone/iPad Safari с Request Desktop Website: ширина большая, pointer coarse.
-  try {
-    return window.matchMedia(DASHBOARD_MOBILE_MEDIA_QUERY).matches;
-  } catch {
-    return false;
-  }
+  return viewportWidth <= DASHBOARD_MOBILE_SINGLE_COL_MAX_WIDTH;
 }
 
 export type DashboardWidgetType =

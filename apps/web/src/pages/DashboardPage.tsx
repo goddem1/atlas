@@ -41,6 +41,7 @@ import {
   getDashboardViewportWidth,
   insertWidgetInMobileOrder,
   isDashboardMobileSingleColumn,
+  isDesktopSiteOnPhone,
   layoutAllWidgetsSequential,
   layoutDashboardWidgetsForBoard,
   normalizeDashboardWidgets,
@@ -316,6 +317,9 @@ export function DashboardPage() {
   const [mobileSingleCol, setMobileSingleCol] = useState(() =>
     typeof window !== "undefined" ? isDashboardMobileSingleColumn() : false,
   );
+  const [desktopSiteOnPhone, setDesktopSiteOnPhone] = useState(() =>
+    typeof window !== "undefined" ? isDesktopSiteOnPhone() : false,
+  );
   const skipPersistRef = useRef(true);
   /** Сброс гостевого дашборда только после выхода из аккаунта, не при каждой проверке сессии. */
   const wasLoggedInRef = useRef(false);
@@ -449,6 +453,7 @@ export function DashboardPage() {
     const sync = () => {
       const mobile = isDashboardMobileSingleColumn();
       setMobileSingleCol(mobile);
+      setDesktopSiteOnPhone(isDesktopSiteOnPhone());
       document.documentElement.classList.toggle("dashboard-mobile", mobile);
       setBoundsVersion((v) => v + 1);
     };
@@ -713,6 +718,14 @@ export function DashboardPage() {
       className={cn("dashboard-page-root", mobileSingleCol && "dashboard-page-root--mobile-col")}
       data-dashboard-theme={prefs.theme}
     >
+      {desktopSiteOnPhone ? (
+        <div className="dashboard-desktop-site-banner" role="status">
+          <p>
+            Safari открыл <b>версию для компьютера</b> — из‑за этого вёрстка «плывёт». Выключите: кнопка{" "}
+            <b>aA</b> → «Веб-сайт» → «Запросить веб-сайт для компьютера» → Выкл., затем обновите страницу.
+          </p>
+        </div>
+      ) : null}
       <div className="dashboard-quick-tabs" aria-label="Быстрый доступ к вкладкам">
         <div className="dashboard-quick-tabs-dim" aria-hidden="true" />
         <div className="dashboard-quick-tabs-hitbox" aria-hidden="true" />

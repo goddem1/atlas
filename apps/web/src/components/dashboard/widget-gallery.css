@@ -769,7 +769,7 @@ html[data-dashboard-theme="dark"] .widget-gallery-category-btn.is-active {
 }
 
 /* Mobile ≤440: новый полноэкранный экран добавления. */
-@media (max-width: 440px), ((hover: none) and (pointer: coarse) and (max-width: 1023px)) {
+@media (max-width: 440px) {
   .widget-gallery-overlay {
     z-index: 470;
     display: flex;

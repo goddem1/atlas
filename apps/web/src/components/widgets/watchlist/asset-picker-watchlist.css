@@ -396,7 +396,7 @@ html[data-dashboard-theme="dark"] .asset-picker-watchlist-item-action-icon {
   }
 }
 
-@media (max-width: 440px), ((hover: none) and (pointer: coarse) and (max-width: 1023px)) {
+@media (max-width: 440px) {
   .asset-picker-watchlist-dialog {
     padding: 10px 10px calc(10px + env(safe-area-inset-bottom, 0px));
     gap: 10px;

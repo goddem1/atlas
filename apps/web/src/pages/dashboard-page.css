@@ -36,13 +36,37 @@
   inset: 1.25rem; /* = Tailwind inset-5 / DASHBOARD_EDGE_INSET */
 }
 
+/* Safari «версия для компьютера» на iPhone: layout ~980px, адаптивы ломаются. */
+.dashboard-desktop-site-banner {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  z-index: 1000;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: rgba(20, 20, 24, 0.92);
+  color: #f5f5f5;
+  font-size: 14px;
+  line-height: 1.45;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+  pointer-events: auto;
+}
+
+.dashboard-desktop-site-banner p {
+  margin: 0;
+}
+
+.dashboard-desktop-site-banner b {
+  font-weight: 650;
+}
+
 /*
- * Мобильная колонка:
- * — @media ≤440px
- * — coarse pointer ≤1023px (Safari «Версия для ПК» на iPhone ~980px)
- * — .dashboard-widget-board--mobile-col / .dashboard-main-surface--mobile-col (JS)
+ * Мобильная колонка только при layout ≤440px (как JS).
+ * Не форсировать mobile-CSS при Safari desktop-site (~980px) — получается «криво».
+ * Класс --mobile-col дублирует правила, когда JS и media совпали.
  */
-@media (max-width: 440px), ((hover: none) and (pointer: coarse) and (max-width: 1023px)) {
+@media (max-width: 440px) {
   .dashboard-main-surface {
     overflow-x: hidden;
     overflow-y: auto;
@@ -422,7 +446,7 @@ html.dashboard-mobile .index-widget-shell {
   background: var(--atlas-btn-glass-active-bg);
 }
 
-@media (max-width: 440px), ((hover: none) and (pointer: coarse) and (max-width: 1023px)) {
+@media (max-width: 440px) {
   .dashboard-quick-tabs {
     display: none;
   }
@@ -848,7 +872,7 @@ html[data-dashboard-theme="dark"] .dashboard-theme-toggle--panel .dashboard-them
   display: none;
 }
 
-@media (max-width: 440px), ((hover: none) and (pointer: coarse) and (max-width: 1023px)) {
+@media (max-width: 440px) {
   .dashboard-floating-action-btn--add-desktop {
     display: none;
   }

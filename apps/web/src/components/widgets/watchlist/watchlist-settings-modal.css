@@ -294,7 +294,7 @@ html[data-dashboard-theme="dark"] .watchlist-settings-list-drag {
   }
 }
 
-@media (max-width: 440px), ((hover: none) and (pointer: coarse) and (max-width: 1023px)) {
+@media (max-width: 440px) {
   .watchlist-settings-backdrop-layer {
     z-index: 480;
   }
