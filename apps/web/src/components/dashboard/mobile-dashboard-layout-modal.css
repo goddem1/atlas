@@ -137,7 +137,7 @@ html[data-dashboard-theme="dark"] .mdl-overlay {
 
 .mdl-index-cell {
   position: relative;
-  width: min(130px, calc(100vw * 130 / 430));
+  width: min(130px, calc(100vw * 130 / 440));
   max-width: 130px;
   min-width: 0;
   flex: 1 1 0;

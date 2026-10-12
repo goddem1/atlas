@@ -342,7 +342,7 @@ html[data-dashboard-theme="dark"] .fed-curve-y-label {
   stroke: #9ca3af;
 }
 
-@media (max-width: 430px) {
+@media (max-width: 440px) {
   .fed-curve-widget-shell {
     width: 100%;
     max-width: 100%;

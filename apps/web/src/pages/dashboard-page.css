@@ -36,8 +36,8 @@
   inset: 1.25rem; /* = Tailwind inset-5 / DASHBOARD_EDGE_INSET */
 }
 
-/* Телефоны ≤430px (360 / 390 / 430): одна колонка, скролл по вертикали. */
-@media (max-width: 430px) {
+/* Телефоны ≤440px (360 / 390 / 440): одна колонка, скролл по вертикали. */
+@media (max-width: 440px) {
   .dashboard-main-surface {
     overflow-x: hidden;
     overflow-y: auto;
@@ -64,7 +64,7 @@
     width: 100%;
     min-height: 100%;
     box-sizing: border-box;
-    padding: 10px; /* 430 и 390 */
+    padding: 10px; /* 440 и 390 */
   }
 
   .dashboard-widget-board .dashboard-widget-slot,
@@ -112,8 +112,8 @@
   .dashboard-widget-board .dashboard-widget-slot--index,
   .dashboard-widget-board .dashboard-widget-slot--index.react-draggable,
   .dashboard-widget-board .dashboard-widget-slot--index .react-draggable {
-    width: min(130px, calc(100vw * 130 / 430)) !important;
-    max-width: min(130px, calc(100vw * 130 / 430)) !important;
+    width: min(130px, calc(100vw * 130 / 440)) !important;
+    max-width: min(130px, calc(100vw * 130 / 440)) !important;
     height: auto !important;
     flex: 0 0 auto;
   }
@@ -282,7 +282,7 @@
   background: var(--atlas-btn-glass-active-bg);
 }
 
-@media (max-width: 430px) {
+@media (max-width: 440px) {
   .dashboard-quick-tabs {
     display: none;
   }
@@ -704,7 +704,7 @@ html[data-dashboard-theme="dark"] .dashboard-theme-toggle--panel .dashboard-them
   display: none;
 }
 
-@media (max-width: 430px) {
+@media (max-width: 440px) {
   .dashboard-floating-action-btn--add-desktop {
     display: none;
   }

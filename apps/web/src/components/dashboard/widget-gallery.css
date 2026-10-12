@@ -633,7 +633,7 @@ html[data-dashboard-theme="dark"] .widget-gallery-category-btn.is-active {
   gap: 7px !important;
 }
 
-/* Десктопный вид: мобильные @media (≤430 / width:430) иначе раздувают до 410px и обрезают. */
+/* Десктопный вид: мобильные @media (≤440 / width:440) иначе раздувают до 410px и обрезают. */
 .widget-gallery-preview .price-widget-shell {
   width: 100% !important;
   max-width: none !important;
@@ -744,7 +744,7 @@ html[data-dashboard-theme="dark"] .widget-gallery-category-btn.is-active {
   }
 }
 
-@media (max-width: 720px) and (min-width: 431px) {
+@media (max-width: 720px) and (min-width: 441px) {
   .widget-gallery-layout {
     flex-direction: column;
   }
@@ -768,8 +768,8 @@ html[data-dashboard-theme="dark"] .widget-gallery-category-btn.is-active {
   }
 }
 
-/* Mobile ≤430: новый полноэкранный экран добавления. */
-@media (max-width: 430px) {
+/* Mobile ≤440: новый полноэкранный экран добавления. */
+@media (max-width: 440px) {
   .widget-gallery-overlay {
     z-index: 470;
     display: flex;

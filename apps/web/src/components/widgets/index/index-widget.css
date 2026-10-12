@@ -125,11 +125,11 @@
   height: 14px;
 }
 
-@media (max-width: 430px) {
+@media (max-width: 440px) {
   .index-widget-shell,
   .index-widget-card {
-    width: min(130px, calc(100vw * 130 / 430));
-    max-width: min(130px, calc(100vw * 130 / 430));
+    width: min(130px, calc(100vw * 130 / 440));
+    max-width: min(130px, calc(100vw * 130 / 440));
   }
 
   .index-widget-card {

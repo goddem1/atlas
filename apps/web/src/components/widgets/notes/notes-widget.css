@@ -1,4 +1,4 @@
-﻿.notes-widget-shell {
+.notes-widget-shell {
   position: relative;
   box-sizing: border-box;
   width: 100%;
@@ -183,7 +183,7 @@ html[data-dashboard-theme="dark"] .notes-widget-row-icon {
   pointer-events: none;
 }
 
-@media (max-width: 430px) {
+@media (max-width: 440px) {
   .notes-widget-shell,
   .notes-widget-card,
   .notes-widget-body {

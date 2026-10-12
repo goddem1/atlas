@@ -370,7 +370,7 @@
   color: #ef4444;
 }
 
-@media (max-width: 430px) {
+@media (max-width: 440px) {
   .watchlist-shell,
   .watchlist-card {
     width: 100%;

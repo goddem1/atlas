@@ -252,7 +252,7 @@
   height: 14px;
 }
 
-@media (max-width: 430px) {
+@media (max-width: 440px) {
   .journal-widget-shell,
   .journal-widget-card-elevated,
   .journal-widget-card {
@@ -293,7 +293,7 @@
 
   .journal-widget-chart-wrap {
     flex: none;
-    width: min(188px, calc(100vw * 188 / 430));
+    width: min(188px, calc(100vw * 188 / 440));
     max-width: 188px;
     height: var(--portfolio-chart-height);
   }
@@ -309,7 +309,7 @@
 
   .journal-widget-chart-block .portfolio-timeframe-switcher > .btn-on-glass {
     min-width: 0;
-    width: min(40px, calc(100vw * 40 / 430));
+    width: min(40px, calc(100vw * 40 / 440));
     max-width: 40px;
     height: 21px;
     box-sizing: border-box;

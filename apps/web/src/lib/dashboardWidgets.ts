@@ -23,10 +23,10 @@ export const DASHBOARD_EDGE_INSET = 20;
 /** Минимальный зазор между прямоугольниками виджетов (px). */
 export const DASHBOARD_WIDGET_GAP = 20;
 /**
- * Телефоны (iPhone 14 Pro Max ~430, Pro ~390, SE/mini ~360):
- * все виджеты в одну колонку. Покрывает vw ≤ 430.
+ * Телефоны (iPhone 14 Pro Max ~440, Pro ~390, SE/mini ~360):
+ * все виджеты в одну колонку. Покрывает vw ≤ 440.
  */
-export const DASHBOARD_MOBILE_SINGLE_COL_MAX_WIDTH = 430;
+export const DASHBOARD_MOBILE_SINGLE_COL_MAX_WIDTH = 440;
 
 export function isDashboardMobileSingleColumn(
   viewportWidth: number = typeof window !== "undefined" ? window.innerWidth : 1200,
