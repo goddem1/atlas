@@ -183,7 +183,7 @@ html[data-dashboard-theme="dark"] .notes-widget-row-icon {
   pointer-events: none;
 }
 
-@media (max-width: 440px), ((hover: none) and (pointer: coarse) and (max-width: 1024px)) {
+@media (max-width: 768px), ((hover: none) and (pointer: coarse) and (max-width: 1024px)) {
   .notes-widget-shell,
   .notes-widget-card,
   .notes-widget-body {

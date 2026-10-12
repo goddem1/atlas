@@ -149,7 +149,7 @@
   height: 14px;
 }
 
-@media (max-width: 440px), ((hover: none) and (pointer: coarse) and (max-width: 1024px)) {
+@media (max-width: 768px), ((hover: none) and (pointer: coarse) and (max-width: 1024px)) {
   .index-board-shell,
   .index-board-card {
     width: 100%;

@@ -35,7 +35,7 @@ function cn(...parts: Array<string | undefined | false>): string {
 
 export function FedCurvePeriodSettings({ open, compareDays, onSelect, onClose }: Props) {
   const panelRef = useRef<HTMLDivElement>(null);
-  const isMobile = useMaxWidth(440);
+  const isMobile = useMaxWidth(768);
   useBackdropBlurPause(open && isMobile);
 
   useEffect(() => {

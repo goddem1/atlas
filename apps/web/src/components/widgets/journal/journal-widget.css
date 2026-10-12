@@ -252,7 +252,7 @@
   height: 14px;
 }
 
-@media (max-width: 440px), ((hover: none) and (pointer: coarse) and (max-width: 1024px)) {
+@media (max-width: 768px), ((hover: none) and (pointer: coarse) and (max-width: 1024px)) {
   .journal-widget-shell,
   .journal-widget-card-elevated,
   .journal-widget-card {

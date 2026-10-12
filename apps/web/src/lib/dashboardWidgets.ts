@@ -23,14 +23,14 @@ export const DASHBOARD_EDGE_INSET = 20;
 /** Минимальный зазор между прямоугольниками виджетов (px). */
 export const DASHBOARD_WIDGET_GAP = 20;
 /**
- * Порог «узкий экран». На телефоне Safari ширина может быть любой —
- * мобильный режим также включаем по pointer/UA (см. MEDIA_QUERY).
+ * Порог «узкий экран» (стандартный md). На телефоне Safari ширина может
+ * быть любой — мобильный режим также включаем по pointer/UA (см. MEDIA_QUERY).
  */
-export const DASHBOARD_MOBILE_SINGLE_COL_MAX_WIDTH = 440;
+export const DASHBOARD_MOBILE_SINGLE_COL_MAX_WIDTH = 768;
 
 /**
  * Мобилка = узкий layout ИЛИ тач-телефон/планшет (как открывается Safari),
- * без требования ровно ≤440px.
+ * без требования ровно ≤768px.
  */
 export const DASHBOARD_MOBILE_MEDIA_QUERY = `(max-width: ${DASHBOARD_MOBILE_SINGLE_COL_MAX_WIDTH}px), ((hover: none) and (pointer: coarse) and (max-width: 1024px))`;
 
