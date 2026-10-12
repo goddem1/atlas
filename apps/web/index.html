@@ -2,7 +2,31 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      id="pano-viewport"
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+    <script>
+      /* Safari: зафиксировать ширину = screen.width до загрузки CSS/JS. */
+      (function () {
+        try {
+          var sw = screen.width || 0;
+          if (sw <= 0 || sw > 440) return;
+          var ua = navigator.userAgent || "";
+          var phone =
+            /iPhone|iPod|Android/i.test(ua) ||
+            (navigator.maxTouchPoints > 1 && sw <= 440);
+          if (!phone) return;
+          var m = document.getElementById("pano-viewport");
+          if (!m) return;
+          m.setAttribute(
+            "content",
+            "width=" + sw + ", initial-scale=1, maximum-scale=1, viewport-fit=cover",
+          );
+        } catch (e) {}
+      })();
+    </script>
     <link rel="icon" type="image/svg+xml" href="/assets/portfolio-ui/panoLogo.svg" />
     <title>Panorama</title>
   </head>

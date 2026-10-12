@@ -24,11 +24,7 @@ export const DASHBOARD_EDGE_INSET = 20;
 export const DASHBOARD_WIDGET_GAP = 20;
 /**
  * Телефоны (iPhone 14 Pro Max ~440, Pro ~390, SE/mini ~360):
- * все виджеты в одну колонку. Покрывает layout viewport ≤ 440.
- *
- * Важно: не подмешивать «грубый» pointer / max-width:1023 — в Safari
- * «Версия для компьютера» layout ~980px, а mobile-CSS заточен под ~390.
- * Смесь даёт «кривую» вёрстку. Desktop-site детектим отдельно.
+ * все виджеты в одну колонку.
  */
 export const DASHBOARD_MOBILE_SINGLE_COL_MAX_WIDTH = 440;
 
@@ -43,27 +39,55 @@ export function getDashboardViewportWidth(): number {
   return Math.min(...parts);
 }
 
-/** Реальная CSS-ширина экрана устройства (на iPhone остаётся ~390 даже при desktop-site). */
+/** CSS-ширина экрана (на iPhone ~390 даже если Safari врёт layout ~980). */
 export function getDashboardScreenWidth(): number {
   if (typeof window === "undefined") return 1200;
   return window.screen?.width > 0 ? window.screen.width : getDashboardViewportWidth();
 }
 
+export function isPhoneScreen(): boolean {
+  if (typeof window === "undefined") return false;
+  return getDashboardScreenWidth() <= DASHBOARD_MOBILE_SINGLE_COL_MAX_WIDTH;
+}
+
 /**
- * Safari/Chrome iOS «Запросить веб-сайт для компьютера»:
+ * Жёстко ставит viewport = screen.width, чтобы `@media (max-width: 440px)`
+ * и JS видели одну ширину (Safari иначе может держать «компьютерный» layout).
+ */
+export function lockPhoneViewport(): boolean {
+  if (typeof document === "undefined" || typeof window === "undefined") return false;
+  if (!isPhoneScreen()) return false;
+  const sw = getDashboardScreenWidth();
+  const meta =
+    document.querySelector<HTMLMetaElement>('meta[name="viewport"]') ??
+    document.querySelector<HTMLMetaElement>("#pano-viewport");
+  if (!meta) return false;
+  const next = `width=${sw}, initial-scale=1, maximum-scale=1, viewport-fit=cover`;
+  if (meta.getAttribute("content") === next) return false;
+  meta.setAttribute("content", next);
+  return true;
+}
+
+/**
+ * Safari «Запросить веб-сайт для компьютера»:
  * layout viewport ~980, screen.width остаётся шириной телефона.
  */
 export function isDesktopSiteOnPhone(): boolean {
   if (typeof window === "undefined") return false;
   const layout = getDashboardViewportWidth();
   const screenW = getDashboardScreenWidth();
-  return screenW <= DASHBOARD_MOBILE_SINGLE_COL_MAX_WIDTH && layout > DASHBOARD_MOBILE_SINGLE_COL_MAX_WIDTH + 80;
+  return isPhoneScreen() && layout > DASHBOARD_MOBILE_SINGLE_COL_MAX_WIDTH + 80;
 }
 
 export function isDashboardMobileSingleColumn(
   viewportWidth: number = typeof window !== "undefined" ? getDashboardViewportWidth() : 1200,
 ): boolean {
-  return viewportWidth <= DASHBOARD_MOBILE_SINGLE_COL_MAX_WIDTH;
+  if (viewportWidth <= DASHBOARD_MOBILE_SINGLE_COL_MAX_WIDTH) return true;
+  if (typeof window === "undefined") return false;
+  // Desktop-site (~980): не форсим mobile-CSS — будет «криво». Баннер просит выключить режим.
+  if (isDesktopSiteOnPhone()) return false;
+  // Экран телефона при нормальном viewport.
+  return isPhoneScreen();
 }
 
 export type DashboardWidgetType =

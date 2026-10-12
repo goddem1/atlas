@@ -42,6 +42,7 @@ import {
   insertWidgetInMobileOrder,
   isDashboardMobileSingleColumn,
   isDesktopSiteOnPhone,
+  lockPhoneViewport,
   layoutAllWidgetsSequential,
   layoutDashboardWidgetsForBoard,
   normalizeDashboardWidgets,
@@ -448,9 +449,11 @@ export function DashboardPage() {
     setWidgets((ws) => layoutDashboardWidgetsForBoard(ws, width, height, vw));
   }, []);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
+    lockPhoneViewport();
     const mq = window.matchMedia(DASHBOARD_MOBILE_MEDIA_QUERY);
     const sync = () => {
+      lockPhoneViewport();
       const mobile = isDashboardMobileSingleColumn();
       setMobileSingleCol(mobile);
       setDesktopSiteOnPhone(isDesktopSiteOnPhone());
@@ -460,10 +463,12 @@ export function DashboardPage() {
     sync();
     mq.addEventListener("change", sync);
     window.addEventListener("resize", sync);
+    window.addEventListener("orientationchange", sync);
     window.visualViewport?.addEventListener("resize", sync);
     return () => {
       mq.removeEventListener("change", sync);
       window.removeEventListener("resize", sync);
+      window.removeEventListener("orientationchange", sync);
       window.visualViewport?.removeEventListener("resize", sync);
       document.documentElement.classList.remove("dashboard-mobile");
     };
@@ -721,8 +726,8 @@ export function DashboardPage() {
       {desktopSiteOnPhone ? (
         <div className="dashboard-desktop-site-banner" role="status">
           <p>
-            Safari открыл <b>версию для компьютера</b> — из‑за этого вёрстка «плывёт». Выключите: кнопка{" "}
-            <b>aA</b> → «Веб-сайт» → «Запросить веб-сайт для компьютера» → Выкл., затем обновите страницу.
+            Safari отдаёт ширину как у компьютера — мобильная вёрстка не включается. Нажмите <b>aA</b> →
+            «Веб-сайт» → выключите «Запросить веб-сайт для компьютера» → обновите страницу.
           </p>
         </div>
       ) : null}
