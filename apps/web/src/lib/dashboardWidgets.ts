@@ -75,7 +75,6 @@ export function lockPhoneViewport(): boolean {
 export function isDesktopSiteOnPhone(): boolean {
   if (typeof window === "undefined") return false;
   const layout = getDashboardViewportWidth();
-  const screenW = getDashboardScreenWidth();
   return isPhoneScreen() && layout > DASHBOARD_MOBILE_SINGLE_COL_MAX_WIDTH + 80;
 }
 
