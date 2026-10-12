@@ -59,6 +59,7 @@
   top: 0;
   z-index: 2;
   isolation: isolate;
+  overflow: visible;
   min-height: 60px;
   padding: 5px 12px 5px 40px;
   border-radius: 50px;

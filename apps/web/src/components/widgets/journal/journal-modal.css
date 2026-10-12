@@ -142,6 +142,7 @@
   position: sticky;
   top: 0;
   z-index: 2;
+  overflow: visible;
   padding: 10px 12px 8px;
   border-bottom: 1px solid rgba(60, 60, 67, 0.12);
   background: rgba(255, 255, 255, 0.28);
@@ -1133,6 +1134,7 @@ html[data-dashboard-theme="dark"] .journal-table-footer-btn--primary:active {
   margin-left: auto;
   position: sticky;
   right: 0;
+  overflow: visible;
   padding-left: 8px;
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.28) 24%);
 }

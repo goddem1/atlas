@@ -309,14 +309,21 @@ html.dashboard-mobile .index-widget-shell {
   left: 0;
   top: calc(50% - 50dvh);
   width: 30vw;
-  height: 100vh;
   height: 100dvh;
-  min-height: -webkit-fill-available;
+  min-height: 100dvh;
   pointer-events: none;
   z-index: -1;
   opacity: 0;
   background: linear-gradient(90deg, rgba(0, 0, 0, 0.26) 0%, rgba(0, 0, 0, 0.12) 35%, rgba(0, 0, 0, 0) 100%);
   transition: opacity 0.28s ease;
+}
+
+@supports not (height: 100dvh) {
+  .dashboard-quick-tabs-dim {
+    height: -webkit-fill-available;
+    min-height: -webkit-fill-available;
+    top: calc(50% - 50vh);
+  }
 }
 
 .dashboard-quick-tabs-trigger {
