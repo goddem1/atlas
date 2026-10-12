@@ -63,7 +63,7 @@
 }
 
 .macro-cal-col-labels span {
-  text-align: start;
+  text-align: center;
 }
 
 .macro-cal-col-labels span:nth-child(2) {
@@ -166,7 +166,7 @@
 }
 
 .macro-cal-val {
-  text-align: start;
+  text-align: center;
   font-variant-numeric: tabular-nums;
   color: var(--atlas-fg-primary);
 }
@@ -235,20 +235,6 @@
     font-size: 16px;
   }
 
-  .macro-cal-row {
-    font-size: 16px;
-    grid-template-columns: 18px 44px minmax(0, 1fr) 48px 48px;
-    gap: 4px 6px;
-    padding: 6px 0;
-  }
-
-  .macro-cal-col-labels {
-    font-size: 16px;
-    grid-template-columns: 48px 48px;
-    column-gap: 6px;
-    padding: 0;
-  }
-
   .macro-cal-head {
     padding: 10px 10px 0;
   }
@@ -267,7 +253,42 @@
   }
 
   .macro-cal-list {
+    /* тот же горизонтальный inset, что у .macro-cal-head */
     padding: 6px 10px 12px;
+  }
+
+  .macro-cal-row {
+    position: relative;
+    font-size: 16px;
+    /* без колонки под ! — время стартует от паддинга списка */
+    grid-template-columns: 44px minmax(0, 1fr) 48px 48px;
+    gap: 4px 6px;
+    padding: 6px 0;
+  }
+
+  .macro-cal-alert-slot {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    width: 12px;
+    transform: translate(-55%, -50%);
+    pointer-events: none;
+  }
+
+  .macro-cal-alert {
+    font-size: 14px;
+  }
+
+  .macro-cal-col-labels {
+    font-size: 16px;
+    grid-template-columns: 48px 48px;
+    column-gap: 6px;
+    padding: 0;
+  }
+
+  .macro-cal-col-labels span,
+  .macro-cal-val {
+    text-align: center;
   }
 
   .macro-cal-footer {
@@ -280,11 +301,33 @@ html.dashboard-mobile .macro-cal-footer {
   display: none;
 }
 
+html.dashboard-mobile .macro-cal-list {
+  padding: 6px 10px 12px;
+}
+
+html.dashboard-mobile .macro-cal-head {
+  padding: 10px 10px 0;
+}
+
 html.dashboard-mobile .macro-cal-row {
-  grid-template-columns: 18px 44px minmax(0, 1fr) 48px 48px;
+  position: relative;
+  grid-template-columns: 44px minmax(0, 1fr) 48px 48px;
   gap: 4px 6px;
   padding: 6px 0;
   font-size: 16px;
+}
+
+html.dashboard-mobile .macro-cal-alert-slot {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 12px;
+  transform: translate(-55%, -50%);
+  pointer-events: none;
+}
+
+html.dashboard-mobile .macro-cal-alert {
+  font-size: 14px;
 }
 
 html.dashboard-mobile .macro-cal-col-labels {
@@ -292,4 +335,9 @@ html.dashboard-mobile .macro-cal-col-labels {
   column-gap: 6px;
   padding: 0;
   font-size: 16px;
+}
+
+html.dashboard-mobile .macro-cal-col-labels span,
+html.dashboard-mobile .macro-cal-val {
+  text-align: center;
 }
