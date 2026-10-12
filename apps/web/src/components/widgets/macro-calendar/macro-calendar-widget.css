@@ -258,21 +258,16 @@
   }
 
   .macro-cal-row {
-    position: relative;
     font-size: 16px;
-    /* без колонки под ! — время стартует от паддинга списка */
-    grid-template-columns: 44px minmax(0, 1fr) 48px 48px;
+    /* с ! — колонка алерта в потоке */
+    grid-template-columns: 14px 44px minmax(0, 1fr) 48px 48px;
     gap: 4px 6px;
     padding: 6px 0;
   }
 
-  .macro-cal-alert-slot {
-    position: absolute;
-    left: 0;
-    top: 50%;
-    width: 12px;
-    transform: translate(-55%, -50%);
-    pointer-events: none;
+  .macro-cal-row--no-alert {
+    /* без ! — время сразу от паддинга списка */
+    grid-template-columns: 44px minmax(0, 1fr) 48px 48px;
   }
 
   .macro-cal-alert {
@@ -310,20 +305,14 @@ html.dashboard-mobile .macro-cal-head {
 }
 
 html.dashboard-mobile .macro-cal-row {
-  position: relative;
-  grid-template-columns: 44px minmax(0, 1fr) 48px 48px;
+  grid-template-columns: 14px 44px minmax(0, 1fr) 48px 48px;
   gap: 4px 6px;
   padding: 6px 0;
   font-size: 16px;
 }
 
-html.dashboard-mobile .macro-cal-alert-slot {
-  position: absolute;
-  left: 0;
-  top: 50%;
-  width: 12px;
-  transform: translate(-55%, -50%);
-  pointer-events: none;
+html.dashboard-mobile .macro-cal-row--no-alert {
+  grid-template-columns: 44px minmax(0, 1fr) 48px 48px;
 }
 
 html.dashboard-mobile .macro-cal-alert {

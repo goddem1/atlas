@@ -229,7 +229,10 @@ export const MacroCalendarWidget = memo(function MacroCalendarWidget({
               return (
                 <li
                   key={e.id}
-                  className="macro-cal-row macro-cal-row--clickable"
+                  className={cn(
+                    "macro-cal-row macro-cal-row--clickable",
+                    e.importance !== "high" ? "macro-cal-row--no-alert" : undefined,
+                  )}
                   role="button"
                   tabIndex={0}
                   onClick={() => setSeriesIndicatorId(e.indicatorId)}
@@ -240,9 +243,11 @@ export const MacroCalendarWidget = memo(function MacroCalendarWidget({
                     }
                   }}
                 >
-              <span className="macro-cal-alert-slot" aria-hidden={e.importance !== "high"}>
-                {e.importance === "high" ? <span className="macro-cal-alert">!</span> : null}
-              </span>
+              {e.importance === "high" ? (
+                <span className="macro-cal-alert-slot">
+                  <span className="macro-cal-alert">!</span>
+                </span>
+              ) : null}
               <span className="macro-cal-time">{fmtMacroEventTime(e.date)}</span>
               <p className="macro-cal-name" title={e.name}>
                 <span>{e.name}</span>
