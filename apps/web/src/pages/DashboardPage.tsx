@@ -205,7 +205,9 @@ const DraggableWidget = memo(function DraggableWidget({
           "pointer-events-auto inline-block",
           mobileSingleCol ? "relative left-auto top-auto" : "absolute left-0 top-0",
           widthClass,
-          "cursor-default touch-none",
+          "cursor-default",
+          /* touch-none блокирует pan-y — на мобилке скролл должен стартовать с плашки */
+          !mobileSingleCol && "touch-none",
         )}
       >
         {widget.type === "price-sparkline" ? (

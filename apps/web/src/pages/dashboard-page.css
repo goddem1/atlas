@@ -107,6 +107,7 @@
     width: 100% !important;
     max-width: 100% !important;
     flex: 0 0 100%;
+    touch-action: pan-y;
   }
 
   .dashboard-widget-board .dashboard-widget-slot--macro-calendar {
@@ -205,6 +206,7 @@
   width: 100% !important;
   max-width: 100% !important;
   flex: 0 0 100%;
+  touch-action: pan-y;
 }
 
 .dashboard-widget-board--mobile-col .dashboard-widget-slot--macro-calendar {
