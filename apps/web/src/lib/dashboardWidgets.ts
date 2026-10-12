@@ -23,13 +23,16 @@ export const DASHBOARD_EDGE_INSET = 20;
 /** Минимальный зазор между прямоугольниками виджетов (px). */
 export const DASHBOARD_WIDGET_GAP = 20;
 /**
- * Телефоны (iPhone 14 Pro Max ~440, Pro ~390, SE/mini ~360):
- * все виджеты в одну колонку.
+ * Порог «узкий экран». На телефоне Safari ширина может быть любой —
+ * мобильный режим также включаем по pointer/UA (см. MEDIA_QUERY).
  */
 export const DASHBOARD_MOBILE_SINGLE_COL_MAX_WIDTH = 440;
 
-/** Media query = тот же порог, что и CSS `@media (max-width: 440px)`. */
-export const DASHBOARD_MOBILE_MEDIA_QUERY = `(max-width: ${DASHBOARD_MOBILE_SINGLE_COL_MAX_WIDTH}px)`;
+/**
+ * Мобилка = узкий layout ИЛИ тач-телефон/планшет (как открывается Safari),
+ * без требования ровно ≤440px.
+ */
+export const DASHBOARD_MOBILE_MEDIA_QUERY = `(max-width: ${DASHBOARD_MOBILE_SINGLE_COL_MAX_WIDTH}px), ((hover: none) and (pointer: coarse) and (max-width: 1024px))`;
 
 export function getDashboardViewportWidth(): number {
   if (typeof window === "undefined") return 1200;
@@ -39,7 +42,6 @@ export function getDashboardViewportWidth(): number {
   return Math.min(...parts);
 }
 
-/** CSS-ширина экрана (на iPhone ~390 даже если Safari врёт layout ~980). */
 export function getDashboardScreenWidth(): number {
   if (typeof window === "undefined") return 1200;
   return window.screen?.width > 0 ? window.screen.width : getDashboardViewportWidth();
@@ -50,41 +52,33 @@ export function isPhoneScreen(): boolean {
   return getDashboardScreenWidth() <= DASHBOARD_MOBILE_SINGLE_COL_MAX_WIDTH;
 }
 
-/**
- * Жёстко ставит viewport = screen.width, чтобы `@media (max-width: 440px)`
- * и JS видели одну ширину (Safari иначе может держать «компьютерный» layout).
- */
-export function lockPhoneViewport(): boolean {
-  if (typeof document === "undefined" || typeof window === "undefined") return false;
-  if (!isPhoneScreen()) return false;
-  const sw = getDashboardScreenWidth();
-  const meta =
-    document.querySelector<HTMLMetaElement>('meta[name="viewport"]') ??
-    document.querySelector<HTMLMetaElement>("#pano-viewport");
-  if (!meta) return false;
-  const next = `width=${sw}, initial-scale=1, maximum-scale=1, viewport-fit=cover`;
-  if (meta.getAttribute("content") === next) return false;
-  meta.setAttribute("content", next);
-  return true;
+export function isTouchPhoneOrTablet(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    if (window.matchMedia(DASHBOARD_MOBILE_MEDIA_QUERY).matches) return true;
+  } catch {
+    /* ignore */
+  }
+  const ua = navigator.userAgent || "";
+  if (/iPhone|iPod|Android/i.test(ua)) return true;
+  return isPhoneScreen();
 }
 
-/**
- * Safari «Запросить веб-сайт для компьютера»:
- * layout viewport ~980, screen.width остаётся шириной телефона.
- */
+/** Оставляем no-op: больше не ломаем viewport Safari вручную. */
+export function lockPhoneViewport(): boolean {
+  return false;
+}
+
 export function isDesktopSiteOnPhone(): boolean {
   if (typeof window === "undefined") return false;
-  const layout = getDashboardViewportWidth();
-  return isPhoneScreen() && layout > DASHBOARD_MOBILE_SINGLE_COL_MAX_WIDTH + 80;
+  return isPhoneScreen() && getDashboardViewportWidth() > DASHBOARD_MOBILE_SINGLE_COL_MAX_WIDTH + 80;
 }
 
 export function isDashboardMobileSingleColumn(
   viewportWidth: number = typeof window !== "undefined" ? getDashboardViewportWidth() : 1200,
 ): boolean {
   if (viewportWidth <= DASHBOARD_MOBILE_SINGLE_COL_MAX_WIDTH) return true;
-  // Safari иногда не матчит @media (max-width:440), хотя экран телефона —
-  // колонка и стили идут через html.dashboard-mobile / --mobile-col.
-  if (typeof window !== "undefined" && isPhoneScreen()) return true;
+  if (typeof window !== "undefined" && isTouchPhoneOrTablet()) return true;
   return false;
 }
 

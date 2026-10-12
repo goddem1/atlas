@@ -282,7 +282,7 @@
 }
 
 /* Мобильные оверрайды — после базовых правил, иначе каскад их перебивает. */
-@media (max-width: 440px) {
+@media (max-width: 440px), ((hover: none) and (pointer: coarse) and (max-width: 1024px)) {
   .price-widget-shell,
   .price-widget-card {
     width: 100%;

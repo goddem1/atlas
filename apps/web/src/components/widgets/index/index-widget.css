@@ -125,7 +125,7 @@
   height: 14px;
 }
 
-@media (max-width: 440px) {
+@media (max-width: 440px), ((hover: none) and (pointer: coarse) and (max-width: 1024px)) {
   .index-widget-shell,
   .index-widget-card {
     width: min(130px, calc(100vw * 130 / 440));

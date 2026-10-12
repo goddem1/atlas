@@ -84,7 +84,7 @@ html[data-dashboard-theme="dark"] .portfolio-menu-circle-icon {
   transform: rotate(45deg);
 }
 
-@media (max-width: 440px) {
+@media (max-width: 440px), ((hover: none) and (pointer: coarse) and (max-width: 1024px)) {
   .portfolio-menu-wrap {
     display: none;
   }

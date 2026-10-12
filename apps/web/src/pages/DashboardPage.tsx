@@ -42,7 +42,6 @@ import {
   insertWidgetInMobileOrder,
   isDashboardMobileSingleColumn,
   isDesktopSiteOnPhone,
-  lockPhoneViewport,
   layoutAllWidgetsSequential,
   layoutDashboardWidgetsForBoard,
   normalizeDashboardWidgets,
@@ -450,10 +449,8 @@ export function DashboardPage() {
   }, []);
 
   useLayoutEffect(() => {
-    lockPhoneViewport();
     const mq = window.matchMedia(DASHBOARD_MOBILE_MEDIA_QUERY);
     const sync = () => {
-      lockPhoneViewport();
       const mobile = isDashboardMobileSingleColumn();
       setMobileSingleCol(mobile);
       setDesktopSiteOnPhone(isDesktopSiteOnPhone());
