@@ -52,13 +52,18 @@
 }
 
 .macro-cal-col-labels {
-  display: flex;
-  justify-content: flex-end;
-  gap: 20px;
+  display: grid;
+  grid-template-columns: 56px 56px;
+  column-gap: 8px;
+  justify-content: end;
   padding: 0 4px 0 0;
   font-size: 20px;
   color: var(--atlas-second-primary);
   flex: 0 0 auto;
+}
+
+.macro-cal-col-labels span {
+  text-align: start;
 }
 
 .macro-cal-col-labels span:nth-child(2) {
@@ -230,16 +235,26 @@
     font-size: 16px;
   }
 
-  .macro-cal-col-labels {
-    font-size: 16px;
-  }
-
   .macro-cal-row {
     font-size: 16px;
+    grid-template-columns: 18px 44px minmax(0, 1fr) 48px 48px;
+    gap: 4px 6px;
+    padding: 6px 0;
+  }
+
+  .macro-cal-col-labels {
+    font-size: 16px;
+    grid-template-columns: 48px 48px;
+    column-gap: 6px;
+    padding: 0;
   }
 
   .macro-cal-head {
     padding: 10px 10px 0;
+  }
+
+  .macro-cal-head-row {
+    gap: 8px;
   }
 
   .macro-cal-divider--rotated {
@@ -252,10 +267,29 @@
   }
 
   .macro-cal-list {
-    padding: 6px 10px 10px;
+    padding: 6px 10px 12px;
   }
 
   .macro-cal-footer {
-    padding: 0 10px 10px;
+    display: none;
   }
+}
+
+/* JS-фолбэк Safari: класс ставит DashboardPage */
+html.dashboard-mobile .macro-cal-footer {
+  display: none;
+}
+
+html.dashboard-mobile .macro-cal-row {
+  grid-template-columns: 18px 44px minmax(0, 1fr) 48px 48px;
+  gap: 4px 6px;
+  padding: 6px 0;
+  font-size: 16px;
+}
+
+html.dashboard-mobile .macro-cal-col-labels {
+  grid-template-columns: 48px 48px;
+  column-gap: 6px;
+  padding: 0;
+  font-size: 16px;
 }
