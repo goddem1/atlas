@@ -87,7 +87,7 @@
     display: flex;
     flex-direction: row;
     flex-wrap: wrap;
-    justify-content: center;
+    justify-content: flex-start;
     align-items: flex-start;
     align-content: flex-start;
     gap: 10px;
@@ -104,9 +104,9 @@
     left: auto !important;
     top: auto !important;
     transform: none !important;
-    width: min(350px, calc(100vw - 20px)) !important;
-    max-width: min(350px, calc(100vw - 20px)) !important;
-    flex: 0 0 auto;
+    width: 100% !important;
+    max-width: 100% !important;
+    flex: 0 0 100%;
   }
 
   .dashboard-widget-board .dashboard-widget-slot--macro-calendar {
@@ -114,6 +114,8 @@
   }
 
   .dashboard-widget-board .dashboard-widget-slot--price-sparkline {
+    width: 100% !important;
+    max-width: 100% !important;
     height: 196px !important;
   }
 
@@ -133,8 +135,6 @@
   }
 
   .dashboard-widget-board .dashboard-widget-slot--index-board {
-    width: min(280px, calc(100vw - 20px)) !important;
-    max-width: min(280px, calc(100vw - 20px)) !important;
     height: auto !important;
     min-height: 228px !important;
   }
@@ -185,7 +185,7 @@
   display: flex !important;
   flex-direction: row;
   flex-wrap: wrap;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: flex-start;
   align-content: flex-start;
   gap: 10px;
@@ -202,9 +202,9 @@
   left: auto !important;
   top: auto !important;
   transform: none !important;
-  width: min(350px, calc(100vw - 20px)) !important;
-  max-width: min(350px, calc(100vw - 20px)) !important;
-  flex: 0 0 auto;
+  width: 100% !important;
+  max-width: 100% !important;
+  flex: 0 0 100%;
 }
 
 .dashboard-widget-board--mobile-col .dashboard-widget-slot--macro-calendar {
@@ -212,6 +212,8 @@
 }
 
 .dashboard-widget-board--mobile-col .dashboard-widget-slot--price-sparkline {
+  width: 100% !important;
+  max-width: 100% !important;
   height: 196px !important;
 }
 
@@ -231,8 +233,6 @@
 }
 
 .dashboard-widget-board--mobile-col .dashboard-widget-slot--index-board {
-  width: min(280px, calc(100vw - 20px)) !important;
-  max-width: min(280px, calc(100vw - 20px)) !important;
   height: auto !important;
   min-height: 228px !important;
 }
@@ -252,7 +252,7 @@
   min-height: 280px !important;
 }
 
-/* Внутренности виджетов: десктопные размеры плашек, слот не растягиваем на всю ширину. */
+/* Внутренности виджетов: на мобилке плашки на всю ширину слота. */
 html.dashboard-mobile .price-widget-shell,
 html.dashboard-mobile .price-widget-card,
 html.dashboard-mobile .portfolio-widget-shell,
@@ -268,15 +268,15 @@ html.dashboard-mobile .journal-widget-shell,
 html.dashboard-mobile .journal-widget-card,
 html.dashboard-mobile .fed-curve-widget-shell,
 html.dashboard-mobile .fed-curve-chart-panel,
-html.dashboard-mobile .index-widget-shell {
+html.dashboard-mobile .index-board-shell {
   width: 100% !important;
-  max-width: min(350px, calc(100vw - 20px)) !important;
+  max-width: 100% !important;
   box-sizing: border-box;
 }
 
-html.dashboard-mobile .index-board-shell {
+html.dashboard-mobile .index-widget-shell {
   width: 100% !important;
-  max-width: min(280px, calc(100vw - 20px)) !important;
+  max-width: min(130px, calc(100vw * 130 / 440)) !important;
   box-sizing: border-box;
 }
 
