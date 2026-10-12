@@ -95,23 +95,38 @@
   }
 
   .dashboard-widget-board .dashboard-widget-slot--portfolio {
-    height: 187px !important;
+    height: auto !important;
+    min-height: 187px !important;
   }
 
   .dashboard-widget-board .dashboard-widget-slot--journal {
-    height: 187px !important;
+    height: auto !important;
+    min-height: 187px !important;
   }
 
   .dashboard-widget-board .dashboard-widget-slot--watchlist {
-    height: 454px !important;
+    height: auto !important;
+    min-height: 454px !important;
   }
 
   .dashboard-widget-board .dashboard-widget-slot--index-board {
-    height: 228px !important;
+    height: auto !important;
+    min-height: 228px !important;
   }
 
   .dashboard-widget-board .dashboard-widget-slot--notes {
-    height: 260px !important;
+    height: auto !important;
+    min-height: 260px !important;
+  }
+
+  .dashboard-widget-board .dashboard-widget-slot--news {
+    height: auto !important;
+    min-height: 400px !important;
+  }
+
+  .dashboard-widget-board .dashboard-widget-slot--fed-curve {
+    height: auto !important;
+    min-height: 280px !important;
   }
 
   .dashboard-widget-board .dashboard-widget-slot--index,
@@ -177,23 +192,61 @@
 }
 
 .dashboard-widget-board--mobile-col .dashboard-widget-slot--portfolio {
-  height: 187px !important;
+  height: auto !important;
+  min-height: 187px !important;
 }
 
 .dashboard-widget-board--mobile-col .dashboard-widget-slot--journal {
-  height: 187px !important;
+  height: auto !important;
+  min-height: 187px !important;
 }
 
 .dashboard-widget-board--mobile-col .dashboard-widget-slot--watchlist {
-  height: 454px !important;
+  height: auto !important;
+  min-height: 454px !important;
 }
 
 .dashboard-widget-board--mobile-col .dashboard-widget-slot--index-board {
-  height: 228px !important;
+  height: auto !important;
+  min-height: 228px !important;
 }
 
 .dashboard-widget-board--mobile-col .dashboard-widget-slot--notes {
-  height: 260px !important;
+  height: auto !important;
+  min-height: 260px !important;
+}
+
+.dashboard-widget-board--mobile-col .dashboard-widget-slot--news {
+  height: auto !important;
+  min-height: 400px !important;
+}
+
+.dashboard-widget-board--mobile-col .dashboard-widget-slot--fed-curve {
+  height: auto !important;
+  min-height: 280px !important;
+}
+
+/* Внутренности виджетов: 100% ширины слота (не 350px «дырка» на широком Safari desktop-site). */
+html.dashboard-mobile .price-widget-shell,
+html.dashboard-mobile .price-widget-card,
+html.dashboard-mobile .portfolio-widget-shell,
+html.dashboard-mobile .portfolio-widget-card,
+html.dashboard-mobile .macro-cal-shell,
+html.dashboard-mobile .macro-cal-card,
+html.dashboard-mobile .watchlist-shell,
+html.dashboard-mobile .notes-widget-shell,
+html.dashboard-mobile .notes-widget-card,
+html.dashboard-mobile .news-widget-shell,
+html.dashboard-mobile .news-widget-card,
+html.dashboard-mobile .journal-widget-shell,
+html.dashboard-mobile .journal-widget-card,
+html.dashboard-mobile .fed-curve-widget-shell,
+html.dashboard-mobile .fed-curve-chart-panel,
+html.dashboard-mobile .index-board-shell,
+html.dashboard-mobile .index-widget-shell {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box;
 }
 
 .dashboard-widget-board--mobile-col .dashboard-widget-slot--index,
@@ -795,7 +848,7 @@ html[data-dashboard-theme="dark"] .dashboard-theme-toggle--panel .dashboard-them
   display: none;
 }
 
-@media (max-width: 440px) {
+@media (max-width: 440px), ((hover: none) and (pointer: coarse) and (max-width: 1023px)) {
   .dashboard-floating-action-btn--add-desktop {
     display: none;
   }

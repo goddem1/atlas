@@ -225,7 +225,7 @@
   }
 }
 
-@media (max-width: 440px) {
+@media (max-width: 440px), ((hover: none) and (pointer: coarse) and (max-width: 1023px)) {
   .macro-cal-date {
     font-size: 16px;
   }

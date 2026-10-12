@@ -240,7 +240,7 @@ html[data-dashboard-theme="dark"] .news-widget-text {
   text-decoration: underline;
 }
 
-@media (max-width: 440px) {
+@media (max-width: 440px), ((hover: none) and (pointer: coarse) and (max-width: 1023px)) {
   .news-widget-text {
     -webkit-line-clamp: 3;
     line-clamp: 3;

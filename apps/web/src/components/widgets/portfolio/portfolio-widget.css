@@ -1207,7 +1207,7 @@ html[data-dashboard-theme="dark"] .portfolio-timeframe-switcher > .btn-on-glass.
   gap: 10px;
 }
 
-@media (max-width: 440px) {
+@media (max-width: 440px), ((hover: none) and (pointer: coarse) and (max-width: 1023px)) {
   .portfolio-widget-shell,
   .portfolio-widget-card {
     width: 100%;
@@ -1235,7 +1235,8 @@ html[data-dashboard-theme="dark"] .portfolio-timeframe-switcher > .btn-on-glass.
 
   .portfolio-widget-shell,
   .portfolio-widget-card {
-    height: 187px;
+    height: auto;
+    min-height: 187px;
   }
 
   .portfolio-asset-icon {

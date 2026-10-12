@@ -447,7 +447,9 @@ export function DashboardPage() {
   useEffect(() => {
     const mq = window.matchMedia(DASHBOARD_MOBILE_MEDIA_QUERY);
     const sync = () => {
-      setMobileSingleCol(isDashboardMobileSingleColumn());
+      const mobile = isDashboardMobileSingleColumn();
+      setMobileSingleCol(mobile);
+      document.documentElement.classList.toggle("dashboard-mobile", mobile);
       setBoundsVersion((v) => v + 1);
     };
     sync();
@@ -458,6 +460,7 @@ export function DashboardPage() {
       mq.removeEventListener("change", sync);
       window.removeEventListener("resize", sync);
       window.visualViewport?.removeEventListener("resize", sync);
+      document.documentElement.classList.remove("dashboard-mobile");
     };
   }, []);
 
