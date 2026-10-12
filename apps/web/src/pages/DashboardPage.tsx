@@ -35,9 +35,10 @@ import { getThemeColors, hexToRgba, mergeDashboardPrefs, type DashboardPrefs } f
 import {
   createWidgetId,
   DASHBOARD_GRID_SIZE,
-  DASHBOARD_MOBILE_SINGLE_COL_MAX_WIDTH,
+  DASHBOARD_MOBILE_MEDIA_QUERY,
   DASHBOARD_WIDGET_GAP,
   dashboardWidgetOuterSize,
+  getDashboardViewportWidth,
   insertWidgetInMobileOrder,
   isDashboardMobileSingleColumn,
   layoutAllWidgetsSequential,
@@ -200,7 +201,8 @@ const DraggableWidget = memo(function DraggableWidget({
         className={cn(
           "dashboard-widget-slot",
           `dashboard-widget-slot--${widget.type}`,
-          "pointer-events-auto absolute left-0 top-0 inline-block",
+          "pointer-events-auto inline-block",
+          mobileSingleCol ? "relative left-auto top-auto" : "absolute left-0 top-0",
           widthClass,
           "cursor-default touch-none",
         )}
@@ -312,7 +314,7 @@ export function DashboardPage() {
   const boardRef = useRef<HTMLDivElement | null>(null);
   const [boundsVersion, setBoundsVersion] = useState(0);
   const [mobileSingleCol, setMobileSingleCol] = useState(() =>
-    typeof window !== "undefined" ? isDashboardMobileSingleColumn(window.innerWidth) : false,
+    typeof window !== "undefined" ? isDashboardMobileSingleColumn() : false,
   );
   const skipPersistRef = useRef(true);
   /** Сброс гостевого дашборда только после выхода из аккаунта, не при каждой проверке сессии. */
@@ -395,7 +397,7 @@ export function DashboardPage() {
         if (cancelled) return;
         const rect = boardRef.current?.getBoundingClientRect();
         const normalized = normalizeDashboardWidgets(state.widgets);
-        const vw = window.innerWidth;
+        const vw = getDashboardViewportWidth();
         setWidgets(
           isDashboardMobileSingleColumn(vw)
             ? normalized
@@ -436,21 +438,27 @@ export function DashboardPage() {
     if (!el) return;
     const { width, height } = el.getBoundingClientRect();
     if (width < 1 || height < 1) return;
-    const vw = window.innerWidth;
+    const vw = getDashboardViewportWidth();
     // На телефоне колонка через CSS — не перезаписываем desktop x/y в стор.
     if (isDashboardMobileSingleColumn(vw)) return;
     setWidgets((ws) => layoutDashboardWidgetsForBoard(ws, width, height, vw));
   }, []);
 
   useEffect(() => {
-    const mq = window.matchMedia(`(max-width: ${DASHBOARD_MOBILE_SINGLE_COL_MAX_WIDTH}px)`);
+    const mq = window.matchMedia(DASHBOARD_MOBILE_MEDIA_QUERY);
     const sync = () => {
-      setMobileSingleCol(mq.matches);
+      setMobileSingleCol(isDashboardMobileSingleColumn());
       setBoundsVersion((v) => v + 1);
     };
     sync();
     mq.addEventListener("change", sync);
-    return () => mq.removeEventListener("change", sync);
+    window.addEventListener("resize", sync);
+    window.visualViewport?.addEventListener("resize", sync);
+    return () => {
+      mq.removeEventListener("change", sync);
+      window.removeEventListener("resize", sync);
+      window.visualViewport?.removeEventListener("resize", sync);
+    };
   }, []);
 
   useLayoutEffect(() => {
@@ -473,9 +481,9 @@ export function DashboardPage() {
   );
 
   const moveWidget = useCallback((id: string, x: number, y: number) => {
-    if (isDashboardMobileSingleColumn(window.innerWidth)) return;
+    if (isDashboardMobileSingleColumn()) return;
     const el = boardRef.current;
-    const vw = window.innerWidth;
+    const vw = getDashboardViewportWidth();
     const rect = el?.getBoundingClientRect();
     const bw = rect && rect.width > 0 ? rect.width : Math.max(DASHBOARD_GRID_SIZE * 4, vw - 40);
     const bh = rect && rect.height > 0 ? rect.height : Math.max(DASHBOARD_GRID_SIZE * 4, window.innerHeight - 40);
@@ -532,7 +540,7 @@ export function DashboardPage() {
   const addWidget = useCallback(
     (type: DashboardWidgetType, options?: { indexId?: MarketIndexId }) => {
     const el = boardRef.current;
-    const vw = window.innerWidth;
+    const vw = getDashboardViewportWidth();
     const rect = el?.getBoundingClientRect();
     const bw = rect && rect.width > 0 ? rect.width : Math.max(DASHBOARD_GRID_SIZE * 4, vw - 40);
     const bh = rect && rect.height > 0 ? rect.height : Math.max(DASHBOARD_GRID_SIZE * 4, window.innerHeight - 40);
@@ -698,7 +706,10 @@ export function DashboardPage() {
   }, [prefs.gridOpacity, prefs.theme]);
 
   return (
-    <div className="dashboard-page-root" data-dashboard-theme={prefs.theme}>
+    <div
+      className={cn("dashboard-page-root", mobileSingleCol && "dashboard-page-root--mobile-col")}
+      data-dashboard-theme={prefs.theme}
+    >
       <div className="dashboard-quick-tabs" aria-label="Быстрый доступ к вкладкам">
         <div className="dashboard-quick-tabs-dim" aria-hidden="true" />
         <div className="dashboard-quick-tabs-hitbox" aria-hidden="true" />
@@ -760,7 +771,10 @@ export function DashboardPage() {
         </div>
       </div>
 
-      <main className="dashboard-main-surface" style={mainStyle}>
+      <main
+        className={cn("dashboard-main-surface", mobileSingleCol && "dashboard-main-surface--mobile-col")}
+        style={mainStyle}
+      >
         {/* Область виджетов: inset 20px — вне этой зоны нельзя ставить (bounds родителя для Draggable). */}
         <div
           ref={boardRef}

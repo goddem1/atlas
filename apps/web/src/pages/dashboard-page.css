@@ -36,8 +36,13 @@
   inset: 1.25rem; /* = Tailwind inset-5 / DASHBOARD_EDGE_INSET */
 }
 
-/* Телефоны ≤440px (360 / 390 / 440): одна колонка, скролл по вертикали. */
-@media (max-width: 440px) {
+/*
+ * Мобильная колонка:
+ * — @media ≤440px
+ * — coarse pointer ≤1023px (Safari «Версия для ПК» на iPhone ~980px)
+ * — .dashboard-widget-board--mobile-col / .dashboard-main-surface--mobile-col (JS)
+ */
+@media (max-width: 440px), ((hover: none) and (pointer: coarse) and (max-width: 1023px)) {
   .dashboard-main-surface {
     overflow-x: hidden;
     overflow-y: auto;
@@ -64,7 +69,7 @@
     width: 100%;
     min-height: 100%;
     box-sizing: border-box;
-    padding: 10px; /* 440 и 390 */
+    padding: 10px;
   }
 
   .dashboard-widget-board .dashboard-widget-slot,
@@ -119,8 +124,90 @@
   }
 }
 
+/* JS-фолбэк: класс ставит DashboardPage даже если media query расходится с Safari. */
+.dashboard-main-surface--mobile-col {
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.dashboard-main-surface--mobile-col::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+.dashboard-widget-board--mobile-col {
+  position: relative !important;
+  inset: auto !important;
+  display: flex !important;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  align-content: flex-start;
+  gap: 10px;
+  width: 100%;
+  min-height: 100%;
+  box-sizing: border-box;
+  padding: 10px;
+}
+
+.dashboard-widget-board--mobile-col .dashboard-widget-slot,
+.dashboard-widget-board--mobile-col .react-draggable {
+  position: relative !important;
+  inset: auto !important;
+  left: auto !important;
+  top: auto !important;
+  transform: none !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  flex: 0 0 100%;
+}
+
+.dashboard-widget-board--mobile-col .dashboard-widget-slot--macro-calendar {
+  height: 203px !important;
+}
+
+.dashboard-widget-board--mobile-col .dashboard-widget-slot--price-sparkline {
+  width: 100% !important;
+  max-width: 100% !important;
+  height: 196px !important;
+}
+
+.dashboard-widget-board--mobile-col .dashboard-widget-slot--portfolio {
+  height: 187px !important;
+}
+
+.dashboard-widget-board--mobile-col .dashboard-widget-slot--journal {
+  height: 187px !important;
+}
+
+.dashboard-widget-board--mobile-col .dashboard-widget-slot--watchlist {
+  height: 454px !important;
+}
+
+.dashboard-widget-board--mobile-col .dashboard-widget-slot--index-board {
+  height: 228px !important;
+}
+
+.dashboard-widget-board--mobile-col .dashboard-widget-slot--notes {
+  height: 260px !important;
+}
+
+.dashboard-widget-board--mobile-col .dashboard-widget-slot--index,
+.dashboard-widget-board--mobile-col .dashboard-widget-slot--index.react-draggable,
+.dashboard-widget-board--mobile-col .dashboard-widget-slot--index .react-draggable {
+  width: min(130px, calc(100vw * 130 / 440)) !important;
+  max-width: min(130px, calc(100vw * 130 / 440)) !important;
+  height: auto !important;
+  flex: 0 0 auto;
+}
+
 @media (max-width: 360px) {
-  .dashboard-widget-board {
+  .dashboard-widget-board,
+  .dashboard-widget-board--mobile-col {
     padding: 5px;
   }
 }
@@ -282,10 +369,14 @@
   background: var(--atlas-btn-glass-active-bg);
 }
 
-@media (max-width: 440px) {
+@media (max-width: 440px), ((hover: none) and (pointer: coarse) and (max-width: 1023px)) {
   .dashboard-quick-tabs {
     display: none;
   }
+}
+
+.dashboard-page-root--mobile-col .dashboard-quick-tabs {
+  display: none;
 }
 
 /* Плавающая панель: настройки, «+», макро (бывший Tailwind: fixed right-4 top-4 z-[300] flex …). */

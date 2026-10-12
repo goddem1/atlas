@@ -2,7 +2,7 @@ import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { dashboardUserAvatarBackground, dashboardUserAvatarLetter } from "../auth/auth-utils";
 import type { DashboardPrefs, DashboardTheme } from "../../lib/dashboardPrefs";
 import { clampGridOpacity } from "../../lib/dashboardPrefs";
-import { DASHBOARD_MOBILE_SINGLE_COL_MAX_WIDTH } from "../../lib/dashboardWidgets";
+import { DASHBOARD_MOBILE_MEDIA_QUERY, isDashboardMobileSingleColumn } from "../../lib/dashboardWidgets";
 import { profileAvatarUrl, type ProfileUserResponse } from "../../services/api";
 
 const ProfileSettingsModal = lazy(() =>
@@ -87,17 +87,19 @@ function ThemeToggle({
 
 function useIsMobileFloating(): boolean {
   const [isMobile, setIsMobile] = useState(() =>
-    typeof window !== "undefined"
-      ? window.matchMedia(`(max-width: ${DASHBOARD_MOBILE_SINGLE_COL_MAX_WIDTH}px)`).matches
-      : false,
+    typeof window !== "undefined" ? isDashboardMobileSingleColumn() : false,
   );
 
   useEffect(() => {
-    const mq = window.matchMedia(`(max-width: ${DASHBOARD_MOBILE_SINGLE_COL_MAX_WIDTH}px)`);
-    const onChange = () => setIsMobile(mq.matches);
+    const mq = window.matchMedia(DASHBOARD_MOBILE_MEDIA_QUERY);
+    const onChange = () => setIsMobile(isDashboardMobileSingleColumn());
     onChange();
     mq.addEventListener("change", onChange);
-    return () => mq.removeEventListener("change", onChange);
+    window.addEventListener("resize", onChange);
+    return () => {
+      mq.removeEventListener("change", onChange);
+      window.removeEventListener("resize", onChange);
+    };
   }, []);
 
   return isMobile;

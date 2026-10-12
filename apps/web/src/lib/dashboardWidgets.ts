@@ -28,10 +28,35 @@ export const DASHBOARD_WIDGET_GAP = 20;
  */
 export const DASHBOARD_MOBILE_SINGLE_COL_MAX_WIDTH = 440;
 
+/**
+ * Safari «Версия для компьютера» даёт layout ~980px при том же iPhone —
+ * тогда один max-width: 440px не срабатывает. Доп. сигнал: coarse pointer.
+ */
+export const DASHBOARD_MOBILE_COARSE_MAX_WIDTH = 1023;
+
+/** Media query для sync JS ↔ CSS (включая Safari desktop-site на телефоне). */
+export const DASHBOARD_MOBILE_MEDIA_QUERY = `(max-width: ${DASHBOARD_MOBILE_SINGLE_COL_MAX_WIDTH}px), ((hover: none) and (pointer: coarse) and (max-width: ${DASHBOARD_MOBILE_COARSE_MAX_WIDTH}px))`;
+
+export function getDashboardViewportWidth(): number {
+  if (typeof window === "undefined") return 1200;
+  const docW = document.documentElement?.clientWidth;
+  const parts = [window.innerWidth];
+  if (typeof docW === "number" && docW > 0) parts.push(docW);
+  if (window.visualViewport?.width) parts.push(window.visualViewport.width);
+  return Math.min(...parts);
+}
+
 export function isDashboardMobileSingleColumn(
-  viewportWidth: number = typeof window !== "undefined" ? window.innerWidth : 1200,
+  viewportWidth: number = typeof window !== "undefined" ? getDashboardViewportWidth() : 1200,
 ): boolean {
-  return viewportWidth <= DASHBOARD_MOBILE_SINGLE_COL_MAX_WIDTH;
+  if (viewportWidth <= DASHBOARD_MOBILE_SINGLE_COL_MAX_WIDTH) return true;
+  if (typeof window === "undefined") return false;
+  // iPhone/iPad Safari с Request Desktop Website: ширина большая, pointer coarse.
+  try {
+    return window.matchMedia(DASHBOARD_MOBILE_MEDIA_QUERY).matches;
+  } catch {
+    return false;
+  }
 }
 
 export type DashboardWidgetType =
