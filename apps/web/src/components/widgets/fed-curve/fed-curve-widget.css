@@ -345,7 +345,7 @@ html[data-dashboard-theme="dark"] .fed-curve-y-label {
 @media (max-width: 768px), ((hover: none) and (pointer: coarse) and (max-width: 1024px)) {
   .fed-curve-widget-shell {
     width: 100%;
-    max-width: 100%;
+    max-width: 350px;
   }
 }
 
