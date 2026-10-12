@@ -1,33 +1,6 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <script>
-      console.log('=== PANORAMA DEBUG ===');
-      console.log('1. Script started');
-
-      window.__panoramaLog = [];
-      var _log = console.log.bind(console);
-
-      window.addEventListener('error', function(e) {
-        console.error('GLOBAL ERROR:', e.message, 'at', e.filename, ':', e.lineno);
-      });
-
-      window.addEventListener('unhandledrejection', function(e) {
-        console.error('UNHANDLED PROMISE:', String(e.reason));
-      });
-
-      document.addEventListener('DOMContentLoaded', function() {
-        console.log('2. DOMContentLoaded fired');
-      });
-
-      window.addEventListener('load', function() {
-        console.log('3. Window load fired');
-        setTimeout(function() {
-          var root = document.getElementById('root');
-          console.log('4. Root element:', root ? root.innerHTML.substring(0, 100) : 'NOT FOUND');
-        }, 2000);
-      });
-    </script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/svg+xml" href="/assets/portfolio-ui/panoLogo.svg" />
@@ -36,23 +9,5 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
-    <script>
-      window.onerror = function(msg, src, line, col, err) {
-        document.body.style.background = '#111';
-        document.body.innerHTML = '<div style="color:red;padding:20px;font-size:14px;word-break:break-all">' +
-          '<b>ERROR:</b> ' + msg + '<br><br>' +
-          '<b>File:</b> ' + src + '<br>' +
-          '<b>Line:</b> ' + line +
-          (err && err.stack ? '<br><br><b>Stack:</b><br>' + err.stack.replace(/\n/g,'<br>') : '') +
-          '</div>';
-      };
-      window.addEventListener('unhandledrejection', function(e) {
-        document.body.style.background = '#111';
-        document.body.innerHTML = '<div style="color:orange;padding:20px;font-size:14px;word-break:break-all">' +
-          '<b>PROMISE ERROR:</b><br>' + String(e.reason) +
-          (e.reason && e.reason.stack ? '<br><br>' + e.reason.stack.replace(/\n/g,'<br>') : '') +
-          '</div>';
-      });
-    </script>
   </body>
 </html>
