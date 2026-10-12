@@ -994,6 +994,53 @@ html[data-dashboard-theme="dark"] .dashboard-theme-toggle--panel .dashboard-them
   }
 }
 
+/*
+ * Safari: @media (max-width:440) иногда не матчит, хотя экран телефонный.
+ * Дублируем ключевые mobile-правила на html.dashboard-mobile (ставит JS).
+ */
+html.dashboard-mobile .dashboard-floating-action-btn--add-desktop {
+  display: none;
+}
+
+html.dashboard-mobile .dashboard-floating-actions {
+  top: auto !important;
+  bottom: max(1rem, env(safe-area-inset-bottom, 0px)) !important;
+  right: 1rem;
+  align-items: flex-end;
+}
+
+html.dashboard-mobile .dashboard-floating-actions-settings-stack {
+  flex-direction: column-reverse;
+}
+
+html.dashboard-mobile .dashboard-floating-actions-settings .dashboard-floating-action-expanded {
+  flex-direction: column-reverse;
+  padding-bottom: 0;
+}
+
+html.dashboard-mobile
+  .dashboard-floating-actions-settings:hover:not(.dashboard-floating-actions-settings--panel-open)
+  .dashboard-floating-action-expanded,
+html.dashboard-mobile
+  .dashboard-floating-actions-settings:focus-within:not(.dashboard-floating-actions-settings--panel-open)
+  .dashboard-floating-action-expanded,
+html.dashboard-mobile
+  .dashboard-floating-actions-settings.is-menu-open:not(.dashboard-floating-actions-settings--panel-open)
+  .dashboard-floating-action-expanded {
+  padding-bottom: 0;
+  padding-top: 8px;
+}
+
+html.dashboard-mobile .dashboard-floating-actions-settings-hover-bridge {
+  top: auto;
+  bottom: 100%;
+}
+
+html.dashboard-mobile .dashboard-widget-board--mobile-col,
+html.dashboard-mobile .dashboard-widget-board {
+  padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+}
+
 .dashboard-floating-action-icon--user {
   width: 30px;
   height: 30px;

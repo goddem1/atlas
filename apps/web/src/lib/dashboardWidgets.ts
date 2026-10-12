@@ -82,11 +82,10 @@ export function isDashboardMobileSingleColumn(
   viewportWidth: number = typeof window !== "undefined" ? getDashboardViewportWidth() : 1200,
 ): boolean {
   if (viewportWidth <= DASHBOARD_MOBILE_SINGLE_COL_MAX_WIDTH) return true;
-  if (typeof window === "undefined") return false;
-  // Desktop-site (~980): не форсим mobile-CSS — будет «криво». Баннер просит выключить режим.
-  if (isDesktopSiteOnPhone()) return false;
-  // Экран телефона при нормальном viewport.
-  return isPhoneScreen();
+  // Safari иногда не матчит @media (max-width:440), хотя экран телефона —
+  // колонка и стили идут через html.dashboard-mobile / --mobile-col.
+  if (typeof window !== "undefined" && isPhoneScreen()) return true;
+  return false;
 }
 
 export type DashboardWidgetType =
