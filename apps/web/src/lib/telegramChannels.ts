@@ -1,6 +1,7 @@
 import { TELEGRAM_CHANNELS_MAX, normalizeTelegramUsername } from "@atlas-v1/shared";
 
 const STORAGE_KEY = "atlas-v1-telegram-channels";
+export const TELEGRAM_CHANNELS_CHANGED_EVENT = "atlas-telegram-channels-changed";
 
 /** `null` — ещё не сохраняли (первый запуск, брать дефолт с API). */
 export function loadTelegramChannels(): string[] | null {
@@ -18,6 +19,9 @@ export function loadTelegramChannels(): string[] | null {
 export function saveTelegramChannels(usernames: string[]): void {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(normalizeChannelList(usernames)));
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event(TELEGRAM_CHANNELS_CHANGED_EVENT));
+    }
   } catch {
     // ignore quota / private mode
   }

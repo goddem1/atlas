@@ -76,13 +76,17 @@ function shouldOverwrite(
   return true;
 }
 
-export async function getTelegramNewsDailyIndexRow(
-  prisma: PrismaClient,
-  day: string,
-): Promise<TelegramNewsDailyIndexRow | null> {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return null;
-  const row = await prisma.telegramNewsDailyIndex.findUnique({ where: { day } });
-  if (!row) return null;
+function mapDailyIndexRow(row: {
+  day: string;
+  sentiment: number;
+  formula: string;
+  candidateCount: number;
+  usernames: unknown;
+  topItems: unknown;
+  source: string;
+  model: string | null;
+  updatedAt: Date;
+}): TelegramNewsDailyIndexRow {
   return {
     day: row.day,
     sentiment: row.sentiment,
@@ -94,6 +98,32 @@ export async function getTelegramNewsDailyIndexRow(
     model: row.model,
     updatedAt: row.updatedAt.toISOString(),
   };
+}
+
+export async function getTelegramNewsDailyIndexRow(
+  prisma: PrismaClient,
+  day: string,
+): Promise<TelegramNewsDailyIndexRow | null> {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return null;
+  const row = await prisma.telegramNewsDailyIndex.findUnique({ where: { day } });
+  if (!row) return null;
+  return mapDailyIndexRow(row);
+}
+
+/** Последний доступный снимок (если за целевой день cron ещё не отработал). */
+export async function getLatestTelegramNewsDailyIndexRow(
+  prisma: PrismaClient,
+  onOrBeforeDay?: string,
+): Promise<TelegramNewsDailyIndexRow | null> {
+  const row = await prisma.telegramNewsDailyIndex.findFirst({
+    where:
+      onOrBeforeDay && /^\d{4}-\d{2}-\d{2}$/.test(onOrBeforeDay)
+        ? { day: { lte: onOrBeforeDay } }
+        : undefined,
+    orderBy: { day: "desc" },
+  });
+  if (!row) return null;
+  return mapDailyIndexRow(row);
 }
 
 export async function upsertTelegramNewsDailyIndex(

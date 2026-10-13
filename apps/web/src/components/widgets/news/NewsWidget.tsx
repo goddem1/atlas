@@ -1,11 +1,15 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState, memo } from "react";
 import type { TelegramNewsWidgetExplanation } from "@atlas-v1/shared";
 import { loadTelegramFilters } from "../../../lib/telegramFilters";
-import { loadTelegramChannels } from "../../../lib/telegramChannels";
+import {
+  loadTelegramChannels,
+  saveTelegramChannels,
+  TELEGRAM_CHANNELS_CHANGED_EVENT,
+} from "../../../lib/telegramChannels";
 import { TwemojiText } from "../../../lib/twemojiText";
 import { useIsBackdropBlurPaused } from "../../../lib/useIsBackdropBlurPaused";
 import { isTelegramEnabled } from "../../../lib/telegramFeature";
-import { fetchTelegramNewsWidget } from "../../../services/api";
+import { fetchTelegramNewsChannels, fetchTelegramNewsWidget } from "../../../services/api";
 import {
   GALLERY_NEWS_EXPLANATION,
   GALLERY_NEWS_ITEMS,
@@ -77,6 +81,7 @@ export const NewsWidget = memo(function NewsWidget({
   );
   const [day, setDay] = useState<string | undefined>(undefined);
   const [candidateCount, setCandidateCount] = useState<number | undefined>(undefined);
+  const [emptyHint, setEmptyHint] = useState<string | null>(null);
   const [localNewsOpen, setLocalNewsOpen] = useState(false);
 
   const openNews = useCallback(() => {
@@ -94,6 +99,7 @@ export const NewsWidget = memo(function NewsWidget({
       setExplanation(DEV_NEWS_EXPLANATION);
       setDay(undefined);
       setCandidateCount(DEV_NEWS_ITEMS.length);
+      setEmptyHint(null);
       setErr(null);
       setLoading(false);
       return true;
@@ -109,22 +115,7 @@ export const NewsWidget = memo(function NewsWidget({
       });
       setDay(undefined);
       setCandidateCount(undefined);
-      setErr(null);
-      setLoading(false);
-      return;
-    }
-    const stored = loadTelegramChannels();
-    const usernames = stored && stored.length > 0 ? stored : [];
-    if (usernames.length === 0) {
-      if (applyDevFixtures()) return;
-      setItems([]);
-      setSentiment(50);
-      setExplanation({
-        formula: "Нет каналов — сентимент не считается.",
-        notes: [],
-      });
-      setDay(undefined);
-      setCandidateCount(undefined);
+      setEmptyHint("Telegram отключён локально");
       setErr(null);
       setLoading(false);
       return;
@@ -132,9 +123,39 @@ export const NewsWidget = memo(function NewsWidget({
 
     setLoading(true);
     setErr(null);
-    const filters = loadTelegramFilters();
-    void fetchTelegramNewsWidget(usernames, filters)
-      .then((data) => {
+
+    const resolveUsernames = async (): Promise<string[]> => {
+      const stored = loadTelegramChannels();
+      if (stored && stored.length > 0) return stored;
+      // Первый запуск: как в модалке ленты — подтянуть дефолтные каналы с API
+      if (stored == null) {
+        const rows = await fetchTelegramNewsChannels();
+        const defaults = rows.map((r) => r.username).filter(Boolean);
+        if (defaults.length > 0) {
+          saveTelegramChannels(defaults);
+          return defaults;
+        }
+      }
+      return [];
+    };
+
+    void resolveUsernames()
+      .then(async (usernames) => {
+        if (usernames.length === 0) {
+          if (applyDevFixtures()) return;
+          setItems([]);
+          setSentiment(50);
+          setExplanation({
+            formula: "Нет каналов — сентимент не считается.",
+            notes: [],
+          });
+          setDay(undefined);
+          setCandidateCount(undefined);
+          setEmptyHint("Добавьте каналы в ленте");
+          return;
+        }
+        const filters = loadTelegramFilters();
+        const data = await fetchTelegramNewsWidget(usernames, filters);
         const notes = data.explanation?.notes ?? [];
         const noteById = new Map(notes.map((n) => [n.id, n]));
         const mapped = data.items.map((msg) => {
@@ -156,6 +177,11 @@ export const NewsWidget = memo(function NewsWidget({
         );
         setDay(data.day);
         setCandidateCount(data.candidateCount);
+        setEmptyHint(
+          mapped.length === 0
+            ? data.why?.trim() || data.explanation?.formula?.trim() || "Нет новостей"
+            : null,
+        );
       })
       .catch((e: unknown) => {
         if (applyDevFixtures()) return;
@@ -164,6 +190,7 @@ export const NewsWidget = memo(function NewsWidget({
         setExplanation(EMPTY_EXPLANATION);
         setDay(undefined);
         setCandidateCount(undefined);
+        setEmptyHint(null);
       })
       .finally(() => setLoading(false));
   }, [galleryPreview]);
@@ -172,7 +199,12 @@ export const NewsWidget = memo(function NewsWidget({
     if (galleryPreview || overlayOpen) return;
     load();
     const id = window.setInterval(load, POLL_MS);
-    return () => window.clearInterval(id);
+    const onChannelsChanged = () => load();
+    window.addEventListener(TELEGRAM_CHANNELS_CHANGED_EVENT, onChannelsChanged);
+    return () => {
+      window.clearInterval(id);
+      window.removeEventListener(TELEGRAM_CHANNELS_CHANGED_EVENT, onChannelsChanged);
+    };
   }, [load, galleryPreview, overlayOpen]);
 
   const tone = useMemo(() => sentimentTone(sentiment), [sentiment]);
@@ -264,7 +296,7 @@ export const NewsWidget = memo(function NewsWidget({
         {!loading && err ? <p className="news-widget-msg news-widget-msg--err">{err}</p> : null}
         {!loading && !err && items.length === 0 ? (
           <p className="news-widget-msg">
-            {telegramEnabled ? "Нет новостей" : "Telegram отключён локально"}
+            {telegramEnabled ? emptyHint || "Нет новостей" : "Telegram отключён локально"}
             {telegramEnabled ? (
               <button type="button" className="news-widget-inline-link" onClick={openNews}>
                 открыть ленту

@@ -18,6 +18,7 @@ import {
   listWatchedUsernames,
 } from "./telegramNewsStore.js";
 import {
+  getLatestTelegramNewsDailyIndexRow,
   getTelegramNewsDailyIndexRow,
   upsertTelegramNewsDailyIndex,
 } from "./telegramNewsDailyIndex.js";
@@ -777,7 +778,9 @@ export async function getNewsWidgetInsight(
 ): Promise<TelegramNewsWidgetResponse> {
   const filters = normalizeFilters(filtersRaw);
   const day = resolveNewsWidgetMskDay();
-  const row = await getTelegramNewsDailyIndexRow(prisma, day);
+  const row =
+    (await getTelegramNewsDailyIndexRow(prisma, day)) ??
+    (await getLatestTelegramNewsDailyIndexRow(prisma, day));
 
   if (!row) {
     return {
