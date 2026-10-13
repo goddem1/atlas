@@ -26,6 +26,11 @@
 }
 
 .portfolio-widget-left {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
   padding: 20px 10px 20px 20px;
 }
 
@@ -57,6 +62,10 @@
 
 .portfolio-chart-block {
   margin-top: 2px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
   /* Single place to tune chart + controls layout */
   --portfolio-chart-height: 120px;
 }
@@ -99,7 +108,9 @@
 }
 
 .portfolio-timeframe-switcher {
-  margin-top: 8px;
+  /* прижимаем к низу левой колонки; padding даёт зазор от графика */
+  margin-top: auto;
+  padding-top: 14px;
   display: flex;
   gap: 12.6px;
 }
@@ -1228,8 +1239,13 @@ html[data-dashboard-theme="dark"] .portfolio-timeframe-switcher > .btn-on-glass.
     padding: 10px;
   }
 
+  .portfolio-widget-left {
+    height: 100%;
+  }
+
   .portfolio-chart-block {
     margin-top: 10px;
+    flex: 1;
     --portfolio-chart-height: 79px;
   }
 
@@ -1270,7 +1286,8 @@ html[data-dashboard-theme="dark"] .portfolio-timeframe-switcher > .btn-on-glass.
   /* Кнопки Д/М/Г/Все: старт 40px на 440, дальше сжимаются */
   .portfolio-timeframe-switcher {
     gap: 8px;
-    margin-top: 10px;
+    margin-top: auto;
+    padding-top: 12px;
   }
 
   .portfolio-timeframe-switcher > .btn-on-glass {
