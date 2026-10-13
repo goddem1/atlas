@@ -122,6 +122,23 @@ export function sortWidgetsForMobileColumn(widgets: DashboardWidget[]): Dashboar
   return [...widgets].sort((a, b) => a.y - b.y || a.x - b.x || a.id.localeCompare(b.id));
 }
 
+/**
+ * Собирает все мелкие `index` в один блок (линии по MOBILE_INDEX_ROW_MAX)
+ * на месте первого индекса. Остальные виджеты сохраняют относительный порядок.
+ * Так одиночные индексы не разъезжаются по доске между крупными карточками.
+ */
+export function packIndexWidgetsForMobileColumn(widgets: DashboardWidget[]): DashboardWidget[] {
+  const sorted = sortWidgetsForMobileColumn(widgets);
+  const indexes = sorted.filter((w) => w.type === "index");
+  if (indexes.length === 0) return sorted;
+
+  const firstIndexAt = sorted.findIndex((w) => w.type === "index");
+  const others = sorted.filter((w) => w.type !== "index");
+  const beforeCount = sorted.slice(0, firstIndexAt).filter((w) => w.type !== "index").length;
+
+  return [...others.slice(0, beforeCount), ...indexes, ...others.slice(beforeCount)];
+}
+
 export const WIDGET_CATALOG: {
   type: DashboardWidgetType;
   title: string;
@@ -214,21 +231,21 @@ export type MobileLayoutRow =
   | { kind: "single"; widget: DashboardWidget }
   | { kind: "index-row"; widgets: DashboardWidget[] };
 
-/** Группирует подряд идущие `index` по 1–3 в ряд (как в макете редактора). */
+/** Группирует все `index` по 1–3 в ряд (как в макете редактора). */
 export function groupWidgetsForMobileLayout(widgets: DashboardWidget[]): MobileLayoutRow[] {
-  const sorted = sortWidgetsForMobileColumn(widgets);
+  const packed = packIndexWidgetsForMobileColumn(widgets);
   const rows: MobileLayoutRow[] = [];
   let i = 0;
-  while (i < sorted.length) {
-    const w = sorted[i]!;
+  while (i < packed.length) {
+    const w = packed[i]!;
     if (w.type === "index") {
       const group: DashboardWidget[] = [];
       while (
-        i < sorted.length &&
-        sorted[i]!.type === "index" &&
+        i < packed.length &&
+        packed[i]!.type === "index" &&
         group.length < MOBILE_INDEX_ROW_MAX
       ) {
-        group.push(sorted[i]!);
+        group.push(packed[i]!);
         i += 1;
       }
       rows.push({ kind: "index-row", widgets: group });
@@ -303,15 +320,15 @@ function findIncompleteIndexRowForInsert(
   return best?.rowIndex ?? null;
 }
 
-/** Вставляет index в незаполненную линию (макс. 3) или создаёт новую. */
+/** Вставляет index в незаполненную линию (макс. 3) или создаёт новую линию индексов. */
 function insertIndexInMobileOrder(
   widgets: DashboardWidget[],
   newWidget: DashboardWidget,
   insertAt: number | null,
 ): DashboardWidget[] {
-  const ordered = sortWidgetsForMobileColumn(widgets);
-  const rows = groupWidgetsForMobileLayout(ordered);
-  const fillRowIndex = findIncompleteIndexRowForInsert(rows, insertAt);
+  const rows = groupWidgetsForMobileLayout(widgets);
+  // Пока есть незаполненная линия индексов — только туда, никуда иначе.
+  const fillRowIndex = findIncompleteIndexRowForInsert(rows, null);
 
   if (fillRowIndex != null) {
     const row = rows[fillRowIndex]!;
@@ -322,11 +339,19 @@ function insertIndexInMobileOrder(
     }
   }
 
-  const at = Math.max(0, Math.min(insertAt ?? ordered.length, ordered.length));
+  // Все линии по 3 — новая линия сразу после блока индексов (или в конец / insertAt).
+  const ordered = packIndexWidgetsForMobileColumn(widgets);
+  let afterIndexes: number | null = null;
+  let flat = 0;
+  for (const row of rows) {
+    const len = mobileRowLength(row);
+    if (row.kind === "index-row") afterIndexes = flat + len;
+    flat += len;
+  }
+  const preferred = insertAt ?? afterIndexes ?? ordered.length;
+  const at = Math.max(0, Math.min(preferred, ordered.length));
   const next = [...ordered.slice(0, at), newWidget, ...ordered.slice(at)];
-  return applyMobileLayoutRows(
-    groupWidgetsForMobileLayout(next.map((w, i) => ({ ...w, y: i, x: 0 }))),
-  );
+  return applyMobileLayoutRows(groupWidgetsForMobileLayout(next.map((w, i) => ({ ...w, y: i, x: 0 }))));
 }
 
 /** Вставляет виджет в плоский мобильный порядок по индексу (0 = в начало). */
@@ -338,7 +363,7 @@ export function insertWidgetInMobileOrder(
   if (newWidget.type === "index") {
     return insertIndexInMobileOrder(widgets, newWidget, insertAt);
   }
-  const ordered = sortWidgetsForMobileColumn(widgets);
+  const ordered = packIndexWidgetsForMobileColumn(widgets);
   const at = Math.max(0, Math.min(insertAt ?? ordered.length, ordered.length));
   const next = [...ordered.slice(0, at), newWidget, ...ordered.slice(at)];
   return applyMobileLayoutRows(

@@ -45,11 +45,12 @@ import {
   layoutAllWidgetsSequential,
   layoutDashboardWidgetsForBoard,
   normalizeDashboardWidgets,
+  groupWidgetsForMobileLayout,
   resolveCollisions,
   snapAndClampDashboardPosition,
-  sortWidgetsForMobileColumn,
   type DashboardWidget,
   type DashboardWidgetType,
+  type MobileLayoutRow,
 } from "../lib/dashboardWidgets";
 import type { FedCurveCompareDays } from "../lib/fedCurveComparePeriod";
 import { toUserDashboardState } from "../lib/userDashboardStorage";
@@ -487,8 +488,8 @@ export function DashboardPage() {
     relayoutFromBoard();
   }, [boundsVersion, relayoutFromBoard]);
 
-  const widgetsForRender = useMemo(
-    () => (mobileSingleCol ? sortWidgetsForMobileColumn(widgets) : widgets),
+  const mobileLayoutRows = useMemo(
+    () => (mobileSingleCol ? groupWidgetsForMobileLayout(widgets) : null),
     [mobileSingleCol, widgets],
   );
 
@@ -800,39 +801,56 @@ export function DashboardPage() {
           ref={boardRef}
           className={cn("dashboard-widget-board", mobileSingleCol && "dashboard-widget-board--mobile-col")}
         >
-          {widgetsForRender.map((w) =>
-            w.type === "price-sparkline" ||
-            w.type === "portfolio" ||
-            w.type === "macro-calendar" ||
-            w.type === "fed-curve" ||
-            w.type === "watchlist" ||
-            w.type === "news" ||
-            w.type === "notes" ||
-            w.type === "journal" ||
-            w.type === "index" ||
-            w.type === "index-board" ? (
-              <DraggableWidget
-                key={w.id}
-                widget={w}
-                gridSize={DASHBOARD_GRID_SIZE}
-                mobileSingleCol={mobileSingleCol}
-                onMove={moveWidget}
-                onPriceSymbol={setPriceWidgetSymbol}
-                onRemove={removeWidget}
-                onOpenMacroCalendar={openMacroCalendar}
-                onOpenNews={isTelegramEnabled() ? () => setTelegramNewsOpen(true) : undefined}
-                onOpenNotes={openNotes}
-                onOpenJournal={openJournal}
-                onOpenNewsExplain={setNewsExplain}
-                onFedCurveCompareDays={setFedCurveCompareDays}
-                onWatchlistChange={setWatchlistState}
-                onIndexIdChange={setIndexId}
-                onOpenIndexChart={openKlineChartForIndex}
-                openSettingsToken={openSettingsTokenById[w.id] ?? 0}
-                galleryPreview={!isLoggedIn}
-              />
-            ) : null,
-          )}
+          {(() => {
+            const renderWidget = (w: DashboardWidget) =>
+              w.type === "price-sparkline" ||
+              w.type === "portfolio" ||
+              w.type === "macro-calendar" ||
+              w.type === "fed-curve" ||
+              w.type === "watchlist" ||
+              w.type === "news" ||
+              w.type === "notes" ||
+              w.type === "journal" ||
+              w.type === "index" ||
+              w.type === "index-board" ? (
+                <DraggableWidget
+                  key={w.id}
+                  widget={w}
+                  gridSize={DASHBOARD_GRID_SIZE}
+                  mobileSingleCol={mobileSingleCol}
+                  onMove={moveWidget}
+                  onPriceSymbol={setPriceWidgetSymbol}
+                  onRemove={removeWidget}
+                  onOpenMacroCalendar={openMacroCalendar}
+                  onOpenNews={isTelegramEnabled() ? () => setTelegramNewsOpen(true) : undefined}
+                  onOpenNotes={openNotes}
+                  onOpenJournal={openJournal}
+                  onOpenNewsExplain={setNewsExplain}
+                  onFedCurveCompareDays={setFedCurveCompareDays}
+                  onWatchlistChange={setWatchlistState}
+                  onIndexIdChange={setIndexId}
+                  onOpenIndexChart={openKlineChartForIndex}
+                  openSettingsToken={openSettingsTokenById[w.id] ?? 0}
+                  galleryPreview={!isLoggedIn}
+                />
+              ) : null;
+
+            if (mobileLayoutRows) {
+              return mobileLayoutRows.map((row: MobileLayoutRow, rowIndex) => {
+                if (row.kind === "single") return renderWidget(row.widget);
+                return (
+                  <div
+                    key={`index-row-${row.widgets.map((w) => w.id).join("-") || rowIndex}`}
+                    className="dashboard-widget-index-row"
+                  >
+                    {row.widgets.map((w) => renderWidget(w))}
+                  </div>
+                );
+              });
+            }
+
+            return widgets.map((w) => renderWidget(w));
+          })()}
         </div>
       </main>
 
