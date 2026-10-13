@@ -184,27 +184,28 @@ html[data-dashboard-theme="dark"] .notes-widget-row-icon {
 }
 
 @media (max-width: 768px), ((hover: none) and (pointer: coarse) and (max-width: 1024px)) {
+  /* Высота = заметки (макс. 4 × 60px) + паддинг списка */
   .notes-widget-shell,
-  .notes-widget-card {
-    height: 100%;
-    min-height: 0;
-  }
-
+  .notes-widget-card,
   .notes-widget-body {
-    height: 100%;
-    flex: 1;
+    height: auto;
+    flex: none;
     min-height: 0;
   }
 
   .notes-widget-list {
     padding: 10px;
-    flex: 1;
+    flex: none;
     min-height: 0;
     overflow: hidden;
   }
 
   .notes-widget-list > li {
     height: 60px;
+  }
+
+  .notes-widget-msg {
+    margin: 14px 12px;
   }
 
   .notes-widget-row-title,
@@ -218,4 +219,21 @@ html[data-dashboard-theme="dark"] .notes-widget-row-icon {
     display: block;
     -webkit-line-clamp: unset;
   }
+}
+
+html.dashboard-mobile .notes-widget-shell,
+html.dashboard-mobile .notes-widget-card,
+html.dashboard-mobile .notes-widget-body {
+  height: auto;
+  flex: none;
+  min-height: 0;
+}
+
+html.dashboard-mobile .notes-widget-list {
+  padding: 10px;
+  flex: none;
+}
+
+html.dashboard-mobile .notes-widget-list > li {
+  height: 60px;
 }
