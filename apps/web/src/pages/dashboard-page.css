@@ -141,8 +141,8 @@
   }
 
   .dashboard-widget-board .dashboard-widget-slot--notes {
-    height: auto !important;
-    min-height: 260px !important;
+    height: 233px !important;
+    min-height: 233px !important;
   }
 
   .dashboard-widget-board .dashboard-widget-slot--news {
@@ -240,8 +240,8 @@
 }
 
 .dashboard-widget-board--mobile-col .dashboard-widget-slot--notes {
-  height: auto !important;
-  min-height: 260px !important;
+  height: 233px !important;
+  min-height: 233px !important;
 }
 
 .dashboard-widget-board--mobile-col .dashboard-widget-slot--news {
