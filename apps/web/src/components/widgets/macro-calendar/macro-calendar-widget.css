@@ -254,7 +254,7 @@
 
   .macro-cal-list {
     /* тот же горизонтальный inset, что у .macro-cal-head */
-    padding: 6px 10px 12px;
+    padding: 6px 10px 18px;
   }
 
   .macro-cal-row {
@@ -297,7 +297,7 @@ html.dashboard-mobile .macro-cal-footer {
 }
 
 html.dashboard-mobile .macro-cal-list {
-  padding: 6px 10px 12px;
+  padding: 6px 10px 18px;
 }
 
 html.dashboard-mobile .macro-cal-head {

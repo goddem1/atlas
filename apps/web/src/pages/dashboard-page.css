@@ -111,7 +111,7 @@
   }
 
   .dashboard-widget-board .dashboard-widget-slot--macro-calendar {
-    height: 203px !important;
+    height: 212px !important;
   }
 
   .dashboard-widget-board .dashboard-widget-slot--price-sparkline {
@@ -210,7 +210,7 @@
 }
 
 .dashboard-widget-board--mobile-col .dashboard-widget-slot--macro-calendar {
-  height: 203px !important;
+  height: 212px !important;
 }
 
 .dashboard-widget-board--mobile-col .dashboard-widget-slot--price-sparkline {
