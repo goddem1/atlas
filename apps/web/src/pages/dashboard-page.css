@@ -151,8 +151,9 @@
   }
 
   .dashboard-widget-board .dashboard-widget-slot--fed-curve {
-    height: auto !important;
-    min-height: 280px !important;
+    /* слот = высота плашки (200px), иначе пустой зазор до следующего виджета */
+    height: 200px !important;
+    min-height: 200px !important;
   }
 
   .dashboard-widget-board .dashboard-widget-slot--index,
@@ -250,8 +251,8 @@
 }
 
 .dashboard-widget-board--mobile-col .dashboard-widget-slot--fed-curve {
-  height: auto !important;
-  min-height: 280px !important;
+  height: 200px !important;
+  min-height: 200px !important;
 }
 
 /* Внутренности виджетов: на мобилке плашки на всю ширину слота. */
