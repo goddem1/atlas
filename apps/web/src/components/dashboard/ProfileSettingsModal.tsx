@@ -292,7 +292,12 @@ export function ProfileSettingsModal({
             <div className="profile-settings-avatar btn-glass" aria-hidden="true">
               <div className="profile-settings-avatar-photo">
                 {avatarPreview ? (
-                  <img src={avatarPreview} alt="" className="profile-settings-avatar-image" />
+                  <img
+                    src={avatarPreview}
+                    alt=""
+                    className="profile-settings-avatar-image"
+                    onError={() => setAvatarPreview(null)}
+                  />
                 ) : (
                   <span
                     className="profile-settings-avatar-letter"

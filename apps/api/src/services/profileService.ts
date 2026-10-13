@@ -9,6 +9,15 @@ const ALLOWED_AVATAR_MIME = new Set(["image/jpeg", "image/png", "image/webp", "i
 
 export const USER_AVATAR_PUBLIC_PATH = (userId: string) => `/profile/avatars/${userId}.webp`;
 
+export async function ensureAvatarStorage(): Promise<void> {
+  await fs.mkdir(AVATAR_DIR, { recursive: true });
+}
+
+function isLocalAvatarPath(image: string | null | undefined): boolean {
+  if (!image) return false;
+  return image.startsWith("/profile/avatars/");
+}
+
 export type ProfileUserDto = {
   id: string;
   name: string;
@@ -89,7 +98,18 @@ export async function getProfileUser(prisma: PrismaClient, userId: string): Prom
   if (!user) {
     throw new Error("User not found");
   }
-  return toProfileUserDto(user);
+  const dto = toProfileUserDto(user);
+  if (isLocalAvatarPath(dto.image)) {
+    const file = await readUserAvatarFile(userId);
+    if (!file) {
+      // В БД путь есть, файла нет (потеря тома / старый деплой) — не отдаём битый URL
+      void prisma.user
+        .update({ where: { id: userId }, data: { image: null } })
+        .catch(() => undefined);
+      return { ...dto, image: null };
+    }
+  }
+  return dto;
 }
 
 export async function updateProfileName(

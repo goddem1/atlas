@@ -129,8 +129,13 @@ export function DashboardSettings({
     () => (isLoggedIn ? dashboardUserAvatarBackground(user?.id, user?.email) : undefined),
     [isLoggedIn, user?.id, user?.email],
   );
+  const [avatarBroken, setAvatarBroken] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+
+  useEffect(() => {
+    setAvatarBroken(false);
+  }, [avatarImageUrl]);
   const wrapRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobileFloating();
   const showOverlayClose = isMobile && (mobileLayoutOpen || galleryOpen);
@@ -225,12 +230,13 @@ export function DashboardSettings({
               aria-haspopup={isMobile ? "menu" : undefined}
               onClick={handleAccountClick}
             >
-              {isLoggedIn && avatarImageUrl ? (
+              {isLoggedIn && avatarImageUrl && !avatarBroken ? (
                 <img
                   src={avatarImageUrl}
                   alt=""
                   aria-hidden
                   className="dashboard-floating-action-avatar-image"
+                  onError={() => setAvatarBroken(true)}
                 />
               ) : isLoggedIn && avatarLetter ? (
                 <span

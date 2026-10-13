@@ -26,6 +26,7 @@ import { registerDashboardRoutes } from "./routes/dashboard.js";
 import { registerKlineChartPrefsRoutes } from "./routes/klineChartPrefs.js";
 import { registerPortfolioRoutes } from "./routes/portfolio.js";
 import { registerProfileRoutes } from "./routes/profile.js";
+import { ensureAvatarStorage } from "./services/profileService.js";
 import { registerTelegramNewsRoutes } from "./routes/telegramNews.js";
 import { registerNotesRoutes } from "./routes/notes.js";
 import { registerTradesRoutes } from "./routes/trades.js";
@@ -80,6 +81,7 @@ const host = process.env.HOST ?? "0.0.0.0";
 
 try {
   await prisma.$connect();
+  await ensureAvatarStorage();
 
   if (process.env.BINANCE_WS_DISABLED !== "true") {
     const symbols = await prisma.cryptocurrencyList.findMany({
