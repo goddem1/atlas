@@ -1333,3 +1333,351 @@ html[data-dashboard-theme="dark"] .trade-form-cell--actions {
 .trade-comment-view {
   padding: 8px 0;
 }
+
+/* Desktop 1440: шрифты/отступы как у адаптированных виджетов */
+@media (min-width: 1440px) and (max-width: 1919px) {
+  .journal-modal-overlay {
+    padding: 10px;
+  }
+
+  .journal-modal-dialog {
+    width: min(1400px, calc(100vw - 20px));
+    max-height: min(820px, calc(100dvh - 20px));
+    gap: 15px;
+    font-size: 16px;
+  }
+
+  .journal-modal-chart-card {
+    border-radius: 20px;
+    padding: 14px 16px 12px;
+  }
+
+  .journal-modal-chart-card .equity-curve-chart--full {
+    height: 150px;
+  }
+
+  .journal-modal-table-card {
+    --journal-table-max-height: 580px;
+    border-radius: 20px;
+  }
+
+  .journal-modal-form-wrap {
+    padding: 12px 14px;
+    border-radius: 16px;
+  }
+
+  .journal-modal-form-row {
+    padding: 8px 10px 6px;
+  }
+
+  .journal-filters-popover {
+    width: min(260px, calc(100vw - 20px));
+    padding: 10px;
+    border-radius: 14px;
+    gap: 8px;
+  }
+
+  .journal-filters-popover-title,
+  .journal-filters-popover-field,
+  .journal-filters-popover-field input,
+  .journal-filters-popover-field select {
+    font-size: 13px;
+  }
+
+  .journal-filters-popover-field input,
+  .journal-filters-popover-field select {
+    height: 32px;
+  }
+
+  .journal-table th,
+  .journal-table td {
+    padding: 8px 4px;
+  }
+
+  .journal-table th:first-child,
+  .journal-table td:first-child {
+    padding-left: 8px;
+  }
+
+  .journal-table th:last-child,
+  .journal-table td:last-child {
+    padding-right: 8px;
+  }
+
+  .journal-table th {
+    height: 42px;
+    min-height: 42px;
+  }
+
+  .journal-table-form-row .portfolio-currency-switch,
+  .journal-table-form-row .journal-trade-form-direction.portfolio-buy-sell-toggle,
+  .journal-table-form-row .journal-trade-ghost-field,
+  .journal-table-form-row .portfolio-input-ghost,
+  .journal-trade-form-amount-line .portfolio-currency-switch,
+  .journal-trade-form-direction,
+  .journal-trade-form-direction.portfolio-buy-sell-toggle,
+  .journal-trade-form-comment-input {
+    height: 42px;
+    min-height: 42px;
+  }
+
+  .journal-table-form-row .portfolio-currency-btn,
+  .journal-table-form-row .portfolio-ghost-label,
+  .journal-table-form-row .portfolio-input-ghost,
+  .journal-trade-form-direction .portfolio-buy-sell-btn {
+    font-size: 14px;
+  }
+
+  .journal-trade-form-direction .portfolio-buy-sell-btn {
+    height: 36px;
+  }
+
+  .journal-trade-form-icon-btn,
+  .journal-table-edit-btn--inline {
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+  }
+
+  .journal-trade-form-actions,
+  .journal-table-expand-cell {
+    width: 34px;
+  }
+
+  .journal-table-filter-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+  }
+
+  .journal-table td.journal-table-footer-cell,
+  .journal-table .journal-table-footer-row td,
+  .journal-table .journal-table-footer-row td:first-child,
+  .journal-table .journal-table-footer-row td:last-child {
+    padding: 0;
+  }
+
+  .journal-table-footer {
+    width: 100%;
+    margin: 0;
+  }
+
+  .journal-table-footer .journal-table-footer-btn {
+    width: 100%;
+    margin: 0;
+    border-radius: 0 0 20px 20px;
+  }
+
+  .journal-table-footer-btn {
+    height: 38px;
+    font-size: 14px;
+  }
+
+  .journal-table-empty {
+    padding: 18px;
+  }
+
+  .journal-col-expand,
+  .journal-table-form-row td.journal-table-form-expand-col {
+    width: 50px;
+    max-width: 50px;
+    min-width: 50px;
+  }
+}
+
+/* Desktop 1280: компактнее, окно на всю ширину с отступом 20px */
+@media (min-width: 1280px) and (max-width: 1439px) {
+  .journal-modal-overlay {
+    padding: 20px;
+  }
+
+  .journal-modal-dialog {
+    width: calc(100vw - 40px);
+    max-width: none;
+    max-height: min(720px, calc(100dvh - 40px));
+    gap: 10px;
+    font-size: 14px;
+  }
+
+  .journal-modal-chart-card {
+    border-radius: 18px;
+    padding: 10px 12px 8px;
+  }
+
+  .journal-modal-chart-card .equity-curve-chart--full {
+    height: 120px;
+  }
+
+  .journal-modal-table-card {
+    --journal-table-max-height: 480px;
+    border-radius: 18px;
+  }
+
+  .journal-modal-form-wrap {
+    padding: 10px 12px;
+    border-radius: 14px;
+  }
+
+  .journal-modal-form-row {
+    padding: 6px 8px 4px;
+  }
+
+  .journal-filters-popover {
+    width: min(240px, calc(100vw - 16px));
+    padding: 8px;
+    border-radius: 12px;
+    gap: 6px;
+  }
+
+  .journal-filters-popover-title,
+  .journal-filters-popover-field,
+  .journal-filters-popover-field input,
+  .journal-filters-popover-field select {
+    font-size: 12px;
+  }
+
+  .journal-filters-popover-field input,
+  .journal-filters-popover-field select {
+    height: 30px;
+  }
+
+  .journal-table th,
+  .journal-table td {
+    padding: 6px 3px;
+  }
+
+  .journal-table th:first-child,
+  .journal-table td:first-child {
+    padding-left: 6px;
+  }
+
+  .journal-table th:last-child,
+  .journal-table td:last-child {
+    padding-right: 6px;
+  }
+
+  .journal-table th {
+    height: 36px;
+    min-height: 36px;
+  }
+
+  .journal-table-form-row .portfolio-currency-switch,
+  .journal-table-form-row .journal-trade-form-direction.portfolio-buy-sell-toggle,
+  .journal-table-form-row .journal-trade-ghost-field,
+  .journal-table-form-row .portfolio-input-ghost,
+  .journal-trade-form-amount-line .portfolio-currency-switch,
+  .journal-trade-form-direction,
+  .journal-trade-form-direction.portfolio-buy-sell-toggle,
+  .journal-trade-form-comment-input {
+    height: 36px;
+    min-height: 36px;
+  }
+
+  .journal-table-form-row .portfolio-currency-btn,
+  .journal-table-form-row .portfolio-ghost-label,
+  .journal-table-form-row .portfolio-input-ghost,
+  .journal-trade-form-direction .portfolio-buy-sell-btn {
+    font-size: 12px;
+  }
+
+  .journal-trade-form-direction .portfolio-buy-sell-btn {
+    height: 30px;
+  }
+
+  .journal-table-form-row .portfolio-currency-empty-dot {
+    width: 18px;
+    height: 18px;
+  }
+
+  .journal-table-form-row .portfolio-currency-asset-icon {
+    width: 20px;
+    height: 20px;
+  }
+
+  .journal-trade-form-icon-btn,
+  .journal-table-edit-btn--inline {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+  }
+
+  .journal-trade-form-actions,
+  .journal-table-expand-cell {
+    width: 30px;
+  }
+
+  .journal-table-filter-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+  }
+
+  .journal-table-expand {
+    width: 24px;
+    height: 24px;
+  }
+
+  .journal-table td.journal-table-footer-cell,
+  .journal-table .journal-table-footer-row td,
+  .journal-table .journal-table-footer-row td:first-child,
+  .journal-table .journal-table-footer-row td:last-child {
+    padding: 0;
+  }
+
+  .journal-table-footer {
+    width: 100%;
+    margin: 0;
+  }
+
+  .journal-table-footer .journal-table-footer-btn {
+    width: 100%;
+    margin: 0;
+    border-radius: 0 0 18px 18px;
+  }
+
+  .journal-table-footer-btn {
+    height: 34px;
+    font-size: 13px;
+  }
+
+  .journal-table-empty {
+    padding: 14px;
+  }
+
+  .journal-col-expand,
+  .journal-table-form-row td.journal-table-form-expand-col {
+    width: 44px;
+    max-width: 44px;
+    min-width: 44px;
+  }
+
+  .journal-table col.journal-col-entryAt,
+  .journal-col-entryAt,
+  .journal-table th.journal-col-entryAt,
+  .journal-table td.journal-col-entryAt,
+  .journal-table-form-row .journal-col-entryAt {
+    width: 180px;
+    max-width: 180px;
+  }
+
+  .journal-table col.journal-col-symbol,
+  .journal-col-symbol,
+  .journal-table th.journal-col-symbol,
+  .journal-table td.journal-col-symbol,
+  .journal-table-form-row .journal-col-symbol {
+    width: 200px;
+    max-width: 200px;
+  }
+
+  .journal-table-form-row .journal-trade-form-asset {
+    max-width: 190px;
+  }
+
+  .journal-trade-form-direction {
+    width: 72px;
+  }
+
+  .journal-col-direction {
+    width: 80px;
+  }
+}

@@ -342,6 +342,67 @@ html[data-dashboard-theme="dark"] .fed-curve-y-label {
   stroke: #9ca3af;
 }
 
+/* Desktop 1440: плашка 297×169, тултип 12px */
+@media (min-width: 1440px) and (max-width: 1919px) {
+  .dashboard-widget-slot--fed-curve {
+    width: 297px !important;
+    max-width: 297px !important;
+    height: 169px !important;
+  }
+
+  .fed-curve-widget-shell {
+    width: 297px;
+    max-width: 297px;
+    height: 169px;
+  }
+
+  .fed-curve-tooltip {
+    width: 110px;
+    min-width: 110px;
+    min-height: 64px;
+    padding: 6px 8px;
+    border-radius: 8px;
+  }
+
+  .fed-curve-tooltip-tenor,
+  .fed-curve-tooltip-row {
+    font-size: 12px;
+  }
+}
+
+/* Desktop 1280: плашка 240×149, тултип 10px */
+@media (min-width: 1280px) and (max-width: 1439px) {
+  .dashboard-widget-slot--fed-curve {
+    width: 240px !important;
+    max-width: 240px !important;
+    height: 149px !important;
+  }
+
+  .fed-curve-widget-shell {
+    width: 240px;
+    max-width: 240px;
+    height: 149px;
+  }
+
+  .fed-curve-tooltip {
+    width: 96px;
+    min-width: 96px;
+    min-height: 56px;
+    padding: 5px 6px;
+    border-radius: 7px;
+  }
+
+  .fed-curve-tooltip-tenor,
+  .fed-curve-tooltip-row {
+    font-size: 10px;
+  }
+
+  .fed-curve-tooltip-dot {
+    width: 5px;
+    height: 5px;
+  }
+}
+
 @media (max-width: 768px), ((hover: none) and (pointer: coarse) and (max-width: 1024px)) {
   .fed-curve-widget-shell {
     width: 100%;

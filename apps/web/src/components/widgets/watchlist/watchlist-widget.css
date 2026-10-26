@@ -118,7 +118,8 @@
 
 .watchlist-list-menu-header-slot {
   flex-shrink: 0;
-  height: 38px;
+  /* padding-top head (20) + строка заголовка (~25 при 20px) */
+  height: 45px;
 }
 
 .watchlist-head {
@@ -368,6 +369,236 @@
 
 .watchlist-msg--err {
   color: #ef4444;
+}
+
+/* Desktop 1440: плашка 252×412, радиус 20/7, отступы 15px, иконки 27px, тексты 16/11 */
+@media (min-width: 1440px) and (max-width: 1919px) {
+  .dashboard-widget-slot--watchlist {
+    width: 252px !important;
+    max-width: 252px !important;
+    height: 412px !important;
+  }
+
+  .watchlist-shell {
+    width: 252px;
+    max-width: 252px;
+  }
+
+  .watchlist-card {
+    height: 412px;
+  }
+
+  .watchlist-head {
+    padding: 20px 15px 15px;
+  }
+
+  .watchlist-divider {
+    margin: 0 15px;
+  }
+
+  .watchlist-list {
+    padding: 0 15px 15px;
+  }
+
+  .watchlist-msg {
+    padding: 12px 15px;
+    font-size: 16px;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+  }
+
+  .watchlist-list-select {
+    font-size: 16px;
+  }
+
+  .watchlist-list-select-icon {
+    width: 14px;
+    height: 14px;
+  }
+
+  .watchlist-list-menu-panel,
+  .watchlist-list-menu-panel--portal {
+    width: 112px;
+  }
+
+  .watchlist-list-menu-panel--portal {
+    border-radius: 16px;
+  }
+
+  .watchlist-list-menu-content {
+    padding: 0 8px 8px;
+  }
+
+  .watchlist-list-menu-header-slot {
+    /* padding-top head (20) + строка заголовка (~20) */
+    height: 40px;
+  }
+
+  .watchlist-list-menu-divider {
+    margin: 0 0 8px;
+  }
+
+  .watchlist-list-menu-options {
+    gap: 4px;
+  }
+
+  .watchlist-list-menu-option,
+  .watchlist-list-menu-option-input {
+    font-size: 16px;
+  }
+
+  .watchlist-list-menu-option {
+    padding: 4px 8px;
+    border-radius: 8px;
+  }
+
+  .watchlist-list-menu-option-input {
+    padding: 6px 6px;
+    border-radius: 8px;
+  }
+
+  .watchlist-list-menu-add {
+    padding: 6px 8px;
+  }
+
+  .watchlist-list-menu-add-icon {
+    width: 14px;
+    height: 14px;
+  }
+
+  .watchlist-symbol,
+  .watchlist-price {
+    font-size: 16px;
+  }
+
+  .watchlist-change {
+    min-width: 56px;
+    font-size: 11px;
+  }
+
+  .watchlist-asset-icon {
+    width: 27px;
+    height: 27px;
+  }
+
+  .watchlist-asset-icon--fallback {
+    font-size: 12px;
+  }
+}
+
+/* Desktop 1280: плашка 240×384, радиус 15/7, отступы 10px, иконки 25px, тексты 16/11 */
+@media (min-width: 1280px) and (max-width: 1439px) {
+  .dashboard-widget-slot--watchlist {
+    width: 240px !important;
+    max-width: 240px !important;
+    height: 384px !important;
+  }
+
+  .watchlist-shell {
+    width: 240px;
+    max-width: 240px;
+  }
+
+  .watchlist-card {
+    height: 384px;
+  }
+
+  .watchlist-head {
+    padding: 16px 10px 12px;
+  }
+
+  .watchlist-divider {
+    margin: 0 10px;
+  }
+
+  .watchlist-list {
+    padding: 0 10px 10px;
+  }
+
+  .watchlist-msg {
+    padding: 10px;
+    font-size: 16px;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+  }
+
+  .watchlist-list-select {
+    font-size: 16px;
+  }
+
+  .watchlist-list-select-icon {
+    width: 13px;
+    height: 13px;
+  }
+
+  .watchlist-list-menu-panel,
+  .watchlist-list-menu-panel--portal {
+    width: 104px;
+  }
+
+  .watchlist-list-menu-panel--portal {
+    border-radius: 14px;
+  }
+
+  .watchlist-list-menu-content {
+    padding: 0 6px 6px;
+  }
+
+  .watchlist-list-menu-header-slot {
+    /* padding-top head (16) + строка заголовка (~20) */
+    height: 36px;
+  }
+
+  .watchlist-list-menu-divider {
+    margin: 0 0 6px;
+  }
+
+  .watchlist-list-menu-options {
+    gap: 3px;
+  }
+
+  .watchlist-list-menu-option,
+  .watchlist-list-menu-option-input {
+    font-size: 16px;
+  }
+
+  .watchlist-list-menu-option {
+    padding: 3px 6px;
+    border-radius: 7px;
+  }
+
+  .watchlist-list-menu-option-input {
+    padding: 5px 5px;
+    border-radius: 7px;
+  }
+
+  .watchlist-list-menu-add {
+    padding: 5px 6px;
+  }
+
+  .watchlist-list-menu-add-icon {
+    width: 13px;
+    height: 13px;
+  }
+
+  .watchlist-symbol,
+  .watchlist-price {
+    font-size: 16px;
+  }
+
+  .watchlist-change {
+    min-width: 52px;
+    font-size: 11px;
+  }
+
+  .watchlist-asset-icon {
+    width: 25px;
+    height: 25px;
+  }
+
+  .watchlist-asset-icon--fallback {
+    font-size: 11px;
+  }
 }
 
 @media (max-width: 768px), ((hover: none) and (pointer: coarse) and (max-width: 1024px)) {

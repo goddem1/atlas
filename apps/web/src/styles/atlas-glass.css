@@ -412,6 +412,22 @@ html[data-backdrop-blur-pause] .dashboard-page-root .dashboard-quick-tabs * {
   -webkit-backdrop-filter: none !important;
 }
 
+/* Desktop 1440: единый радиус всех плашек 20 / 7 / 20 / 20 */
+@media (min-width: 1440px) and (max-width: 1919px) {
+  :root {
+    --atlas-widget-radius: 20px 7px 20px 20px;
+    --atlas-widget-radius-fed-curve: 20px 7px 20px 20px;
+  }
+}
+
+/* Desktop 1280: единый радиус всех плашек 15 / 7 / 15 / 15 */
+@media (min-width: 1280px) and (max-width: 1439px) {
+  :root {
+    --atlas-widget-radius: 15px 7px 15px 15px;
+    --atlas-widget-radius-fed-curve: 15px 7px 15px 15px;
+  }
+}
+
 /* Мобильные: единый радиус всех виджетов 15 / 7 / 15 / 15 (стекло как на десктопе) */
 @media (max-width: 768px), ((hover: none) and (pointer: coarse) and (max-width: 1024px)) {
   :root {

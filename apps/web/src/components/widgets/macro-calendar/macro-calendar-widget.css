@@ -230,6 +230,128 @@
   }
 }
 
+/* Desktop 1440: плашка 482×233, шрифты 16px, gap между событиями 10px */
+@media (min-width: 1440px) and (max-width: 1919px) {
+  .dashboard-widget-slot--macro-calendar {
+    width: 482px !important;
+    max-width: 482px !important;
+    height: 233px !important;
+  }
+
+  .macro-cal-shell {
+    width: 482px;
+    max-width: 482px;
+    height: 233px;
+  }
+
+  .macro-cal-card {
+    height: 233px;
+  }
+
+  .macro-cal-head {
+    padding: 12px 15px 0;
+    gap: 8px;
+  }
+
+  .macro-cal-date,
+  .macro-cal-col-labels,
+  .macro-cal-row {
+    font-size: 16px;
+  }
+
+  .macro-cal-alert {
+    font-size: 16px;
+  }
+
+  .macro-cal-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 6px 15px 12px;
+  }
+
+  .macro-cal-col-labels {
+    grid-template-columns: 48px 48px;
+    column-gap: 6px;
+    padding: 0;
+  }
+
+  .macro-cal-row {
+    padding: 0;
+    gap: 4px 6px;
+    grid-template-columns: 18px 44px minmax(0, 1fr) 48px 48px;
+  }
+
+  .macro-cal-row--no-alert {
+    grid-template-columns: 44px minmax(0, 1fr) 48px 48px;
+  }
+
+  .macro-cal-footer {
+    padding: 0 15px 12px;
+  }
+}
+
+/* Desktop 1280: плашка 400×202, шрифты 16px, gap между событиями 7px */
+@media (min-width: 1280px) and (max-width: 1439px) {
+  .dashboard-widget-slot--macro-calendar {
+    width: 400px !important;
+    max-width: 400px !important;
+    height: 202px !important;
+  }
+
+  .macro-cal-shell {
+    width: 400px;
+    max-width: 400px;
+    height: 202px;
+  }
+
+  .macro-cal-card {
+    height: 202px;
+  }
+
+  .macro-cal-head {
+    padding: 10px 10px 0;
+    gap: 6px;
+  }
+
+  .macro-cal-date,
+  .macro-cal-col-labels,
+  .macro-cal-row {
+    font-size: 16px;
+  }
+
+  .macro-cal-alert {
+    font-size: 16px;
+  }
+
+  .macro-cal-list {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    padding: 4px 10px 10px;
+  }
+
+  .macro-cal-row {
+    padding: 0;
+    gap: 4px 6px;
+    grid-template-columns: 16px 40px minmax(0, 1fr) 44px 44px;
+  }
+
+  .macro-cal-row--no-alert {
+    grid-template-columns: 40px minmax(0, 1fr) 44px 44px;
+  }
+
+  .macro-cal-col-labels {
+    grid-template-columns: 44px 44px;
+    column-gap: 6px;
+    padding: 0;
+  }
+
+  .macro-cal-footer {
+    padding: 0 10px 10px;
+  }
+}
+
 @media (max-width: 768px), ((hover: none) and (pointer: coarse) and (max-width: 1024px)) {
   .macro-cal-date {
     font-size: 16px;

@@ -36,15 +36,16 @@ import {
   createWidgetId,
   DASHBOARD_GRID_SIZE,
   DASHBOARD_MOBILE_MEDIA_QUERY,
-  DASHBOARD_WIDGET_GAP,
+  dashboardWidgetGap,
   dashboardWidgetOuterSize,
   getDashboardViewportWidth,
   insertWidgetInMobileOrder,
   isDashboardMobileSingleColumn,
   isDesktopSiteOnPhone,
   layoutAllWidgetsSequential,
-  layoutDashboardWidgetsForBoard,
   normalizeDashboardWidgets,
+  resolveDashboardWidgetEdgeAnchors,
+  stabilizeDashboardWidgetsForBoard,
   groupWidgetsForMobileLayout,
   resolveCollisions,
   snapAndClampDashboardPosition,
@@ -188,7 +189,7 @@ const DraggableWidget = memo(function DraggableWidget({
       nodeRef={nodeRef}
       handle=".drag-handle"
       disabled={mobileSingleCol || (widget.type === "watchlist" && watchlistSettingsOpen)}
-      cancel=".price-widget-icon-button,.portfolio-menu-trigger,.btn-on-glass,.macro-cal-expand,.fed-curve-settings-popover,.fed-curve-settings-period-btn,.watchlist-list-header-select,.news-widget-row,.news-widget-inline-link,.notes-widget-row,.notes-widget-inline-link,.journal-widget-row,.journal-period-switcher,.index-widget-name-btn"
+      cancel=".price-widget-icon-button,.price-widget-symbol-btn,.portfolio-menu-trigger,.portfolio-menu-rail,.btn-on-glass,.macro-cal-expand,.fed-curve-settings-popover,.fed-curve-settings-period-btn,.watchlist-list-header-select,.news-widget-row,.news-widget-inline-link,.notes-widget-row,.notes-widget-inline-link,.journal-widget-row,.journal-period-switcher,.index-widget-name-btn"
       bounds="parent"
       grid={[gridSize, gridSize]}
       position={mobileSingleCol ? { x: 0, y: 0 } : isDragging ? undefined : { x: widget.x, y: widget.y }}
@@ -316,6 +317,8 @@ export function DashboardPage() {
   const [profileUser, setProfileUser] = useState<ProfileUserResponse | null>(null);
 
   const boardRef = useRef<HTMLDivElement | null>(null);
+  /** Предыдущий viewport для reflow с сохранением зазоров при смене breakpoint. */
+  const layoutViewportWidthRef = useRef<number | null>(null);
   const [boundsVersion, setBoundsVersion] = useState(0);
   const [mobileSingleCol, setMobileSingleCol] = useState(() =>
     typeof window !== "undefined" ? isDashboardMobileSingleColumn() : false,
@@ -408,7 +411,7 @@ export function DashboardPage() {
         setWidgets(
           isDashboardMobileSingleColumn(vw)
             ? normalized
-            : layoutDashboardWidgetsForBoard(normalized, rect?.width, rect?.height, vw),
+            : stabilizeDashboardWidgetsForBoard(normalized, rect?.width, rect?.height, vw),
         );
         setPrefs(mergeDashboardPrefs(state.prefs));
         setBoundsVersion((v) => v + 1);
@@ -448,7 +451,10 @@ export function DashboardPage() {
     const vw = getDashboardViewportWidth();
     // На телефоне колонка через CSS — не перезаписываем desktop x/y в стор.
     if (isDashboardMobileSingleColumn(vw)) return;
-    setWidgets((ws) => layoutDashboardWidgetsForBoard(ws, width, height, vw));
+    const prevVw = layoutViewportWidthRef.current;
+    layoutViewportWidthRef.current = vw;
+    // Смена размеров плашек → сдвиг с сохранением зазоров; иначе только clamp/overlap.
+    setWidgets((ws) => stabilizeDashboardWidgetsForBoard(ws, width, height, vw, prevVw));
   }, []);
 
   useLayoutEffect(() => {
@@ -506,7 +512,19 @@ export function DashboardPage() {
       if (!self) return ws;
       const snapped = snapAndClampDashboardPosition(x, y, self.type, bw, bh, vw);
       const resolved = resolveCollisions(ws, id, snapped, bw, bh, vw);
-      return ws.map((w) => (w.id === id ? { ...w, ...resolved } : w));
+      const anchors = resolveDashboardWidgetEdgeAnchors(self.type, resolved.x, resolved.y, bw, bh, vw);
+      return ws.map((w) =>
+        w.id === id
+          ? {
+              ...w,
+              ...resolved,
+              anchorX: anchors.anchorX,
+              anchorY: anchors.anchorY,
+              insetRight: anchors.insetRight,
+              insetBottom: anchors.insetBottom,
+            }
+          : w,
+      );
     });
   }, []);
 
@@ -562,7 +580,7 @@ export function DashboardPage() {
     setWidgets((ws) => {
       const idx = ws.length;
       const { h } = dashboardWidgetOuterSize(type, vw);
-      const stepY = Math.ceil((h + DASHBOARD_WIDGET_GAP) / DASHBOARD_GRID_SIZE) * DASHBOARD_GRID_SIZE;
+      const stepY = Math.ceil((h + dashboardWidgetGap(vw)) / DASHBOARD_GRID_SIZE) * DASHBOARD_GRID_SIZE;
       const snapped = snapAndClampDashboardPosition(0, idx * stepY, type, bw, bh, vw);
       const created: DashboardWidget = {
         id: createWidgetId(),

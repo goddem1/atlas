@@ -27,10 +27,15 @@ type Props = {
   galleryPreview?: boolean;
 };
 
-function PriceSparklineWidgetGalleryPreview() {
+function PriceSparklineWidgetGalleryPreview({
+  dragHandleClassName,
+  onDeleteWidget,
+}: Pick<Props, "dragHandleClassName" | "onDeleteWidget">) {
   const demo = GALLERY_PRICE_SPARKLINE;
   return (
     <PriceSparklineCard
+      dragHandleClassName={dragHandleClassName}
+      onDeleteWidget={onDeleteWidget}
       symbol={demo.symbol}
       priceDisplay={demo.priceDisplay}
       changePercent={demo.changePercent}
@@ -218,6 +223,13 @@ export const PriceSparklineWidget = memo(function PriceSparklineWidget({
   galleryPreview = false,
   ...props
 }: Props) {
-  if (galleryPreview) return <PriceSparklineWidgetGalleryPreview />;
+  if (galleryPreview) {
+    return (
+      <PriceSparklineWidgetGalleryPreview
+        dragHandleClassName={props.dragHandleClassName}
+        onDeleteWidget={props.onDeleteWidget}
+      />
+    );
+  }
   return <PriceSparklineWidgetLive {...props} />;
 });

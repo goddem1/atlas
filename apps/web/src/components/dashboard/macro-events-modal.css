@@ -720,3 +720,377 @@ button.macro-events-chart-slot:focus-visible .macro-events-chart-hover {
   }
 }
 
+/* Desktop 1440: шрифты/отступы как у адаптированных виджетов */
+@media (min-width: 1440px) and (max-width: 1919px) {
+  .macro-events-overlay {
+    padding: 20px;
+  }
+
+  .macro-events-dialog {
+    --macro-col-time: 48px;
+    --macro-col-country: 80px;
+    --macro-col-event: clamp(280px, 30vw, 480px);
+    --macro-col-value: 100px;
+    --macro-col-chart: 52px;
+    --macro-col-notification: 52px;
+    --macro-col-gap: 10px;
+    border-radius: 28px;
+    height: calc(100dvh - 40px);
+    max-height: calc(100dvh - 40px);
+  }
+
+  .macro-events-dialog-with-filters {
+    width: calc(100vw - 346px);
+  }
+
+  .macro-events-main-panel {
+    border-radius: 28px;
+  }
+
+  .macro-events-header {
+    min-height: 52px;
+    padding: 4px 10px 4px 28px;
+    border-radius: 40px;
+  }
+
+  .macro-events-header-actions {
+    right: 14px;
+    gap: 8px;
+  }
+
+  .macro-events-icon-button,
+  .macro-events-filters-close,
+  .close-button {
+    width: 42px;
+    height: 42px;
+  }
+
+  .macro-events-header-icon,
+  .macro-events-filters-close .asset-picker-close-icon {
+    width: 24px;
+    height: 24px;
+  }
+
+  .macro-events-title,
+  .macro-events-filters-title,
+  .macro-events-day-title {
+    font-size: 18px;
+  }
+
+  .macro-events-table-num,
+  .macro-events-message,
+  .macro-events-row,
+  .macro-events-time,
+  .macro-events-country,
+  .macro-events-name,
+  .macro-events-cell,
+  .macro-events-cell--actual-only {
+    font-size: 16px;
+  }
+
+  .macro-events-name-ref {
+    font-size: 13px;
+  }
+
+  .macro-events-name-alert {
+    font-size: 22px;
+    margin-right: 4px;
+  }
+
+  .macro-events-body {
+    padding: 0 0 28px 28px;
+  }
+
+  .macro-events-day-title {
+    padding: 28px 0 12px;
+  }
+
+  .macro-events-list {
+    gap: 12px;
+  }
+
+  .macro-events-filters-popup {
+    left: calc(100% + 16px);
+    width: 290px;
+    border-radius: 24px;
+    padding: 12px 14px;
+  }
+
+  .macro-events-filters-head {
+    min-height: 52px;
+    margin: -12px -14px 12px;
+    padding: 4px 16px;
+    border-radius: 40px;
+  }
+
+  .macro-events-filters-form {
+    gap: 10px;
+  }
+
+  .macro-events-filters-close {
+    font-size: 20px;
+  }
+
+  .macro-events-filters-popup .portfolio-input-ghost,
+  .macro-events-filters-popup .portfolio-asset-combobox-input {
+    height: 42px;
+    font-size: 16px;
+    border-radius: 12px;
+    padding: 0 16px;
+  }
+
+  .macro-events-filters-popup .portfolio-ghost-label {
+    left: 16px;
+    font-size: 16px;
+  }
+
+  .macro-events-filters-popup .portfolio-ghost-field:focus-within .portfolio-ghost-label,
+  .macro-events-filters-popup .portfolio-ghost-field.is-floated .portfolio-ghost-label {
+    font-size: 9px;
+  }
+
+  .macro-events-filters-popup .portfolio-ghost-field:focus-within .portfolio-input-ghost,
+  .macro-events-filters-popup .portfolio-ghost-field.is-floated .portfolio-input-ghost {
+    padding-top: 11px;
+  }
+
+  button.macro-events-chart-slot,
+  .macro-events-chart-slot-placeholder {
+    height: 26px;
+  }
+
+  .macro-events-slot-image,
+  .macro-events-chart-slot-loading {
+    width: 48px;
+    height: 20px;
+  }
+
+  .macro-events-row-notification-btn {
+    width: 28px;
+    height: 28px;
+  }
+
+  .macro-events-row-notification-icon {
+    width: 18px;
+    height: 18px;
+  }
+
+  .macro-events-chart-hover {
+    width: 200px;
+    padding: 6px;
+    border-radius: 10px;
+  }
+
+  .macro-events-chart-hover-title {
+    font-size: 13px;
+  }
+
+  .macro-events-chart-hover-plot {
+    height: 88px;
+  }
+
+  .macro-events-preview-image {
+    width: 180px;
+    height: 84px;
+  }
+}
+
+/* Desktop 1280: компактнее, окно с отступом 20px */
+@media (min-width: 1280px) and (max-width: 1439px) {
+  .macro-events-overlay {
+    padding: 20px;
+  }
+
+  .macro-events-dialog {
+    --macro-col-time: 42px;
+    --macro-col-country: 70px;
+    --macro-col-event: clamp(200px, 26vw, 340px);
+    --macro-col-value: 82px;
+    --macro-col-chart: 46px;
+    --macro-col-notification: 42px;
+    --macro-col-gap: 8px;
+    border-radius: 24px;
+    height: calc(100dvh - 40px);
+    max-height: calc(100dvh - 40px);
+  }
+
+  .macro-events-dialog-with-filters {
+    width: calc(100vw - 315px);
+  }
+
+  .macro-events-main-panel {
+    border-radius: 24px;
+  }
+
+  .macro-events-header {
+    min-height: 46px;
+    padding: 3px 8px 3px 20px;
+    border-radius: 36px;
+  }
+
+  .macro-events-header-actions {
+    right: 10px;
+    gap: 6px;
+  }
+
+  .macro-events-icon-button,
+  .macro-events-filters-close,
+  .close-button {
+    width: 38px;
+    height: 38px;
+  }
+
+  .macro-events-header-icon,
+  .macro-events-filters-close .asset-picker-close-icon {
+    width: 22px;
+    height: 22px;
+  }
+
+  .macro-events-title,
+  .macro-events-filters-title,
+  .macro-events-day-title {
+    font-size: 16px;
+  }
+
+  .macro-events-table-num,
+  .macro-events-message,
+  .macro-events-row,
+  .macro-events-time,
+  .macro-events-country,
+  .macro-events-name,
+  .macro-events-cell,
+  .macro-events-cell--actual-only {
+    font-size: 14px;
+  }
+
+  .macro-events-name-ref {
+    font-size: 12px;
+  }
+
+  .macro-events-name-alert {
+    font-size: 18px;
+    margin-right: 4px;
+  }
+
+  .macro-events-body {
+    padding: 0 0 20px 20px;
+  }
+
+  .macro-events-day {
+    padding: 6px 0;
+  }
+
+  .macro-events-day-title {
+    padding: 20px 0 10px;
+  }
+
+  .macro-events-list {
+    gap: 10px;
+  }
+
+  .macro-events-message {
+    padding: 12px;
+  }
+
+  .macro-events-filters-popup {
+    left: calc(100% + 15px);
+    width: 260px;
+    border-radius: 20px;
+    padding: 10px 12px;
+  }
+
+  .macro-events-filters-head {
+    min-height: 46px;
+    margin: -10px -12px 10px;
+    padding: 3px 12px;
+    border-radius: 36px;
+  }
+
+  .macro-events-filters-form {
+    gap: 8px;
+  }
+
+  .macro-events-filters-close {
+    font-size: 18px;
+  }
+
+  .macro-events-filters-popup .portfolio-input-ghost,
+  .macro-events-filters-popup .portfolio-asset-combobox-input {
+    height: 36px;
+    font-size: 14px;
+    border-radius: 11px;
+    padding: 0 14px;
+  }
+
+  .macro-events-filters-popup .portfolio-ghost-label {
+    left: 14px;
+    font-size: 14px;
+  }
+
+  .macro-events-filters-popup .portfolio-ghost-field:focus-within .portfolio-ghost-label,
+  .macro-events-filters-popup .portfolio-ghost-field.is-floated .portfolio-ghost-label {
+    font-size: 8px;
+  }
+
+  .macro-events-filters-popup .portfolio-ghost-field:focus-within .portfolio-input-ghost,
+  .macro-events-filters-popup .portfolio-ghost-field.is-floated .portfolio-input-ghost {
+    padding-top: 10px;
+  }
+
+  .macro-events-period-single,
+  .macro-events-importance-select,
+  .macro-events-category-select {
+    padding-right: 36px;
+  }
+
+  button.macro-events-chart-slot,
+  .macro-events-chart-slot-placeholder {
+    height: 24px;
+  }
+
+  .macro-events-slot-image,
+  .macro-events-chart-slot-loading {
+    width: 44px;
+    height: 18px;
+  }
+
+  .macro-events-chart-slot-loading {
+    font-size: 11px;
+  }
+
+  .macro-events-row-notification-btn {
+    width: 26px;
+    height: 26px;
+  }
+
+  .macro-events-row-notification-icon {
+    width: 16px;
+    height: 16px;
+  }
+
+  .macro-events-chart-hover {
+    width: 180px;
+    padding: 6px;
+    border-radius: 10px;
+    bottom: calc(100% + 6px);
+  }
+
+  .macro-events-chart-hover-title {
+    font-size: 12px;
+    margin-bottom: 4px;
+  }
+
+  .macro-events-chart-hover-plot {
+    height: 76px;
+  }
+
+  .macro-events-chart-hover-note {
+    font-size: 10px;
+  }
+
+  .macro-events-preview-image {
+    width: 160px;
+    height: 72px;
+  }
+}
+

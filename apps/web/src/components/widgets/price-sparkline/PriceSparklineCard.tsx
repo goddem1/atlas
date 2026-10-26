@@ -158,7 +158,6 @@ export function PriceSparklineCard({
     <p className="price-widget-symbol">{symbol}</p>
   );
 
-  const dragCn = cn("price-widget-drag-handle", dragHandleClassName);
   const canHover = pts.length > 1;
   const fallbackPtsIndex = pts.length > 0 ? pts.length - 1 : 0;
   const activePtsIndex =
@@ -194,6 +193,15 @@ export function PriceSparklineCard({
     setHoveredIndex((prev) => (prev === nearest ? prev : nearest));
   };
 
+  // Как у portfolio: класс `drag-handle` всегда на шапке (не только через prop),
+  // иначе в galleryPreview / гостевом режиме react-draggable не находит handle.
+  const headerDragCn = cn(
+    "price-widget-header",
+    "price-widget-drag-handle",
+    "drag-handle",
+    dragHandleClassName,
+  );
+
   return (
     <div className={cn("price-widget-shell", className)}>
       <div
@@ -222,7 +230,7 @@ export function PriceSparklineCard({
         </div>
       </div>
       <div className="atlas-glass price-widget-card">
-      <div className={cn("price-widget-header", dragCn)}>
+      <div className={headerDragCn}>
         <div className="price-widget-asset-head">
           {iconEl}
           {symbolEl}

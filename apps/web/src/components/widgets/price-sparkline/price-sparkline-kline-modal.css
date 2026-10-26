@@ -2190,3 +2190,18 @@
   color: inherit;
   opacity: 0.78;
 }
+
+/* Desktop 1280: график на весь экран, отступы 20px со всех сторон */
+@media (min-width: 1280px) and (max-width: 1439px) {
+  .price-kline-layout {
+    padding: 20px;
+  }
+
+  .price-kline-dialog,
+  .price-kline-dialog--pro {
+    width: calc(100vw - 40px);
+    max-width: none;
+    height: calc(100dvh - 40px);
+    max-height: none;
+  }
+}

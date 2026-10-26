@@ -37,7 +37,7 @@
   top: 0;
   height: 46px;
   padding: 6px 10px;
-  border-radius: 0 10px 0 22px;
+  border-radius: 22px 10px 0px 22px;
   border: var(--atlas-glass-border);
   background-color: var(--atlas-glass-bg);
   box-shadow: var(--atlas-glass-shadow);
@@ -84,8 +84,58 @@ html[data-dashboard-theme="dark"] .portfolio-menu-circle-icon {
   transform: rotate(45deg);
 }
 
-@media (max-width: 768px), ((hover: none) and (pointer: coarse) and (max-width: 1024px)) {
-  .portfolio-menu-wrap {
-    display: none;
+/* Desktop 1440: rail под радиус плашки 20/7, кнопки 35px.
+   Уголок-trigger (.portfolio-menu-trigger) не трогаем — один стиль на все разрешения. */
+@media (min-width: 1440px) and (max-width: 1919px) {
+  .portfolio-menu-rail {
+    height: 45px;
+    padding: 5px 10px;
+    gap: 8px;
+    border-radius: 20px 7px 0 20px;
+  }
+
+  .portfolio-menu-rail .btn-on-glass {
+    width: 35px;
+    height: 35px;
+  }
+
+  .portfolio-menu-rail .portfolio-menu-circle-icon {
+    width: 17px;
+    height: 17px;
+  }
+
+  .portfolio-menu-rail .portfolio-menu-circle-icon-add {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+/* Desktop 1280: rail под радиус плашки 15/7, кнопки 30px */
+@media (min-width: 1280px) and (max-width: 1439px) {
+  .portfolio-menu-rail {
+    height: 40px;
+    padding: 5px 8px;
+    gap: 6px;
+    border-radius: 15px 7px 0 15px;
+  }
+
+  .portfolio-menu-rail .btn-on-glass {
+    width: 30px;
+    height: 30px;
+  }
+
+  .portfolio-menu-rail .portfolio-menu-circle-icon {
+    width: 15px;
+    height: 15px;
+  }
+
+  .portfolio-menu-rail .portfolio-menu-circle-icon-add {
+    width: 14px;
+    height: 14px;
+  }
+
+  .portfolio-menu-rail .portfolio-menu-circle-icon-close {
+    width: 15px;
+    height: 15px;
   }
 }

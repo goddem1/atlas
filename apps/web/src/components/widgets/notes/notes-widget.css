@@ -183,6 +183,91 @@ html[data-dashboard-theme="dark"] .notes-widget-row-icon {
   pointer-events: none;
 }
 
+/* Desktop 1440: плашка 252×268, заголовки 16px, фото 40px */
+@media (min-width: 1440px) and (max-width: 1919px) {
+  .dashboard-widget-slot--notes {
+    width: 252px !important;
+    max-width: 252px !important;
+    height: 268px !important;
+  }
+
+  .notes-widget-shell {
+    width: 252px;
+    max-width: 252px;
+    height: 268px;
+  }
+
+  .notes-widget-card {
+    height: 268px;
+  }
+
+  .notes-widget-list {
+    padding: 10px 15px 12px;
+  }
+
+  .notes-widget-list > li {
+    height: 62px;
+  }
+
+  .notes-widget-row {
+    gap: 10px;
+  }
+
+  .notes-widget-row-title {
+    font-size: 16px;
+  }
+
+  .notes-widget-row-icon {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+/* Desktop 1280: плашка 240×230, заголовки 12px, фото 35px */
+@media (min-width: 1280px) and (max-width: 1439px) {
+  .dashboard-widget-slot--notes {
+    width: 240px !important;
+    max-width: 240px !important;
+    height: 230px !important;
+  }
+
+  .notes-widget-shell {
+    width: 240px;
+    max-width: 240px;
+    height: 230px;
+  }
+
+  .notes-widget-card {
+    height: 230px;
+  }
+
+  .notes-widget-list {
+    padding: 8px 10px 10px;
+  }
+
+  .notes-widget-list > li {
+    height: 52px;
+  }
+
+  .notes-widget-row {
+    gap: 8px;
+  }
+
+  .notes-widget-row-title {
+    font-size: 12px;
+  }
+
+  .notes-widget-row-preview {
+    font-size: 11px;
+  }
+
+  .notes-widget-row-icon {
+    width: 35px;
+    height: 35px;
+    border-radius: 8px;
+  }
+}
+
 @media (max-width: 768px), ((hover: none) and (pointer: coarse) and (max-width: 1024px)) {
   /* Высота = заметки (макс. 4 × 60px) + паддинг списка */
   .notes-widget-shell,

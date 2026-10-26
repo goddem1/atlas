@@ -149,6 +149,72 @@
   height: 14px;
 }
 
+/* Desktop 1440: плашка 297×206, заголовки 14px, цифры 16px */
+@media (min-width: 1440px) and (max-width: 1919px) {
+  .dashboard-widget-slot--index-board {
+    width: 297px !important;
+    max-width: 297px !important;
+    height: 206px !important;
+  }
+
+  .index-board-shell {
+    width: 297px;
+    max-width: 297px;
+    height: 206px;
+  }
+
+  .index-board-card {
+    max-width: 297px;
+    height: 206px;
+  }
+
+  .index-board-body {
+    flex: 0 0 auto;
+    padding: 15px;
+  }
+
+  .index-board-label {
+    font-size: 14px;
+  }
+
+  .index-board-value {
+    font-size: 16px;
+  }
+}
+
+/* Desktop 1280: плашка 240×196, заголовки 14px, цифры 16px */
+@media (min-width: 1280px) and (max-width: 1439px) {
+  .dashboard-widget-slot--index-board {
+    width: 240px !important;
+    max-width: 240px !important;
+    height: 196px !important;
+  }
+
+  .index-board-shell {
+    width: 240px;
+    max-width: 240px;
+    height: 196px;
+  }
+
+  .index-board-card {
+    max-width: 240px;
+    height: 196px;
+  }
+
+  .index-board-body {
+    flex: 0 0 auto;
+    padding: 10px;
+  }
+
+  .index-board-label {
+    font-size: 14px;
+  }
+
+  .index-board-value {
+    font-size: 16px;
+  }
+}
+
 @media (max-width: 768px), ((hover: none) and (pointer: coarse) and (max-width: 1024px)) {
   .index-board-shell,
   .index-board-card {

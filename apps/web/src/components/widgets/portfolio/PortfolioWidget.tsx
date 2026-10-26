@@ -183,61 +183,59 @@ export const PortfolioWidget = memo(function PortfolioWidget({
   return (
     <>
       <div className="portfolio-widget-shell">
-        {!galleryPreview ? (
-          <div
-            className={`portfolio-menu-wrap${menuOpen ? " is-open" : ""}`}
-            onMouseEnter={() => setMenuOpen(true)}
-            onMouseLeave={() => setMenuOpen(false)}
+        <div
+          className={`portfolio-menu-wrap${menuOpen ? " is-open" : ""}`}
+          onMouseEnter={() => setMenuOpen(true)}
+          onMouseLeave={() => setMenuOpen(false)}
+        >
+          <button
+            type="button"
+            className="portfolio-menu-trigger atlas-fg-primary"
+            onClick={() => setMenuOpen((v) => !v)}
+            aria-label="Меню портфеля"
+            aria-expanded={menuOpen}
           >
+            <img src="/assets/portfolio-ui/arrow_down.svg" alt="" className="portfolio-menu-trigger-icon" />
+          </button>
+          <div className="portfolio-menu-rail" aria-hidden={!menuOpen}>
             <button
               type="button"
-              className="portfolio-menu-trigger atlas-fg-primary"
-              onClick={() => setMenuOpen((v) => !v)}
-              aria-label="Меню портфеля"
-              aria-expanded={menuOpen}
+              className="btn-on-glass disabled"
+              disabled
+              aria-label="Настройки (скоро)"
             >
-              <img src="/assets/portfolio-ui/arrow_down.svg" alt="" className="portfolio-menu-trigger-icon" />
+              <img src="/assets/portfolio-ui/settings.svg" alt="" className="portfolio-menu-circle-icon" />
             </button>
-            <div className="portfolio-menu-rail" aria-hidden={!menuOpen}>
-              <button
-                type="button"
-                className="btn-on-glass disabled"
-                disabled
-                aria-label="Настройки (скоро)"
-              >
-                <img src="/assets/portfolio-ui/settings.svg" alt="" className="portfolio-menu-circle-icon" />
-              </button>
-              <button
-                type="button"
-                className="btn-on-glass"
-                onClick={() => triggerMenu("all-assets")}
-                aria-label="Открыть список всех монет"
-              >
-                <img
-                  src="/assets/portfolio-ui/arrow_line_top.svg"
-                  alt=""
-                  className="portfolio-menu-circle-icon portfolio-menu-circle-icon-arrow"
-                />
-              </button>
-              <button
-                type="button"
-                className="btn-on-glass"
-                onClick={() => triggerMenu("add")}
-                aria-label="Добавить транзакцию"
-              >
-                <img src="/assets/portfolio-ui/plus.svg" alt="" className="portfolio-menu-circle-icon portfolio-menu-circle-icon-add" />
-              </button>
-              <button
-                type="button"
-                className="btn-on-glass"
-                onClick={() => onDeleteWidget?.()}
-                aria-label="Удалить виджет"
-              >
-                <img src="/assets/portfolio-ui/close.svg" alt="" className="portfolio-menu-circle-icon portfolio-menu-circle-icon-close" />
-              </button>
-            </div>
+            <button
+              type="button"
+              className="btn-on-glass"
+              onClick={() => triggerMenu("all-assets")}
+              aria-label="Открыть список всех монет"
+            >
+              <img
+                src="/assets/portfolio-ui/arrow_line_top.svg"
+                alt=""
+                className="portfolio-menu-circle-icon portfolio-menu-circle-icon-arrow"
+              />
+            </button>
+            <button
+              type="button"
+              className="btn-on-glass"
+              onClick={() => triggerMenu("add")}
+              aria-label="Добавить транзакцию"
+            >
+              <img src="/assets/portfolio-ui/plus.svg" alt="" className="portfolio-menu-circle-icon portfolio-menu-circle-icon-add" />
+            </button>
+            <button
+              type="button"
+              className="btn-on-glass"
+              onClick={() => onDeleteWidget?.()}
+              aria-label="Удалить виджет"
+            >
+              <img src="/assets/portfolio-ui/close.svg" alt="" className="portfolio-menu-circle-icon portfolio-menu-circle-icon-close" />
+            </button>
           </div>
-        ) : null}
+        </div>
 
         <div className="atlas-glass portfolio-widget-card drag-handle">
           <div className="portfolio-widget-left">

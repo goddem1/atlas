@@ -377,6 +377,178 @@ html[data-dashboard-theme="dark"] .asset-picker-watchlist-item-action-icon {
   filter: brightness(0) saturate(100%) invert(96%) sepia(5%) saturate(180%) hue-rotate(198deg) brightness(102%) contrast(94%);
 }
 
+/* Desktop 1440 */
+@media (min-width: 1440px) and (max-width: 1919px) {
+  .asset-picker-watchlist-dialog {
+    width: min(480px, calc(100vw - 32px));
+    gap: 12px;
+  }
+
+  .asset-picker-watchlist-header {
+    gap: 12px;
+  }
+
+  .asset-picker-watchlist-search-icon {
+    left: 14px;
+    width: 26px;
+    height: 26px;
+  }
+
+  .asset-picker-watchlist-search-input {
+    height: 50px;
+    padding: 8px 14px 8px 50px;
+    font-size: 18px;
+  }
+
+  .asset-picker-watchlist-search-input::placeholder {
+    font-size: 18px;
+  }
+
+  .asset-picker-watchlist-close-button {
+    width: 50px;
+    height: 50px;
+  }
+
+  .asset-picker-watchlist-close-button .asset-picker-watchlist-close-icon {
+    width: 20px;
+    height: 20px;
+  }
+
+  .asset-picker-watchlist-list-panel {
+    border-radius: 28px;
+  }
+
+  .asset-picker-watchlist-list {
+    padding: 12px;
+  }
+
+  .asset-picker-watchlist-item-button {
+    gap: 6px;
+    padding: 8px;
+    border-radius: 14px;
+  }
+
+  .asset-picker-watchlist-item-icon {
+    width: 26px;
+    height: 26px;
+    border-radius: 10px;
+  }
+
+  .asset-picker-watchlist-item-symbol {
+    font-size: 18px;
+  }
+
+  .asset-picker-watchlist-item-name {
+    font-size: 13px;
+  }
+
+  .asset-picker-watchlist-message {
+    padding: 24px 14px;
+    font-size: 16px;
+  }
+
+  .asset-picker-watchlist-item-action {
+    width: 32px;
+    height: 32px;
+  }
+
+  .asset-picker-watchlist-item-action-icon {
+    width: 16px;
+    height: 16px;
+  }
+
+  .asset-picker-watchlist-item-action-icon--trash {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+/* Desktop 1280 */
+@media (min-width: 1280px) and (max-width: 1439px) {
+  .asset-picker-watchlist-dialog {
+    width: min(420px, calc(100vw - 32px));
+    gap: 10px;
+  }
+
+  .asset-picker-watchlist-header {
+    gap: 10px;
+  }
+
+  .asset-picker-watchlist-search-icon {
+    left: 12px;
+    width: 22px;
+    height: 22px;
+  }
+
+  .asset-picker-watchlist-search-input {
+    height: 45px;
+    padding: 8px 12px 8px 44px;
+    font-size: 16px;
+  }
+
+  .asset-picker-watchlist-search-input::placeholder {
+    font-size: 16px;
+  }
+
+  .asset-picker-watchlist-close-button {
+    width: 45px;
+    height: 45px;
+  }
+
+  .asset-picker-watchlist-close-button .asset-picker-watchlist-close-icon {
+    width: 18px;
+    height: 18px;
+  }
+
+  .asset-picker-watchlist-list-panel {
+    border-radius: 24px;
+  }
+
+  .asset-picker-watchlist-list {
+    padding: 10px;
+  }
+
+  .asset-picker-watchlist-item-button {
+    gap: 6px;
+    padding: 7px;
+    border-radius: 12px;
+  }
+
+  .asset-picker-watchlist-item-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 9px;
+  }
+
+  .asset-picker-watchlist-item-symbol {
+    font-size: 16px;
+  }
+
+  .asset-picker-watchlist-item-name {
+    font-size: 12px;
+  }
+
+  .asset-picker-watchlist-message {
+    padding: 20px 12px;
+    font-size: 14px;
+  }
+
+  .asset-picker-watchlist-item-action {
+    width: 30px;
+    height: 30px;
+  }
+
+  .asset-picker-watchlist-item-action-icon {
+    width: 14px;
+    height: 14px;
+  }
+
+  .asset-picker-watchlist-item-action-icon--trash {
+    width: 16px;
+    height: 16px;
+  }
+}
+
 @media (max-width: 640px) {
   .asset-picker-overlay-watchlist {
     padding: 0;

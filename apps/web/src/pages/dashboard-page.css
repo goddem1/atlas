@@ -382,7 +382,7 @@ html.dashboard-mobile .index-widget-shell {
 .dashboard-quick-tabs-trigger {
   width: 10px;
   height: 100px;
-  border-radius: 999px;
+  border-radius: 0 99px 99px 0;
   background: var(--atlas-side-glass-bg);
   border: var(--atlas-glass-border);
   box-shadow: var(--atlas-glass-shadow);
@@ -932,6 +932,81 @@ html[data-dashboard-theme="dark"] .dashboard-theme-toggle--panel .dashboard-them
   display: none;
 }
 
+/* Floating actions: 1920→50 (base), 1440→45, 1280→40 */
+@media (min-width: 1440px) and (max-width: 1919px) {
+  .dashboard-floating-action-btn.btn-glass {
+    width: 45px;
+    height: 45px;
+  }
+
+  .dashboard-floating-action-btn.btn-glass .dashboard-floating-action-icon--plus {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+
+  .dashboard-floating-action-btn.btn-glass .dashboard-floating-action-icon--settings {
+    width: 1.35rem;
+    height: 1.35rem;
+  }
+
+  .dashboard-floating-actions-settings-slot,
+  .dashboard-floating-actions-settings-stack {
+    width: 45px;
+    max-width: 45px;
+  }
+
+  .dashboard-floating-actions-settings-stack {
+    min-width: 45px;
+  }
+
+  .dashboard-floating-actions-settings-hover-bridge {
+    min-width: 45px;
+  }
+
+  .dashboard-floating-actions-settings:hover:not(.dashboard-floating-actions-settings--panel-open) .dashboard-floating-actions-settings-stack,
+  .dashboard-floating-actions-settings:focus-within:not(.dashboard-floating-actions-settings--panel-open) .dashboard-floating-actions-settings-stack,
+  .dashboard-floating-actions-settings.is-menu-open:not(.dashboard-floating-actions-settings--panel-open) .dashboard-floating-actions-settings-stack {
+    border-radius: 45px;
+  }
+}
+
+@media (min-width: 1280px) and (max-width: 1439px) {
+  .dashboard-floating-action-btn.btn-glass {
+    width: 40px;
+    height: 40px;
+  }
+
+  .dashboard-floating-action-btn.btn-glass .dashboard-floating-action-icon--plus {
+    width: 1.375rem;
+    height: 1.375rem;
+  }
+
+  .dashboard-floating-action-btn.btn-glass .dashboard-floating-action-icon--settings {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  .dashboard-floating-actions-settings-slot,
+  .dashboard-floating-actions-settings-stack {
+    width: 40px;
+    max-width: 40px;
+  }
+
+  .dashboard-floating-actions-settings-stack {
+    min-width: 40px;
+  }
+
+  .dashboard-floating-actions-settings-hover-bridge {
+    min-width: 40px;
+  }
+
+  .dashboard-floating-actions-settings:hover:not(.dashboard-floating-actions-settings--panel-open) .dashboard-floating-actions-settings-stack,
+  .dashboard-floating-actions-settings:focus-within:not(.dashboard-floating-actions-settings--panel-open) .dashboard-floating-actions-settings-stack,
+  .dashboard-floating-actions-settings.is-menu-open:not(.dashboard-floating-actions-settings--panel-open) .dashboard-floating-actions-settings-stack {
+    border-radius: 40px;
+  }
+}
+
 @media (max-width: 768px), ((hover: none) and (pointer: coarse) and (max-width: 1024px)) {
   .dashboard-floating-action-btn--add-desktop {
     display: none;
@@ -1255,6 +1330,30 @@ html.dashboard-mobile .dashboard-widget-board {
   contain-intrinsic-size: 350px 200px;
 }
 
+@media (min-width: 1440px) and (max-width: 1919px) {
+  .dashboard-widget-slot--fed-curve {
+    contain-intrinsic-size: 297px 169px;
+  }
+}
+
+@media (min-width: 1280px) and (max-width: 1439px) {
+  .dashboard-widget-slot--fed-curve {
+    contain-intrinsic-size: 240px 149px;
+  }
+}
+
+@media (min-width: 1440px) and (max-width: 1919px) {
+  .dashboard-widget-slot--price-sparkline {
+    contain-intrinsic-size: 297px 169px;
+  }
+}
+
+@media (min-width: 1280px) and (max-width: 1439px) {
+  .dashboard-widget-slot--price-sparkline {
+    contain-intrinsic-size: 240px 149px;
+  }
+}
+
 .dashboard-widget-slot--fed-curve {
   border-radius: var(--atlas-widget-radius-fed-curve);
 }
@@ -1263,32 +1362,128 @@ html.dashboard-mobile .dashboard-widget-board {
   contain-intrinsic-size: 500px 250px;
 }
 
+@media (min-width: 1440px) and (max-width: 1919px) {
+  .dashboard-widget-slot--portfolio {
+    contain-intrinsic-size: 462px 210px;
+  }
+}
+
+@media (min-width: 1280px) and (max-width: 1439px) {
+  .dashboard-widget-slot--portfolio {
+    contain-intrinsic-size: 380px 174px;
+  }
+}
+
 .dashboard-widget-slot--macro-calendar {
   contain-intrinsic-size: 550px 300px;
+}
+
+@media (min-width: 1440px) and (max-width: 1919px) {
+  .dashboard-widget-slot--macro-calendar {
+    contain-intrinsic-size: 482px 233px;
+  }
+}
+
+@media (min-width: 1280px) and (max-width: 1439px) {
+  .dashboard-widget-slot--macro-calendar {
+    contain-intrinsic-size: 400px 202px;
+  }
 }
 
 .dashboard-widget-slot--watchlist {
   contain-intrinsic-size: 350px 530px;
 }
 
+@media (min-width: 1440px) and (max-width: 1919px) {
+  .dashboard-widget-slot--watchlist {
+    contain-intrinsic-size: 252px 412px;
+  }
+}
+
+@media (min-width: 1280px) and (max-width: 1439px) {
+  .dashboard-widget-slot--watchlist {
+    contain-intrinsic-size: 240px 384px;
+  }
+}
+
 .dashboard-widget-slot--news {
   contain-intrinsic-size: 350px 494px;
+}
+
+@media (min-width: 1440px) and (max-width: 1919px) {
+  .dashboard-widget-slot--news {
+    contain-intrinsic-size: 252px 473px;
+  }
+}
+
+@media (min-width: 1280px) and (max-width: 1439px) {
+  .dashboard-widget-slot--news {
+    contain-intrinsic-size: 240px 411px;
+  }
 }
 
 .dashboard-widget-slot--notes {
   contain-intrinsic-size: 350px 326px;
 }
 
+@media (min-width: 1440px) and (max-width: 1919px) {
+  .dashboard-widget-slot--notes {
+    contain-intrinsic-size: 252px 268px;
+  }
+}
+
+@media (min-width: 1280px) and (max-width: 1439px) {
+  .dashboard-widget-slot--notes {
+    contain-intrinsic-size: 240px 230px;
+  }
+}
+
 .dashboard-widget-slot--journal {
   contain-intrinsic-size: 570px 300px;
+}
+
+@media (min-width: 1440px) and (max-width: 1919px) {
+  .dashboard-widget-slot--journal {
+    contain-intrinsic-size: 486px 250px;
+  }
+}
+
+@media (min-width: 1280px) and (max-width: 1439px) {
+  .dashboard-widget-slot--journal {
+    contain-intrinsic-size: 460px 205px;
+  }
 }
 
 .dashboard-widget-slot--index {
   contain-intrinsic-size: 130px 100px;
 }
 
+@media (min-width: 1440px) and (max-width: 1919px) {
+  .dashboard-widget-slot--index {
+    contain-intrinsic-size: 130px 85px;
+  }
+}
+
+@media (min-width: 1280px) and (max-width: 1439px) {
+  .dashboard-widget-slot--index {
+    contain-intrinsic-size: 120px 78px;
+  }
+}
+
 .dashboard-widget-slot--index-board {
   contain-intrinsic-size: 280px 228px;
+}
+
+@media (min-width: 1440px) and (max-width: 1919px) {
+  .dashboard-widget-slot--index-board {
+    contain-intrinsic-size: 297px 206px;
+  }
+}
+
+@media (min-width: 1280px) and (max-width: 1439px) {
+  .dashboard-widget-slot--index-board {
+    contain-intrinsic-size: 240px 196px;
+  }
 }
 
 .dashboard-widget-slot--watchlist-settings-open,

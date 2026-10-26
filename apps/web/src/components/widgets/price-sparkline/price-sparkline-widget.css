@@ -71,6 +71,16 @@
 .price-widget-drag-handle {
   cursor: grab;
   user-select: none;
+  /* Шапка всегда выше графика — иначе SVG перехватывает mousedown */
+  position: relative;
+  z-index: 2;
+  flex-shrink: 0;
+  pointer-events: auto;
+}
+
+.price-widget-drag-handle .price-widget-icon-button,
+.price-widget-drag-handle .price-widget-symbol-btn {
+  cursor: pointer;
 }
 
 .price-widget-asset-head {
@@ -180,6 +190,194 @@
 @media (min-width: 1280px) and (max-width: 1920px) {
   .price-widget-chart-wrap {
     padding: 0 20px 4px;
+  }
+}
+
+/* Desktop 1440: плашка 297×169, иконка 22px, цена 20px, тикер 14px */
+@media (min-width: 1440px) and (max-width: 1919px) {
+  .dashboard-widget-slot--price-sparkline {
+    width: 297px !important;
+    max-width: 297px !important;
+    height: 169px !important;
+  }
+
+  .price-widget-shell {
+    width: 297px;
+    max-width: 297px;
+  }
+
+  .price-widget-card {
+    max-width: 297px;
+    height: 169px;
+  }
+
+  .price-widget-default-icon,
+  .price-widget-asset-icon {
+    width: 27px;
+    height: 27px;
+  }
+
+  .price-widget-default-icon {
+    font-size: 12px;
+  }
+
+  .price-widget-symbol,
+  .price-widget-symbol-btn {
+    font-size: 16px;
+  }
+
+  .price-widget-price {
+    font-size: 20px;
+  }
+
+  .price-widget-usdt-badge {
+    width: 16px;
+    height: 16px;
+    font-size: 8px;
+  }
+
+  .price-widget-change-badge {
+    box-sizing: border-box;
+    height: 18px;
+    padding: 0 4px;
+    border-width: 1.25px;
+    border-radius: 5px;
+    font-size: 11px;
+  }
+
+  .price-widget-header {
+    padding: 12px 12px 4px;
+    column-gap: 8px;
+  }
+
+  .price-widget-chart-wrap {
+    box-sizing: border-box;
+    position: relative;
+    z-index: 0;
+    flex: 1 1 auto;
+    min-height: 0;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    overflow: hidden;
+    padding: 0 0 6px;
+  }
+
+  .price-widget-svg {
+    width: 267px;
+    max-width: 267px;
+    flex: 1 1 0;
+    height: 0;
+    min-height: 0;
+    max-height: none;
+  }
+
+  .price-widget-axis-svg {
+    flex-shrink: 0;
+    width: 267px;
+    max-width: 267px;
+    height: 14px;
+    margin: -6px 0 0;
+  }
+
+  .price-widget-axis-text {
+    font-size: 10px;
+  }
+}
+
+/* Desktop 1280: плашка 240×149, иконка 20px, цена 20px, тикер 14px */
+@media (min-width: 1280px) and (max-width: 1439px) {
+  .dashboard-widget-slot--price-sparkline {
+    width: 240px !important;
+    max-width: 240px !important;
+    height: 149px !important;
+  }
+
+  .price-widget-shell {
+    width: 240px;
+    max-width: 240px;
+  }
+
+  .price-widget-card {
+    max-width: 240px;
+    height: 149px;
+  }
+
+  .price-widget-default-icon,
+  .price-widget-asset-icon {
+    width: 25px;
+    height: 25px;
+  }
+
+  .price-widget-default-icon {
+    font-size: 11px;
+  }
+
+  .price-widget-symbol,
+  .price-widget-symbol-btn {
+    font-size: 14px;
+  }
+
+  .price-widget-price {
+    font-size: 18px;
+  }
+
+  .price-widget-usdt-badge {
+    width: 15px;
+    height: 15px;
+    font-size: 8px;
+  }
+
+  .price-widget-change-badge {
+    box-sizing: border-box;
+    height: 16px;
+    padding: 0 3px;
+    border-width: 1.25px;
+    border-radius: 4.5px;
+    font-size: 10px;
+  }
+
+  .price-widget-header {
+    padding: 10px 10px 3px;
+    column-gap: 6px;
+  }
+
+  .price-widget-chart-wrap {
+    box-sizing: border-box;
+    position: relative;
+    z-index: 0;
+    flex: 1 1 auto;
+    min-height: 0;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    overflow: hidden;
+    padding: 0 15px 5px;
+  }
+
+  .price-widget-svg {
+    width: 223px;
+    max-width: 223px;
+    flex: 1 1 0;
+    height: 0;
+    min-height: 0;
+    max-height: none;
+  }
+
+  .price-widget-axis-svg {
+    flex-shrink: 0;
+    width: 223px;
+    max-width: 223px;
+    height: 12px;
+    margin: -4px 0 0;
+  }
+
+  .price-widget-axis-text {
+    font-size: 9px;
   }
 }
 

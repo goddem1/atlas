@@ -240,6 +240,114 @@ html[data-dashboard-theme="dark"] .news-widget-text {
   text-decoration: underline;
 }
 
+/* Desktop 1440: плашка 252×473, новость 14px, % 16px, кружок 15px */
+@media (min-width: 1440px) and (max-width: 1919px) {
+  .dashboard-widget-slot--news {
+    width: 252px !important;
+    max-width: 252px !important;
+    height: 473px !important;
+  }
+
+  .news-widget-shell {
+    width: 252px;
+    max-width: 252px;
+    height: 473px;
+  }
+
+  .news-widget-card {
+    height: 473px;
+  }
+
+  .news-widget-text {
+    font-size: 14px;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+  }
+
+  .news-widget-row {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .news-widget-tag {
+    width: 19px;
+  }
+
+  .news-widget-tag-label {
+    font-size: 14px;
+    line-height: 0.9;
+    letter-spacing: normal;
+  }
+
+  .news-widget-meter-value {
+    font-size: 16px;
+  }
+
+  .news-widget-meter-track {
+    height: 9px;
+  }
+
+  .news-widget-meter-thumb.is-good,
+  .news-widget-meter-thumb.is-mid {
+    width: 15px;
+    height: 15px;
+  }
+}
+
+/* Desktop 1280: плашка 240×411, новость 14px, % 16px, кружок 14px */
+@media (min-width: 1280px) and (max-width: 1439px) {
+  .dashboard-widget-slot--news {
+    width: 240px !important;
+    max-width: 240px !important;
+    height: 411px !important;
+  }
+
+  .news-widget-shell {
+    width: 240px;
+    max-width: 240px;
+    height: 411px;
+  }
+
+  .news-widget-card {
+    height: 411px;
+  }
+
+  .news-widget-text {
+    font-size: 14px;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+  }
+
+  .news-widget-row {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .news-widget-tag {
+    width: 17px;
+  }
+
+  .news-widget-tag-label {
+    font-size: 12px;
+    line-height: 0.8;
+    letter-spacing: normal;
+  }
+
+  .news-widget-meter-value {
+    font-size: 16px;
+  }
+
+  .news-widget-meter-track {
+    height: 8px;
+  }
+
+  .news-widget-meter-thumb.is-good,
+  .news-widget-meter-thumb.is-mid {
+    width: 14px;
+    height: 14px;
+  }
+}
+
 @media (max-width: 768px), ((hover: none) and (pointer: coarse) and (max-width: 1024px)) {
   .news-widget-text {
     -webkit-line-clamp: 3;

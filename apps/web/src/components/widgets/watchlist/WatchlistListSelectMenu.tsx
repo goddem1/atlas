@@ -11,9 +11,6 @@ export const DEFAULT_WATCHLIST_OPTIONS: WatchlistListOption[] = [
   { id: "list-1", title: "Список 1" },
 ];
 
-const PANEL_OFFSET_TOP = -13;
-const PANEL_OFFSET_LEFT = -20;
-
 type Props = {
   open: boolean;
   options: WatchlistListOption[];
@@ -65,10 +62,23 @@ export function WatchlistListSelectMenu({
     const top = triggerRect.top - hostRect.top;
     const left = triggerRect.left - hostRect.left;
     setTriggerPos({ top, left });
-    setPanelPos({
-      top: top + PANEL_OFFSET_TOP,
-      left: left + PANEL_OFFSET_LEFT,
-    });
+
+    // Панель выравниваем по левому краю head; top — адаптивный inset.
+    const anchor =
+      trigger.closest<HTMLElement>(".watchlist-head") ??
+      trigger.closest<HTMLElement>(".watchlist-card");
+    const vw = window.innerWidth;
+    const topInset = vw >= 1440 && vw < 1920 ? 8 : vw >= 1280 && vw < 1440 ? 6 : 0;
+    if (anchor) {
+      const anchorRect = anchor.getBoundingClientRect();
+      setPanelPos({
+        top: anchorRect.top - hostRect.top + topInset,
+        left: anchorRect.left - hostRect.left,
+      });
+      return;
+    }
+
+    setPanelPos({ top: top + topInset, left });
   }, [host]);
 
   useLayoutEffect(() => {
