@@ -171,17 +171,24 @@
 
   .dashboard-widget-board .dashboard-widget-index-row > .dashboard-widget-slot--index,
   .dashboard-widget-board .dashboard-widget-index-row > .dashboard-widget-slot--index.react-draggable {
-    width: min(130px, calc((100% - 20px) / 3)) !important;
-    max-width: min(130px, calc((100% - 20px) / 3)) !important;
+    display: flex !important;
+    flex-direction: column;
+    width: 0 !important;
+    min-width: 0 !important;
+    max-width: none !important;
     height: auto !important;
-    flex: 0 0 auto;
+    flex: 1 1 0 !important;
   }
 
   .dashboard-widget-board .dashboard-widget-slot--index,
   .dashboard-widget-board .dashboard-widget-slot--index.react-draggable,
   .dashboard-widget-board .dashboard-widget-slot--index .react-draggable {
-    width: min(130px, calc(100vw * 130 / 440)) !important;
-    max-width: min(130px, calc(100vw * 130 / 440)) !important;
+    display: flex !important;
+    flex-direction: column;
+    width: min(130px, calc((100% - 20px) / 3)) !important;
+    max-width: min(130px, calc((100% - 20px) / 3)) !important;
+    min-width: 0 !important;
+    min-height: 96px !important;
     height: auto !important;
     flex: 0 0 auto;
   }
@@ -300,7 +307,8 @@ html.dashboard-mobile .index-board-shell {
 
 html.dashboard-mobile .index-widget-shell {
   width: 100% !important;
-  max-width: min(130px, calc(100vw * 130 / 440)) !important;
+  max-width: 100% !important;
+  height: 100%;
   box-sizing: border-box;
 }
 
@@ -320,17 +328,24 @@ html.dashboard-mobile .index-widget-shell {
 
 .dashboard-widget-board--mobile-col .dashboard-widget-index-row > .dashboard-widget-slot--index,
 .dashboard-widget-board--mobile-col .dashboard-widget-index-row > .dashboard-widget-slot--index.react-draggable {
-  width: min(130px, calc((100% - 20px) / 3)) !important;
-  max-width: min(130px, calc((100% - 20px) / 3)) !important;
+  display: flex !important;
+  flex-direction: column;
+  width: 0 !important;
+  min-width: 0 !important;
+  max-width: none !important;
   height: auto !important;
-  flex: 0 0 auto;
+  flex: 1 1 0 !important;
 }
 
 .dashboard-widget-board--mobile-col .dashboard-widget-slot--index,
 .dashboard-widget-board--mobile-col .dashboard-widget-slot--index.react-draggable,
 .dashboard-widget-board--mobile-col .dashboard-widget-slot--index .react-draggable {
-  width: min(130px, calc(100vw * 130 / 440)) !important;
-  max-width: min(130px, calc(100vw * 130 / 440)) !important;
+  display: flex !important;
+  flex-direction: column;
+  width: min(130px, calc((100% - 20px) / 3)) !important;
+  max-width: min(130px, calc((100% - 20px) / 3)) !important;
+  min-width: 0 !important;
+  min-height: 96px !important;
   height: auto !important;
   flex: 0 0 auto;
 }
@@ -916,7 +931,8 @@ html[data-dashboard-theme="dark"] .dashboard-theme-toggle--panel .dashboard-them
   color: var(--atlas-fg-primary);
 }
 
-.dashboard-floating-action-icon--plus {
+.dashboard-floating-action-icon--plus,
+.dashboard-floating-action-icon--message {
   width: 1.75rem;
   height: 1.75rem;
 }
@@ -934,75 +950,77 @@ html[data-dashboard-theme="dark"] .dashboard-theme-toggle--panel .dashboard-them
 
 /* Floating actions: 1920→50 (base), 1440→45, 1280→40 */
 @media (min-width: 1440px) and (max-width: 1919px) {
-  .dashboard-floating-action-btn.btn-glass {
+  html:not([data-devtools-docked]) .dashboard-floating-action-btn.btn-glass {
     width: 45px;
     height: 45px;
   }
 
-  .dashboard-floating-action-btn.btn-glass .dashboard-floating-action-icon--plus {
+  html:not([data-devtools-docked]) .dashboard-floating-action-btn.btn-glass .dashboard-floating-action-icon--plus,
+  html:not([data-devtools-docked]) .dashboard-floating-action-btn.btn-glass .dashboard-floating-action-icon--message {
     width: 1.5rem;
     height: 1.5rem;
   }
 
-  .dashboard-floating-action-btn.btn-glass .dashboard-floating-action-icon--settings {
+  html:not([data-devtools-docked]) .dashboard-floating-action-btn.btn-glass .dashboard-floating-action-icon--settings {
     width: 1.35rem;
     height: 1.35rem;
   }
 
-  .dashboard-floating-actions-settings-slot,
-  .dashboard-floating-actions-settings-stack {
+  html:not([data-devtools-docked]) .dashboard-floating-actions-settings-slot,
+  html:not([data-devtools-docked]) .dashboard-floating-actions-settings-stack {
     width: 45px;
     max-width: 45px;
   }
 
-  .dashboard-floating-actions-settings-stack {
+  html:not([data-devtools-docked]) .dashboard-floating-actions-settings-stack {
     min-width: 45px;
   }
 
-  .dashboard-floating-actions-settings-hover-bridge {
+  html:not([data-devtools-docked]) .dashboard-floating-actions-settings-hover-bridge {
     min-width: 45px;
   }
 
-  .dashboard-floating-actions-settings:hover:not(.dashboard-floating-actions-settings--panel-open) .dashboard-floating-actions-settings-stack,
-  .dashboard-floating-actions-settings:focus-within:not(.dashboard-floating-actions-settings--panel-open) .dashboard-floating-actions-settings-stack,
-  .dashboard-floating-actions-settings.is-menu-open:not(.dashboard-floating-actions-settings--panel-open) .dashboard-floating-actions-settings-stack {
+  html:not([data-devtools-docked]) .dashboard-floating-actions-settings:hover:not(.dashboard-floating-actions-settings--panel-open) .dashboard-floating-actions-settings-stack,
+  html:not([data-devtools-docked]) .dashboard-floating-actions-settings:focus-within:not(.dashboard-floating-actions-settings--panel-open) .dashboard-floating-actions-settings-stack,
+  html:not([data-devtools-docked]) .dashboard-floating-actions-settings.is-menu-open:not(.dashboard-floating-actions-settings--panel-open) .dashboard-floating-actions-settings-stack {
     border-radius: 45px;
   }
 }
 
 @media (min-width: 1280px) and (max-width: 1439px) {
-  .dashboard-floating-action-btn.btn-glass {
+  html:not([data-devtools-docked]) .dashboard-floating-action-btn.btn-glass {
     width: 40px;
     height: 40px;
   }
 
-  .dashboard-floating-action-btn.btn-glass .dashboard-floating-action-icon--plus {
+  html:not([data-devtools-docked]) .dashboard-floating-action-btn.btn-glass .dashboard-floating-action-icon--plus,
+  html:not([data-devtools-docked]) .dashboard-floating-action-btn.btn-glass .dashboard-floating-action-icon--message {
     width: 1.375rem;
     height: 1.375rem;
   }
 
-  .dashboard-floating-action-btn.btn-glass .dashboard-floating-action-icon--settings {
+  html:not([data-devtools-docked]) .dashboard-floating-action-btn.btn-glass .dashboard-floating-action-icon--settings {
     width: 1.25rem;
     height: 1.25rem;
   }
 
-  .dashboard-floating-actions-settings-slot,
-  .dashboard-floating-actions-settings-stack {
+  html:not([data-devtools-docked]) .dashboard-floating-actions-settings-slot,
+  html:not([data-devtools-docked]) .dashboard-floating-actions-settings-stack {
     width: 40px;
     max-width: 40px;
   }
 
-  .dashboard-floating-actions-settings-stack {
+  html:not([data-devtools-docked]) .dashboard-floating-actions-settings-stack {
     min-width: 40px;
   }
 
-  .dashboard-floating-actions-settings-hover-bridge {
+  html:not([data-devtools-docked]) .dashboard-floating-actions-settings-hover-bridge {
     min-width: 40px;
   }
 
-  .dashboard-floating-actions-settings:hover:not(.dashboard-floating-actions-settings--panel-open) .dashboard-floating-actions-settings-stack,
-  .dashboard-floating-actions-settings:focus-within:not(.dashboard-floating-actions-settings--panel-open) .dashboard-floating-actions-settings-stack,
-  .dashboard-floating-actions-settings.is-menu-open:not(.dashboard-floating-actions-settings--panel-open) .dashboard-floating-actions-settings-stack {
+  html:not([data-devtools-docked]) .dashboard-floating-actions-settings:hover:not(.dashboard-floating-actions-settings--panel-open) .dashboard-floating-actions-settings-stack,
+  html:not([data-devtools-docked]) .dashboard-floating-actions-settings:focus-within:not(.dashboard-floating-actions-settings--panel-open) .dashboard-floating-actions-settings-stack,
+  html:not([data-devtools-docked]) .dashboard-floating-actions-settings.is-menu-open:not(.dashboard-floating-actions-settings--panel-open) .dashboard-floating-actions-settings-stack {
     border-radius: 40px;
   }
 }
@@ -1331,25 +1349,25 @@ html.dashboard-mobile .dashboard-widget-board {
 }
 
 @media (min-width: 1440px) and (max-width: 1919px) {
-  .dashboard-widget-slot--fed-curve {
+  html:not([data-devtools-docked]) .dashboard-widget-slot--fed-curve {
     contain-intrinsic-size: 297px 169px;
   }
 }
 
 @media (min-width: 1280px) and (max-width: 1439px) {
-  .dashboard-widget-slot--fed-curve {
+  html:not([data-devtools-docked]) .dashboard-widget-slot--fed-curve {
     contain-intrinsic-size: 240px 149px;
   }
 }
 
 @media (min-width: 1440px) and (max-width: 1919px) {
-  .dashboard-widget-slot--price-sparkline {
+  html:not([data-devtools-docked]) .dashboard-widget-slot--price-sparkline {
     contain-intrinsic-size: 297px 169px;
   }
 }
 
 @media (min-width: 1280px) and (max-width: 1439px) {
-  .dashboard-widget-slot--price-sparkline {
+  html:not([data-devtools-docked]) .dashboard-widget-slot--price-sparkline {
     contain-intrinsic-size: 240px 149px;
   }
 }
@@ -1363,13 +1381,13 @@ html.dashboard-mobile .dashboard-widget-board {
 }
 
 @media (min-width: 1440px) and (max-width: 1919px) {
-  .dashboard-widget-slot--portfolio {
+  html:not([data-devtools-docked]) .dashboard-widget-slot--portfolio {
     contain-intrinsic-size: 462px 210px;
   }
 }
 
 @media (min-width: 1280px) and (max-width: 1439px) {
-  .dashboard-widget-slot--portfolio {
+  html:not([data-devtools-docked]) .dashboard-widget-slot--portfolio {
     contain-intrinsic-size: 380px 174px;
   }
 }
@@ -1379,13 +1397,13 @@ html.dashboard-mobile .dashboard-widget-board {
 }
 
 @media (min-width: 1440px) and (max-width: 1919px) {
-  .dashboard-widget-slot--macro-calendar {
+  html:not([data-devtools-docked]) .dashboard-widget-slot--macro-calendar {
     contain-intrinsic-size: 482px 233px;
   }
 }
 
 @media (min-width: 1280px) and (max-width: 1439px) {
-  .dashboard-widget-slot--macro-calendar {
+  html:not([data-devtools-docked]) .dashboard-widget-slot--macro-calendar {
     contain-intrinsic-size: 400px 202px;
   }
 }
@@ -1395,13 +1413,13 @@ html.dashboard-mobile .dashboard-widget-board {
 }
 
 @media (min-width: 1440px) and (max-width: 1919px) {
-  .dashboard-widget-slot--watchlist {
+  html:not([data-devtools-docked]) .dashboard-widget-slot--watchlist {
     contain-intrinsic-size: 252px 412px;
   }
 }
 
 @media (min-width: 1280px) and (max-width: 1439px) {
-  .dashboard-widget-slot--watchlist {
+  html:not([data-devtools-docked]) .dashboard-widget-slot--watchlist {
     contain-intrinsic-size: 240px 384px;
   }
 }
@@ -1411,13 +1429,13 @@ html.dashboard-mobile .dashboard-widget-board {
 }
 
 @media (min-width: 1440px) and (max-width: 1919px) {
-  .dashboard-widget-slot--news {
+  html:not([data-devtools-docked]) .dashboard-widget-slot--news {
     contain-intrinsic-size: 252px 473px;
   }
 }
 
 @media (min-width: 1280px) and (max-width: 1439px) {
-  .dashboard-widget-slot--news {
+  html:not([data-devtools-docked]) .dashboard-widget-slot--news {
     contain-intrinsic-size: 240px 411px;
   }
 }
@@ -1427,13 +1445,13 @@ html.dashboard-mobile .dashboard-widget-board {
 }
 
 @media (min-width: 1440px) and (max-width: 1919px) {
-  .dashboard-widget-slot--notes {
+  html:not([data-devtools-docked]) .dashboard-widget-slot--notes {
     contain-intrinsic-size: 252px 268px;
   }
 }
 
 @media (min-width: 1280px) and (max-width: 1439px) {
-  .dashboard-widget-slot--notes {
+  html:not([data-devtools-docked]) .dashboard-widget-slot--notes {
     contain-intrinsic-size: 240px 230px;
   }
 }
@@ -1443,13 +1461,13 @@ html.dashboard-mobile .dashboard-widget-board {
 }
 
 @media (min-width: 1440px) and (max-width: 1919px) {
-  .dashboard-widget-slot--journal {
+  html:not([data-devtools-docked]) .dashboard-widget-slot--journal {
     contain-intrinsic-size: 486px 250px;
   }
 }
 
 @media (min-width: 1280px) and (max-width: 1439px) {
-  .dashboard-widget-slot--journal {
+  html:not([data-devtools-docked]) .dashboard-widget-slot--journal {
     contain-intrinsic-size: 460px 205px;
   }
 }
@@ -1459,13 +1477,13 @@ html.dashboard-mobile .dashboard-widget-board {
 }
 
 @media (min-width: 1440px) and (max-width: 1919px) {
-  .dashboard-widget-slot--index {
+  html:not([data-devtools-docked]) .dashboard-widget-slot--index {
     contain-intrinsic-size: 130px 85px;
   }
 }
 
 @media (min-width: 1280px) and (max-width: 1439px) {
-  .dashboard-widget-slot--index {
+  html:not([data-devtools-docked]) .dashboard-widget-slot--index {
     contain-intrinsic-size: 120px 78px;
   }
 }
@@ -1475,13 +1493,13 @@ html.dashboard-mobile .dashboard-widget-board {
 }
 
 @media (min-width: 1440px) and (max-width: 1919px) {
-  .dashboard-widget-slot--index-board {
+  html:not([data-devtools-docked]) .dashboard-widget-slot--index-board {
     contain-intrinsic-size: 297px 206px;
   }
 }
 
 @media (min-width: 1280px) and (max-width: 1439px) {
-  .dashboard-widget-slot--index-board {
+  html:not([data-devtools-docked]) .dashboard-widget-slot--index-board {
     contain-intrinsic-size: 240px 196px;
   }
 }
@@ -1491,4 +1509,114 @@ html.dashboard-mobile .dashboard-widget-board {
   z-index: 465;
   contain: none;
   overflow: visible;
+}
+
+/*
+ * F12 сжимает viewport, и брейкпоинты 1280/1440 начинают уменьшать плашки.
+ * Пока панель открыта, холст остаётся прежнего размера (Full HD, если так было).
+ */
+html[data-devtools-docked] .dashboard-main-surface {
+  overflow: auto;
+}
+
+html[data-devtools-docked] .dashboard-widget-board {
+  width: calc(var(--dashboard-lock-width, 100vw) - 2.5rem);
+  height: calc(var(--dashboard-lock-height, 100dvh) - 2.5rem);
+  right: auto;
+  bottom: auto;
+}
+
+.dashboard-feedback-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 490;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.dashboard-feedback-backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.dashboard-feedback-dialog {
+  position: relative;
+  box-sizing: border-box;
+  width: min(440px, calc(100vw - 32px));
+  padding: 28px;
+  border-radius: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  color: var(--atlas-fg-primary);
+}
+
+.dashboard-feedback-title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 650;
+  line-height: 1.2;
+}
+
+.dashboard-feedback-text,
+.dashboard-feedback-input {
+  width: 100%;
+  box-sizing: border-box;
+  border-radius: 15px;
+  border: 1.5px solid transparent;
+  background: var(--atlas-input-bg);
+  color: var(--atlas-input-fg);
+  font: inherit;
+  font-size: 16px;
+  padding: 12px 16px;
+}
+
+.dashboard-feedback-text::placeholder,
+.dashboard-feedback-input::placeholder {
+  color: var(--atlas-input-placeholder);
+  opacity: 1;
+}
+
+.dashboard-feedback-text {
+  min-height: 140px;
+  resize: vertical;
+}
+
+.dashboard-feedback-text:focus,
+.dashboard-feedback-input:focus {
+  outline: none;
+  border-color: var(--atlas-input-focus-border);
+}
+
+.dashboard-feedback-send {
+  height: 44px;
+  border: none;
+  border-radius: 15px;
+  background: #0088ff;
+  color: #fff;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.dashboard-feedback-send:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.dashboard-feedback-status {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.dashboard-feedback-status--error {
+  color: #c2410c;
 }

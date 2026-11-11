@@ -569,6 +569,22 @@ export async function fetchNewsFeedbackPriceHint(
   return parseJson<NewsFeedbackPriceHintResponse>(res);
 }
 
+export async function sendDashboardFeedback(input: {
+  message: string;
+  contact?: string;
+}): Promise<{ ok: true }> {
+  const res = await fetch(`${apiBase()}/feedback`, {
+    ...authFetchInit,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      message: input.message,
+      contact: input.contact ?? "",
+    }),
+  });
+  return parseJson<{ ok: true }>(res);
+}
+
 export async function saveNewsFeedback(input: SaveNewsFeedbackInput): Promise<{ ok: true }> {
   const res = await fetch(`${apiBase()}/telegram/news-feedback`, {
     ...authFetchInit,

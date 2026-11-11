@@ -48,10 +48,59 @@ export const DASHBOARD_MOBILE_MEDIA_QUERY = `(max-width: ${DASHBOARD_MOBILE_SING
 
 export function getDashboardViewportWidth(): number {
   if (typeof window === "undefined") return 1200;
+  if (isDevtoolsDocked() && devtoolsLayoutLock) return devtoolsLayoutLock.w;
   const docW = document.documentElement?.clientWidth;
   const parts = [window.innerWidth];
   if (typeof docW === "number" && docW > 0) parts.push(docW);
   return Math.min(...parts);
+}
+
+/**
+ * Панель DevTools (F12) уменьшает innerWidth/innerHeight, но не окно браузера.
+ * Это не смена разрешения: раскладку дашборда в этот момент не пересчитываем.
+ */
+export function isDevtoolsDocked(): boolean {
+  if (typeof window === "undefined") return false;
+  const widthGap = window.outerWidth - window.innerWidth;
+  const heightGap = window.outerHeight - window.innerHeight;
+  // Рамка окна и скроллбар дают меньше; закреплённые DevTools — заметно больше.
+  return widthGap > 160 || heightGap > 280;
+}
+
+/** Размер холста до открытия F12. Пока панель открыта, его не перезаписываем. */
+let devtoolsLayoutLock: { w: number; h: number } | null = null;
+
+function guessUndockedViewport(): { w: number; h: number } {
+  const widthGap = window.outerWidth - window.innerWidth;
+  const heightGap = window.outerHeight - window.innerHeight;
+  const w = widthGap > 160 ? window.outerWidth - 16 : window.innerWidth;
+  const h = heightGap > 280 ? window.outerHeight - 140 : window.innerHeight;
+  return { w: Math.max(320, Math.round(w)), h: Math.max(320, Math.round(h)) };
+}
+
+/**
+ * Пока DevTools закреплены, на <html> висит data-devtools-docked и размер холста
+ * до панели. CSS-брейкпоинты 1280/1440 в этом состоянии не применяются.
+ */
+export function syncDevtoolsLayoutLock(): boolean {
+  if (typeof document === "undefined") return false;
+  const root = document.documentElement;
+  const docked = isDevtoolsDocked();
+  if (!docked) {
+    devtoolsLayoutLock = {
+      w: getDashboardViewportWidth(),
+      h: window.innerHeight,
+    };
+    delete root.dataset.devtoolsDocked;
+    root.style.removeProperty("--dashboard-lock-width");
+    root.style.removeProperty("--dashboard-lock-height");
+    return false;
+  }
+  if (!devtoolsLayoutLock) devtoolsLayoutLock = guessUndockedViewport();
+  root.dataset.devtoolsDocked = "1";
+  root.style.setProperty("--dashboard-lock-width", `${devtoolsLayoutLock.w}px`);
+  root.style.setProperty("--dashboard-lock-height", `${devtoolsLayoutLock.h}px`);
+  return true;
 }
 
 export function getDashboardScreenWidth(): number {
@@ -604,12 +653,12 @@ export function dashboardWidgetOuterSize(
 
 /**
  * Канонический (desktop) размер виджета для превью галереи.
- * ScaledFrame равномерно масштабирует его под ширину карточки.
+ * ScaledFrame равномерно вписывает его в карточку целиком.
  */
 export function dashboardWidgetGalleryOuterSize(
   type: DashboardWidgetType,
 ): { w: number; h: number } {
-  return dashboardWidgetOuterSize(type, 1280);
+  return dashboardWidgetOuterSize(type, 1920);
 }
 
 function isWidgetType(v: unknown): v is DashboardWidgetType {

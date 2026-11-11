@@ -30,6 +30,7 @@ import { ensureAvatarStorage } from "./services/profileService.js";
 import { registerTelegramNewsRoutes } from "./routes/telegramNews.js";
 import { registerNotesRoutes } from "./routes/notes.js";
 import { registerTradesRoutes } from "./routes/trades.js";
+import { registerFeedbackRoutes } from "./routes/feedback.js";
 import { startBinanceCandleStream, stopBinanceCandleStream } from "./services/binanceCandleStream.js";
 import { isTelegramDisabled } from "./services/telegramFeature.js";
 import { startCmcMarketIndicesLiveRefresh } from "./services/cmcMarketIndicesLive.js";
@@ -75,6 +76,7 @@ registerKlineChartPrefsRoutes(app, prisma);
 registerTelegramNewsRoutes(app, prisma);
 registerNotesRoutes(app, prisma);
 registerTradesRoutes(app, prisma);
+registerFeedbackRoutes(app);
 
 const port = Number(process.env.PORT ?? 3001);
 const host = process.env.HOST ?? "0.0.0.0";

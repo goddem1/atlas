@@ -127,102 +127,102 @@
 
 /* Desktop 1440: плашка 130×85, цифра 20px, % и название 14px */
 @media (min-width: 1440px) and (max-width: 1919px) {
-  .dashboard-widget-slot--index {
+  html:not([data-devtools-docked]) .dashboard-widget-slot--index {
     width: 130px !important;
     max-width: 130px !important;
     height: 85px !important;
   }
 
-  .index-widget-shell {
+  html:not([data-devtools-docked]) .index-widget-shell {
     width: 130px;
     max-width: 130px;
   }
 
-  .index-widget-card {
+  html:not([data-devtools-docked]) .index-widget-card {
     max-width: 130px;
     height: 85px;
     padding: 0 12px 12px;
   }
 
-  .index-widget-body {
+  html:not([data-devtools-docked]) .index-widget-body {
     padding-top: 10px;
   }
 
-  .index-widget-header--gauge {
+  html:not([data-devtools-docked]) .index-widget-header--gauge {
     padding-bottom: 4px;
   }
 
-  .index-widget-name,
-  .index-widget-name-btn {
+  html:not([data-devtools-docked]) .index-widget-name,
+  html:not([data-devtools-docked]) .index-widget-name-btn {
     font-size: 14px;
   }
 
-  .index-widget-value {
+  html:not([data-devtools-docked]) .index-widget-value {
     font-size: 20px;
   }
 
-  .index-widget-change {
+  html:not([data-devtools-docked]) .index-widget-change {
     font-size: 14px;
   }
 
-  .index-widget-gauge {
+  html:not([data-devtools-docked]) .index-widget-gauge {
     width: 72px;
     height: 36px;
     margin-top: 0;
   }
 
-  .index-widget-gauge .fear-greed-gauge__value {
+  html:not([data-devtools-docked]) .index-widget-gauge .fear-greed-gauge__value {
     font-size: 20px;
   }
 }
 
 /* Desktop 1280: плашка 120×78, цифра 20px, % и название 14px */
 @media (min-width: 1280px) and (max-width: 1439px) {
-  .dashboard-widget-slot--index {
+  html:not([data-devtools-docked]) .dashboard-widget-slot--index {
     width: 120px !important;
     max-width: 120px !important;
     height: 78px !important;
   }
 
-  .index-widget-shell {
+  html:not([data-devtools-docked]) .index-widget-shell {
     width: 120px;
     max-width: 120px;
   }
 
-  .index-widget-card {
+  html:not([data-devtools-docked]) .index-widget-card {
     max-width: 120px;
     height: 78px;
     padding: 0 10px 10px;
   }
 
-  .index-widget-body {
+  html:not([data-devtools-docked]) .index-widget-body {
     padding-top: 6px;
   }
 
-  .index-widget-header--gauge {
+  html:not([data-devtools-docked]) .index-widget-header--gauge {
     padding-bottom: 2px;
   }
 
-  .index-widget-name,
-  .index-widget-name-btn {
+  html:not([data-devtools-docked]) .index-widget-name,
+  html:not([data-devtools-docked]) .index-widget-name-btn {
     font-size: 14px;
   }
 
-  .index-widget-value {
+  html:not([data-devtools-docked]) .index-widget-value {
     font-size: 20px;
   }
 
-  .index-widget-change {
+  html:not([data-devtools-docked]) .index-widget-change {
     font-size: 14px;
   }
 
-  .index-widget-gauge {
+  html:not([data-devtools-docked]) .index-widget-gauge {
     width: 66px;
     height: 33px;
     margin-top: 0;
   }
 
-  .index-widget-gauge .fear-greed-gauge__value {
+  html:not([data-devtools-docked]) .index-widget-gauge .fear-greed-gauge__value {
     font-size: 20px;
   }
 }
@@ -230,18 +230,35 @@
 @media (max-width: 768px), ((hover: none) and (pointer: coarse) and (max-width: 1024px)) {
   .index-widget-shell,
   .index-widget-card {
-    width: min(130px, calc(100vw * 130 / 440));
-    max-width: min(130px, calc(100vw * 130 / 440));
+    width: 100%;
+    max-width: 100%;
+    height: 100%;
   }
 
   .index-widget-card {
-    height: auto;
-    padding: 0 10px 10px;
+    min-height: 96px;
+    padding: 8px 14px;
   }
 
   .index-widget-body {
-    padding-top: 8px;
-    flex: 0 0 auto;
+    justify-content: center;
+    gap: 4px;
+    padding-top: 0;
+    flex: 1 1 auto;
+  }
+
+  .index-widget-header--gauge {
+    padding-bottom: 0;
+  }
+
+  .index-widget-value {
+    margin-top: 2px;
+    font-size: 20px;
+  }
+
+  .index-widget-change {
+    padding-top: 0;
+    font-size: 14px;
   }
 
   .index-widget-name,
@@ -249,11 +266,22 @@
     font-size: 12px;
   }
 
-  .index-widget-value {
-    font-size: 20px;
+  .index-widget-name-btn {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
-  .index-widget-change {
-    font-size: 14px;
+  .index-widget-gauge {
+    width: 72px;
+    height: 36px;
+    margin-top: 2px;
+    margin-bottom: 0;
+  }
+
+  .index-widget-gauge .fear-greed-gauge__value {
+    font-size: 20px;
   }
 }

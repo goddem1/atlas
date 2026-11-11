@@ -10,29 +10,33 @@ type Props = {
 };
 
 /**
- * Рендерит виджет в каноническом размере и равномерно scale'ит под ширину хоста,
- * сохраняя реальные пропорции.
- *
- * Виджеты «на всю колонку» (≥280px) растягиваются/сжимаются до ширины карточки,
- * чтобы в мобильной галерее края совпадали. Компактные (index и т.п.) только сжимаются.
+ * Рендерит виджет в каноническом размере и равномерно вписывает его
+ * в блок превью целиком — и по ширине, и по высоте.
  */
 export function WidgetGalleryScaledFrame({ widgetType, children }: Props) {
   const hostRef = useRef<HTMLDivElement>(null);
+  const innerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
+  const [box, setBox] = useState({ w: 0, h: 0 });
   const { w: naturalW, h: naturalH } = dashboardWidgetGalleryOuterSize(widgetType);
-  const fillHostWidth = naturalW >= 280;
 
   useLayoutEffect(() => {
     const host = hostRef.current;
-    if (!host) return;
+    const inner = innerRef.current;
+    if (!host || !inner) return;
 
     let rafId = 0;
     const measure = () => {
-      const cw = host.clientWidth;
-      if (cw <= 0) return;
-      const ratio = cw / naturalW;
-      const next = fillHostWidth ? ratio : Math.min(ratio, 1);
-      setScale((prev) => (Math.abs(prev - next) < 0.0001 ? prev : next));
+      const child = inner.firstElementChild as HTMLElement | null;
+      const boxW = Math.max(inner.offsetWidth, child?.offsetWidth ?? 0);
+      const boxH = Math.max(inner.offsetHeight, child?.offsetHeight ?? 0);
+      const hostW = host.clientWidth;
+      const hostH = host.clientHeight;
+      if (boxW <= 0 || boxH <= 0 || hostW <= 0 || hostH <= 0) return;
+
+      const fit = Math.min(hostW / boxW, hostH / boxH, 1);
+      setBox((prev) => (prev.w === boxW && prev.h === boxH ? prev : { w: boxW, h: boxH }));
+      setScale((prev) => (Math.abs(prev - fit) < 0.0001 ? prev : fit));
     };
 
     const schedule = () => {
@@ -46,6 +50,7 @@ export function WidgetGalleryScaledFrame({ widgetType, children }: Props) {
     measure();
     const ro = new ResizeObserver(schedule);
     ro.observe(host);
+    ro.observe(inner);
     window.addEventListener("resize", schedule);
 
     return () => {
@@ -53,21 +58,22 @@ export function WidgetGalleryScaledFrame({ widgetType, children }: Props) {
       ro.disconnect();
       window.removeEventListener("resize", schedule);
     };
-  }, [naturalW, naturalH, fillHostWidth]);
+  }, [naturalW, naturalH]);
 
-  const stageH = Math.ceil(naturalH * scale) + 2;
+  const boxW = box.w || naturalW;
+  const boxH = box.h || naturalH;
 
   return (
     <div ref={hostRef} className="widget-gallery-live-host">
       <div
         className="widget-gallery-live-stage"
-        style={
-          fillHostWidth
-            ? { width: "100%", height: stageH }
-            : { width: Math.ceil(naturalW * scale) + 2, height: stageH }
-        }
+        style={{
+          width: Math.ceil(boxW * scale),
+          height: Math.ceil(boxH * scale),
+        }}
       >
         <div
+          ref={innerRef}
           className="widget-gallery-live-inner"
           style={{
             width: naturalW,

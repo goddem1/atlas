@@ -7,6 +7,7 @@ import {
 } from "@atlas-v1/shared";
 import Draggable from "react-draggable";
 import { DashboardSettings } from "../components/dashboard/DashboardSettings";
+import { DashboardFeedbackForm } from "../components/dashboard/DashboardFeedbackForm";
 import { authClient } from "../lib/auth-client";
 import { MacroCalendarWidget } from "../components/widgets/macro-calendar/MacroCalendarWidget";
 import { NewsWidget, type NewsWidgetExplainPayload } from "../components/widgets/news/NewsWidget";
@@ -39,6 +40,8 @@ import {
   dashboardWidgetGap,
   dashboardWidgetOuterSize,
   getDashboardViewportWidth,
+  isDevtoolsDocked,
+  syncDevtoolsLayoutLock,
   insertWidgetInMobileOrder,
   isDashboardMobileSingleColumn,
   isDesktopSiteOnPhone,
@@ -444,6 +447,8 @@ export function DashboardPage() {
   }, [widgets, prefs, isLoggedIn, sessionPending]);
 
   const relayoutFromBoard = useCallback(() => {
+    // F12 сжимает холст, но это не новое разрешение — координаты не трогаем.
+    if (isDevtoolsDocked()) return;
     const el = boardRef.current;
     if (!el) return;
     const { width, height } = el.getBoundingClientRect();
@@ -460,6 +465,7 @@ export function DashboardPage() {
   useLayoutEffect(() => {
     const mq = window.matchMedia(DASHBOARD_MOBILE_MEDIA_QUERY);
     const sync = () => {
+      if (syncDevtoolsLayoutLock()) return;
       const mobile = isDashboardMobileSingleColumn();
       setMobileSingleCol(mobile);
       setDesktopSiteOnPhone(isDesktopSiteOnPhone());
@@ -500,6 +506,7 @@ export function DashboardPage() {
   );
 
   const moveWidget = useCallback((id: string, x: number, y: number) => {
+    if (isDevtoolsDocked()) return;
     if (isDashboardMobileSingleColumn()) return;
     const el = boardRef.current;
     const vw = getDashboardViewportWidth();
@@ -926,6 +933,7 @@ export function DashboardPage() {
         >
           <PlusIcon />
         </button>
+        <DashboardFeedbackForm />
       </div>
 
       {mobileLayoutOpen ? (

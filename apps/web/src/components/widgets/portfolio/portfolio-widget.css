@@ -1220,82 +1220,82 @@ html[data-dashboard-theme="dark"] .portfolio-timeframe-switcher > .btn-on-glass.
 
 /* Desktop 1440: плашка 462×210 */
 @media (min-width: 1440px) and (max-width: 1919px) {
-  .portfolio-all-assets-item-value {
+  html:not([data-devtools-docked]) .portfolio-all-assets-item-value {
     font-size: 18px;
   }
 
-  .portfolio-all-assets-item-pnl {
+  html:not([data-devtools-docked]) .portfolio-all-assets-item-pnl {
     font-size: 14px;
   }
 
-  .portfolio-detail-modal,
-  .asset-picker-dialog.portfolio-detail-modal {
+  html:not([data-devtools-docked]) .portfolio-detail-modal,
+  html:not([data-devtools-docked]) .asset-picker-dialog.portfolio-detail-modal {
     width: min(448px, calc(100vw - 32px));
     border-radius: 26px;
   }
 
-  .portfolio-detail-header,
-  .portfolio-detail-summary-row,
-  .portfolio-detail-summary-row strong,
-  .portfolio-detail-sub,
-  .portfolio-detail-tx-values {
+  html:not([data-devtools-docked]) .portfolio-detail-header,
+  html:not([data-devtools-docked]) .portfolio-detail-summary-row,
+  html:not([data-devtools-docked]) .portfolio-detail-summary-row strong,
+  html:not([data-devtools-docked]) .portfolio-detail-sub,
+  html:not([data-devtools-docked]) .portfolio-detail-tx-values {
     font-size: 16px;
   }
 
-  .portfolio-confirm-dialog {
+  html:not([data-devtools-docked]) .portfolio-confirm-dialog {
     width: min(448px, calc(100vw - 32px));
     border-radius: 26px;
     padding: 16px 24px;
   }
 
-  .portfolio-confirm-text {
+  html:not([data-devtools-docked]) .portfolio-confirm-text {
     font-size: 16px;
   }
 
-  .dashboard-widget-slot--portfolio {
+  html:not([data-devtools-docked]) .dashboard-widget-slot--portfolio {
     width: 462px !important;
     max-width: 462px !important;
     height: 210px !important;
   }
 
-  .portfolio-widget-shell {
+  html:not([data-devtools-docked]) .portfolio-widget-shell {
     width: 462px;
     max-width: 462px;
   }
 
-  .portfolio-widget-card {
+  html:not([data-devtools-docked]) .portfolio-widget-card {
     max-width: 462px;
     height: 210px;
   }
 
-  .portfolio-widget-left {
+  html:not([data-devtools-docked]) .portfolio-widget-left {
     padding: 16px 8px 16px 16px;
   }
 
-  .portfolio-widget-right {
+  html:not([data-devtools-docked]) .portfolio-widget-right {
     padding: 16px 16px 16px 8px;
   }
 
-  .portfolio-total {
+  html:not([data-devtools-docked]) .portfolio-total {
     font-size: 28px;
   }
 
-  .portfolio-total-pnl,
-  .portfolio-total-pnl.portfolio-pnl-positive,
-  .portfolio-pnl-positive {
+  html:not([data-devtools-docked]) .portfolio-total-pnl,
+  html:not([data-devtools-docked]) .portfolio-total-pnl.portfolio-pnl-positive,
+  html:not([data-devtools-docked]) .portfolio-pnl-positive {
     font-size: 16px;
   }
 
-  .portfolio-chart-block {
+  html:not([data-devtools-docked]) .portfolio-chart-block {
     --portfolio-chart-height: 100px;
   }
 
-  .portfolio-timeframe-switcher {
+  html:not([data-devtools-docked]) .portfolio-timeframe-switcher {
     gap: 10px;
     padding-top: 10px;
   }
 
-  .portfolio-timeframe-switcher > .btn-on-glass {
+  html:not([data-devtools-docked]) .portfolio-timeframe-switcher > .btn-on-glass {
     min-width: 42px;
     width: 42px;
     height: 23px;
@@ -1303,104 +1303,104 @@ html[data-dashboard-theme="dark"] .portfolio-timeframe-switcher > .btn-on-glass.
     border-radius: 7px;
   }
 
-  .portfolio-asset-row {
+  html:not([data-devtools-docked]) .portfolio-asset-row {
     grid-template-columns: 28px 1fr auto;
     gap: 5px;
   }
 
-  .portfolio-asset-icon {
+  html:not([data-devtools-docked]) .portfolio-asset-icon {
     width: 28px;
     height: 28px;
   }
 
-  .portfolio-asset-symbol {
+  html:not([data-devtools-docked]) .portfolio-asset-symbol {
     font-size: 16px;
   }
 
-  .portfolio-asset-value-positive,
-  .portfolio-asset-value-negative {
+  html:not([data-devtools-docked]) .portfolio-asset-value-positive,
+  html:not([data-devtools-docked]) .portfolio-asset-value-negative {
     font-size: 18px;
   }
 }
 
 /* Desktop 1280: плашка 380×174 */
 @media (min-width: 1280px) and (max-width: 1439px) {
-  .portfolio-all-assets-item-value {
+  html:not([data-devtools-docked]) .portfolio-all-assets-item-value {
     font-size: 16px;
   }
 
-  .portfolio-all-assets-item-pnl {
+  html:not([data-devtools-docked]) .portfolio-all-assets-item-pnl {
     font-size: 13px;
   }
 
-  .portfolio-detail-modal,
-  .asset-picker-dialog.portfolio-detail-modal {
+  html:not([data-devtools-docked]) .portfolio-detail-modal,
+  html:not([data-devtools-docked]) .asset-picker-dialog.portfolio-detail-modal {
     width: min(400px, calc(100vw - 32px));
     border-radius: 22px;
   }
 
-  .portfolio-detail-header,
-  .portfolio-detail-summary-row,
-  .portfolio-detail-summary-row strong,
-  .portfolio-detail-sub,
-  .portfolio-detail-tx-values {
+  html:not([data-devtools-docked]) .portfolio-detail-header,
+  html:not([data-devtools-docked]) .portfolio-detail-summary-row,
+  html:not([data-devtools-docked]) .portfolio-detail-summary-row strong,
+  html:not([data-devtools-docked]) .portfolio-detail-sub,
+  html:not([data-devtools-docked]) .portfolio-detail-tx-values {
     font-size: 14px;
   }
 
-  .portfolio-confirm-dialog {
+  html:not([data-devtools-docked]) .portfolio-confirm-dialog {
     width: min(400px, calc(100vw - 32px));
     border-radius: 22px;
     padding: 14px 20px;
   }
 
-  .portfolio-confirm-text {
+  html:not([data-devtools-docked]) .portfolio-confirm-text {
     font-size: 14px;
   }
 
-  .dashboard-widget-slot--portfolio {
+  html:not([data-devtools-docked]) .dashboard-widget-slot--portfolio {
     width: 380px !important;
     max-width: 380px !important;
     height: 174px !important;
   }
 
-  .portfolio-widget-shell {
+  html:not([data-devtools-docked]) .portfolio-widget-shell {
     width: 380px;
     max-width: 380px;
   }
 
-  .portfolio-widget-card {
+  html:not([data-devtools-docked]) .portfolio-widget-card {
     max-width: 380px;
     height: 174px;
   }
 
-  .portfolio-widget-left {
+  html:not([data-devtools-docked]) .portfolio-widget-left {
     padding: 12px 6px 12px 12px;
   }
 
-  .portfolio-widget-right {
+  html:not([data-devtools-docked]) .portfolio-widget-right {
     padding: 12px 12px 12px 6px;
   }
 
-  .portfolio-total {
+  html:not([data-devtools-docked]) .portfolio-total {
     font-size: 24px;
   }
 
-  .portfolio-total-pnl,
-  .portfolio-total-pnl.portfolio-pnl-positive,
-  .portfolio-pnl-positive {
+  html:not([data-devtools-docked]) .portfolio-total-pnl,
+  html:not([data-devtools-docked]) .portfolio-total-pnl.portfolio-pnl-positive,
+  html:not([data-devtools-docked]) .portfolio-pnl-positive {
     font-size: 16px;
   }
 
-  .portfolio-chart-block {
+  html:not([data-devtools-docked]) .portfolio-chart-block {
     --portfolio-chart-height: 80px;
   }
 
-  .portfolio-timeframe-switcher {
+  html:not([data-devtools-docked]) .portfolio-timeframe-switcher {
     gap: 8px;
     padding-top: 8px;
   }
 
-  .portfolio-timeframe-switcher > .btn-on-glass {
+  html:not([data-devtools-docked]) .portfolio-timeframe-switcher > .btn-on-glass {
     min-width: 37px;
     width: 37px;
     height: 18px;
@@ -1408,26 +1408,26 @@ html[data-dashboard-theme="dark"] .portfolio-timeframe-switcher > .btn-on-glass.
     border-radius: 6px;
   }
 
-  .portfolio-asset-symbol {
+  html:not([data-devtools-docked]) .portfolio-asset-symbol {
     font-size: 16px;
   }
 
-  .portfolio-asset-value-positive,
-  .portfolio-asset-value-negative {
+  html:not([data-devtools-docked]) .portfolio-asset-value-positive,
+  html:not([data-devtools-docked]) .portfolio-asset-value-negative {
     font-size: 18px;
   }
 
-  .portfolio-asset-row {
+  html:not([data-devtools-docked]) .portfolio-asset-row {
     grid-template-columns: 24px 1fr auto;
     gap: 5px;
   }
 
-  .portfolio-asset-icon {
+  html:not([data-devtools-docked]) .portfolio-asset-icon {
     width: 24px;
     height: 24px;
   }
 
-  .portfolio-asset-list {
+  html:not([data-devtools-docked]) .portfolio-asset-list {
     gap: 8px;
   }
 }

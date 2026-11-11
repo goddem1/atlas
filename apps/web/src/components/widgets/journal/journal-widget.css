@@ -254,122 +254,122 @@
 
 /* Desktop 1440: плашка 486×250, шрифты как у портфеля */
 @media (min-width: 1440px) and (max-width: 1919px) {
-  .dashboard-widget-slot--journal {
+  html:not([data-devtools-docked]) .dashboard-widget-slot--journal {
     width: 486px !important;
     max-width: 486px !important;
     height: 250px !important;
   }
 
-  .journal-widget-shell,
-  .journal-widget-card-elevated {
+  html:not([data-devtools-docked]) .journal-widget-shell,
+  html:not([data-devtools-docked]) .journal-widget-card-elevated {
     width: 486px;
     max-width: 486px;
   }
 
-  .journal-widget-card {
+  html:not([data-devtools-docked]) .journal-widget-card {
     max-width: 486px;
     height: 250px;
   }
 
-  .journal-widget-left,
-  .journal-widget-right {
+  html:not([data-devtools-docked]) .journal-widget-left,
+  html:not([data-devtools-docked]) .journal-widget-right {
     padding: 15px;
   }
 
-  .journal-widget-balance {
+  html:not([data-devtools-docked]) .journal-widget-balance {
     font-size: 28px;
   }
 
-  .journal-widget-total-pnl,
-  .journal-widget-total-pnl.journal-widget-pnl-positive,
-  .journal-widget-pnl-positive {
+  html:not([data-devtools-docked]) .journal-widget-total-pnl,
+  html:not([data-devtools-docked]) .journal-widget-total-pnl.journal-widget-pnl-positive,
+  html:not([data-devtools-docked]) .journal-widget-pnl-positive {
     font-size: 16px;
   }
 
-  .journal-widget-right {
+  html:not([data-devtools-docked]) .journal-widget-right {
     font-size: 16px;
     line-height: 1.2;
   }
 
-  .journal-widget-row-symbol {
+  html:not([data-devtools-docked]) .journal-widget-row-symbol {
     font-size: 16px;
   }
 
-  .journal-widget-row-pnl {
+  html:not([data-devtools-docked]) .journal-widget-row-pnl {
     font-size: 16px;
   }
 
-  .journal-widget-row--view-all {
+  html:not([data-devtools-docked]) .journal-widget-row--view-all {
     font-size: 16px;
   }
 
-  .journal-widget-row--view-all-arrow svg {
+  html:not([data-devtools-docked]) .journal-widget-row--view-all-arrow svg {
     width: 26px;
     height: 18px;
   }
 
-  .journal-widget-list {
+  html:not([data-devtools-docked]) .journal-widget-list {
     gap: 9px;
   }
 }
 
 /* Desktop 1280: плашка 460×205, шрифты как у портфеля */
 @media (min-width: 1280px) and (max-width: 1439px) {
-  .dashboard-widget-slot--journal {
+  html:not([data-devtools-docked]) .dashboard-widget-slot--journal {
     width: 460px !important;
     max-width: 460px !important;
     height: 205px !important;
   }
 
-  .journal-widget-shell,
-  .journal-widget-card-elevated {
+  html:not([data-devtools-docked]) .journal-widget-shell,
+  html:not([data-devtools-docked]) .journal-widget-card-elevated {
     width: 460px;
     max-width: 460px;
   }
 
-  .journal-widget-card {
+  html:not([data-devtools-docked]) .journal-widget-card {
     max-width: 460px;
     height: 205px;
   }
 
-  .journal-widget-left,
-  .journal-widget-right {
+  html:not([data-devtools-docked]) .journal-widget-left,
+  html:not([data-devtools-docked]) .journal-widget-right {
     padding: 10px;
   }
 
-  .journal-widget-balance {
+  html:not([data-devtools-docked]) .journal-widget-balance {
     font-size: 24px;
   }
 
-  .journal-widget-total-pnl,
-  .journal-widget-total-pnl.journal-widget-pnl-positive,
-  .journal-widget-pnl-positive {
+  html:not([data-devtools-docked]) .journal-widget-total-pnl,
+  html:not([data-devtools-docked]) .journal-widget-total-pnl.journal-widget-pnl-positive,
+  html:not([data-devtools-docked]) .journal-widget-pnl-positive {
     font-size: 16px;
   }
 
-  .journal-widget-right {
+  html:not([data-devtools-docked]) .journal-widget-right {
     font-size: 16px;
     line-height: 1.2;
   }
 
-  .journal-widget-row-symbol {
+  html:not([data-devtools-docked]) .journal-widget-row-symbol {
     font-size: 16px;
   }
 
-  .journal-widget-row-pnl {
+  html:not([data-devtools-docked]) .journal-widget-row-pnl {
     font-size: 16px;
   }
 
-  .journal-widget-row--view-all {
+  html:not([data-devtools-docked]) .journal-widget-row--view-all {
     font-size: 16px;
   }
 
-  .journal-widget-row--view-all-arrow svg {
+  html:not([data-devtools-docked]) .journal-widget-row--view-all-arrow svg {
     width: 22px;
     height: 15px;
   }
 
-  .journal-widget-list {
+  html:not([data-devtools-docked]) .journal-widget-list {
     gap: 3px;
   }
 }
