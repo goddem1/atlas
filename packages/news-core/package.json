@@ -1,0 +1,24 @@
+{
+  "name": "@atlas-v1/news-core",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "node --experimental-strip-types --test src/validate.test.ts src/metrics.test.ts src/link.test.ts src/tester.test.ts src/profile.test.ts src/sentiment.test.ts src/eval.test.ts src/digest.test.ts",
+    "lint": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@atlas-v1/news-schema": "workspace:*",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2"
+  }
+}

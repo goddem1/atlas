@@ -11,7 +11,17 @@
     "db:migrate": "pnpm --filter @atlas-v1/api exec prisma migrate dev",
     "db:seed": "pnpm --filter @atlas-v1/api exec prisma db seed",
     "icons:sync": "pnpm --filter @atlas-v1/api icons:sync",
-    "db:studio": "pnpm --filter @atlas-v1/api exec prisma studio"
+    "db:studio": "pnpm --filter @atlas-v1/api exec prisma studio",
+    "news:db:push": "pnpm --filter @atlas-v1/news-schema db:push",
+    "news:api": "pnpm --filter @atlas-v1/news-api dev",
+    "news:web": "pnpm --filter @atlas-v1/news-web dev",
+    "news:ingest": "pnpm --filter @atlas-v1/news-ingest dev",
+    "news:extract": "pnpm --filter @atlas-v1/news-core build && pnpm --filter @atlas-v1/news-analytics start",
+    "news:prices": "pnpm --filter @atlas-v1/news-core build && pnpm --filter @atlas-v1/news-analytics prices",
+    "news:profiles": "pnpm --filter @atlas-v1/news-core build && pnpm --filter @atlas-v1/news-analytics profiles",
+    "news:sentiment": "pnpm --filter @atlas-v1/news-core build && pnpm --filter @atlas-v1/news-analytics sentiment",
+    "news:digest": "pnpm --filter @atlas-v1/news-core build && pnpm --filter @atlas-v1/news-analytics digest",
+    "news:test": "pnpm --filter @atlas-v1/news-core test"
   },
   "engines": {
     "node": ">=20"

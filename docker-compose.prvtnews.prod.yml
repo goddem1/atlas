@@ -1,0 +1,52 @@
+# Закрытый сервис. Не входит в стек Panorama.
+# Секреты: docker/news.env (не в git).
+# docker compose -p prvtnews -f docker-compose.prvtnews.prod.yml --env-file docker/news.env up -d --build
+
+services:
+  prvtnews-db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: prvtnews
+      POSTGRES_PASSWORD: ${NEWS_DB_PASSWORD:?Set NEWS_DB_PASSWORD}
+      POSTGRES_DB: prvtnews
+    volumes:
+      - prvtnews_prod_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U prvtnews -d prvtnews"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  news-api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.news-api
+    restart: unless-stopped
+    depends_on:
+      prvtnews-db:
+        condition: service_healthy
+    environment:
+      NEWS_DATABASE_URL: postgresql://prvtnews:${NEWS_DB_PASSWORD}@prvtnews-db:5432/prvtnews
+      NEWS_JWT_SECRET: ${NEWS_JWT_SECRET:?Set NEWS_JWT_SECRET}
+      ADMIN_USERNAME: ${NEWS_ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD: ${NEWS_ADMIN_PASSWORD:?Set NEWS_ADMIN_PASSWORD}
+      APP_HOST: scrtnews.panoramaapp.ru
+      NEWS_API_PORT: 3101
+      NEWS_API_HOST: 0.0.0.0
+      NEWS_WEB_ORIGIN: https://scrtnews.panoramaapp.ru
+    ports:
+      - "127.0.0.1:3101:3101"
+
+  news-web:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.news-web
+    restart: unless-stopped
+    depends_on:
+      - news-api
+    ports:
+      - "127.0.0.1:5175:80"
+
+volumes:
+  prvtnews_prod_pg:

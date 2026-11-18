@@ -1,0 +1,25 @@
+FROM node:20-alpine AS build
+RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
+WORKDIR /app
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/api/package.json apps/api/
+COPY apps/web/package.json apps/web/
+COPY apps/mobile/package.json apps/mobile/
+COPY apps/news-api/package.json apps/news-api/
+COPY apps/news-web/package.json apps/news-web/
+COPY packages/shared/package.json packages/shared/
+COPY packages/news-core/package.json packages/news-core/
+COPY packages/news-schema/package.json packages/news-schema/
+COPY workers/ingest/package.json workers/ingest/
+COPY workers/analytics/package.json workers/analytics/
+
+RUN pnpm install --frozen-lockfile
+
+COPY apps/news-web apps/news-web
+RUN pnpm --filter @atlas-v1/news-web build
+
+FROM nginx:alpine
+COPY docker/nginx/scrtnews-web.conf /etc/nginx/conf.d/default.conf
+COPY --from=build /app/apps/news-web/dist /usr/share/nginx/html
+EXPOSE 80

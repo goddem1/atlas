@@ -1,0 +1,24 @@
+{
+  "name": "@atlas-v1/news-analytics",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "prices": "tsx src/index.ts --prices",
+    "profiles": "tsx src/index.ts --profiles",
+    "sentiment": "tsx src/index.ts --sentiment",
+    "digest": "tsx src/index.ts --digest",
+    "lint": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@atlas-v1/news-core": "workspace:*",
+    "@atlas-v1/news-schema": "workspace:*",
+    "dotenv": "^16.4.7"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

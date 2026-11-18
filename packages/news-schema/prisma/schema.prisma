@@ -1,0 +1,417 @@
+generator client {
+  provider      = "prisma-client-js"
+  output        = "../generated/client"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.0"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("NEWS_DATABASE_URL")
+}
+
+enum ChannelKind {
+  opinion
+  news
+}
+
+enum MsgType {
+  signal
+  view
+  news
+  result
+  ad
+  noise
+}
+
+enum ResolveStatus {
+  resolved
+  ambiguous
+  unknown
+}
+
+enum CallKind {
+  signal
+  view
+}
+
+enum Direction {
+  long
+  short
+  neutral
+}
+
+enum Horizon {
+  days
+  weeks
+  months
+  unknown
+}
+
+enum CallStatus {
+  open
+  updated
+  closed
+  expired
+  untestable
+  not_triggered
+}
+
+enum CallEventType {
+  update
+  stop_moved
+  partial_take
+  closed_profit
+  closed_loss
+  invalidated
+  comment
+}
+
+enum ExitReason {
+  target
+  stop
+  expired
+  manual_close
+}
+
+enum MetricStatus {
+  ok
+  warn
+  bad
+  insufficient_data
+}
+
+enum PromptName {
+  extract
+  profile
+  sentiment
+}
+
+enum ParamKind {
+  tester
+  sentiment
+  thresholds
+}
+
+enum LabelVerdict {
+  correct
+  wrong
+  partial
+}
+
+enum SentimentScope {
+  market
+  coin
+  theme
+}
+
+model Channel {
+  id        String      @id @default(cuid())
+  tgId      String?     @unique
+  username  String      @unique
+  title     String      @default("")
+  kind      ChannelKind @default(opinion)
+  addedAt   DateTime    @default(now())
+  isActive  Boolean     @default(true)
+  notes     String      @default("")
+  messages  Message[]
+  calls     Call[]
+  profiles  ChannelProfile[]
+  ingest    IngestState?
+}
+
+model Message {
+  id                   String           @id @default(cuid())
+  channelId            String
+  channel              Channel          @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  tgMsgId              Int
+  postedAt             DateTime
+  replyToTgMsgId       Int?
+  isForward            Boolean          @default(false)
+  forwardedFrom        String?
+  hasMedia             Boolean          @default(false)
+  mediaKinds           String[]
+  isDeleted            Boolean          @default(false)
+  deletedDetectedAt    DateTime?
+  firstSeenAt          DateTime         @default(now())
+  backfilled           Boolean          @default(false)
+  editedBeforeIngest   Boolean          @default(false)
+  versions             MessageVersion[]
+  callEvents           CallEvent[]
+  openedCalls          Call[]           @relation("CallOpenedBy")
+  linkReviews          LinkReview[]
+
+  @@unique([channelId, tgMsgId])
+  @@index([channelId, postedAt])
+}
+
+model MessageVersion {
+  id          String       @id @default(cuid())
+  messageId   String
+  message     Message      @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  version     Int
+  text        String       @default("")
+  editedAt    DateTime?
+  capturedAt  DateTime     @default(now())
+  textHash    String
+  extractions Extraction[]
+
+  @@unique([messageId, version])
+}
+
+model Coin {
+  id             String          @id @default(cuid())
+  symbol         String          @unique
+  name           String          @default("")
+  coingeckoId    String?
+  binanceSymbol  String?
+  isStable       Boolean         @default(false)
+  marketCapRank  Int?
+  aliases        CoinAlias[]
+  extractionCoins ExtractionCoin[]
+  calls          Call[]
+  prices         PriceSnapshot[]
+}
+
+model CoinAlias {
+  id     String @id @default(cuid())
+  coinId String
+  coin   Coin   @relation(fields: [coinId], references: [id], onDelete: Cascade)
+  alias  String
+  lang   String @default("ru")
+
+  @@unique([alias, lang])
+}
+
+model Extraction {
+  id               String           @id @default(cuid())
+  messageVersionId String
+  messageVersion   MessageVersion   @relation(fields: [messageVersionId], references: [id], onDelete: Cascade)
+  promptVersionId  String?
+  promptVersion    PromptVersion?   @relation(fields: [promptVersionId], references: [id])
+  model            String
+  rawJson          Json
+  parsedJson       Json?
+  schemaValid      Boolean          @default(false)
+  evidenceValid    Boolean          @default(false)
+  msgType          MsgType?
+  isAd             Boolean          @default(false)
+  adMarkers        String[]
+  createdAt        DateTime         @default(now())
+  tokensIn         Int              @default(0)
+  tokensOut        Int              @default(0)
+  costUsd          Float            @default(0)
+  coins            ExtractionCoin[]
+  calls            Call[]
+  labels           LabelRecord[]
+}
+
+model ExtractionCoin {
+  id           String        @id @default(cuid())
+  extractionId String
+  extraction   Extraction    @relation(fields: [extractionId], references: [id], onDelete: Cascade)
+  rawMention   String
+  coinId       String?
+  coin         Coin?         @relation(fields: [coinId], references: [id])
+  resolveStatus ResolveStatus
+}
+
+model Call {
+  id                 String           @id @default(cuid())
+  channelId          String
+  channel            Channel          @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  coinId             String
+  coin               Coin             @relation(fields: [coinId], references: [id])
+  extractionId       String?
+  extraction         Extraction?      @relation(fields: [extractionId], references: [id])
+  kind               CallKind
+  direction          Direction
+  horizon            Horizon          @default(unknown)
+  openedByMessageId  String
+  openedByMessage    Message          @relation("CallOpenedBy", fields: [openedByMessageId], references: [id])
+  openedAt           DateTime
+  entryLow           Float?
+  entryHigh          Float?
+  stop               Float?
+  targets            Float[]
+  leverageMentioned  Float?
+  status             CallStatus       @default(open)
+  untestableReason   String?
+  closedAt           DateTime?
+  closeReason        String?
+  events             CallEvent[]
+  evaluations        CallEvaluation[]
+}
+
+model LinkReview {
+  id               String   @id @default(cuid())
+  messageId        String
+  message          Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  extractionId     String
+  reason           String
+  rawMention       String   @default("")
+  candidateCallIds String[]
+  candidateCoinIds String[]
+  resolvedCallId   String?
+  createdAt        DateTime @default(now())
+
+  @@unique([extractionId, reason, rawMention])
+}
+
+model CallEvent {
+  id          String        @id @default(cuid())
+  callId      String
+  call        Call          @relation(fields: [callId], references: [id], onDelete: Cascade)
+  messageId   String
+  message     Message       @relation(fields: [messageId], references: [id])
+  type        CallEventType
+  payloadJson Json?
+  at          DateTime
+}
+
+model PriceSnapshot {
+  id         String   @id @default(cuid())
+  coinId     String
+  coin       Coin     @relation(fields: [coinId], references: [id], onDelete: Cascade)
+  ts         DateTime
+  price      Float
+  volume24h  Float?
+  source     String
+
+  @@index([coinId, ts])
+}
+
+model CallEvaluation {
+  id                String     @id @default(cuid())
+  callId            String
+  call              Call       @relation(fields: [callId], references: [id], onDelete: Cascade)
+  paramSetId        String
+  paramSet          ParamSet   @relation(fields: [paramSetId], references: [id])
+  entryFilledAt     DateTime?
+  entryPrice        Float?
+  exitAt            DateTime?
+  exitPrice         Float?
+  exitReason        ExitReason?
+  returnPct         Float?
+  rMultiple         Float?
+  feesPct           Float?
+  slippagePct       Float?
+  btcReturnPct      Float?
+  coinHoldReturnPct Float?
+  checkpoints       Json?
+  maxAdversePct     Float?
+  maxFavorablePct   Float?
+  status            CallStatus
+  createdAt         DateTime   @default(now())
+}
+
+model ChannelProfile {
+  id                  String        @id @default(cuid())
+  channelId           String
+  channel             Channel       @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  weekStart           DateTime
+  promptVersionId     String?
+  promptVersion       PromptVersion? @relation(fields: [promptVersionId], references: [id])
+  profileJson         Json
+  evidenceMessageIds  String[]
+  diffFromPrevJson    Json?
+  createdAt           DateTime      @default(now())
+
+  @@unique([channelId, weekStart, promptVersionId])
+}
+
+model SentimentSnapshot {
+  id                   String         @id @default(cuid())
+  date                 DateTime
+  scope                SentimentScope
+  scopeKey             String         @default("")
+  score                Float
+  dispersion           Float?
+  nMessages            Int
+  nChannels            Int
+  effectiveNChannels   Float
+  overheated           Boolean        @default(false)
+  paramSetId           String?
+  paramSet             ParamSet?      @relation(fields: [paramSetId], references: [id])
+  detailsJson          Json?
+
+  @@index([scope, scopeKey, date])
+}
+
+model LabelRecord {
+  id            String       @id @default(cuid())
+  extractionId  String
+  extraction    Extraction   @relation(fields: [extractionId], references: [id], onDelete: Cascade)
+  labeler       String
+  verdict       LabelVerdict
+  fieldErrors   Json?
+  missedSignal  Boolean      @default(false)
+  note          String       @default("")
+  labeledAt     DateTime     @default(now())
+}
+
+model PromptVersion {
+  id         String           @id @default(cuid())
+  name       PromptName
+  version    Int
+  body       String
+  createdAt  DateTime         @default(now())
+  isActive   Boolean          @default(false)
+  extractions Extraction[]
+  profiles   ChannelProfile[]
+  usages     LlmUsage[]
+
+  @@unique([name, version])
+}
+
+model ParamSet {
+  id          String              @id @default(cuid())
+  kind        ParamKind
+  version     Int
+  paramsJson  Json
+  createdAt   DateTime            @default(now())
+  isActive    Boolean             @default(false)
+  evaluations CallEvaluation[]
+  sentiments  SentimentSnapshot[]
+  metrics     MetricSnapshot[]
+
+  @@unique([kind, version])
+}
+
+model MetricSnapshot {
+  id          String       @id @default(cuid())
+  metricKey   String
+  scopeType   String
+  scopeKey    String       @default("")
+  value       Float?
+  n           Int          @default(0)
+  ciLow       Float?
+  ciHigh      Float?
+  status      MetricStatus
+  computedAt  DateTime     @default(now())
+  paramSetId  String?
+  paramSet    ParamSet?    @relation(fields: [paramSetId], references: [id])
+
+  @@index([metricKey, computedAt])
+}
+
+model LlmUsage {
+  id               String         @id @default(cuid())
+  ts               DateTime       @default(now())
+  stage            String
+  model            String
+  tokensIn         Int            @default(0)
+  tokensOut        Int            @default(0)
+  costUsd          Float          @default(0)
+  promptVersionId  String?
+  promptVersion    PromptVersion? @relation(fields: [promptVersionId], references: [id])
+}
+
+model IngestState {
+  id              String    @id @default(cuid())
+  channelId       String    @unique
+  channel         Channel   @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  lastTgMsgId     Int?
+  lastSyncAt      DateTime?
+  lastError       String?
+  floodWaitUntil  DateTime?
+}

@@ -4,6 +4,7 @@ build
 .env
 .env.local
 docker/.env
+docker/news.env
 apps/api/telegram-login-qr.png
 apps/api/.telegram-qr-url.txt
 *.log
@@ -15,3 +16,4 @@ apps/api/.cache/
 apps/api/data/avatars/
 apps/api/data/notes-media/
 apps/api/data/telegram-media/
+packages/news-schema/generated/

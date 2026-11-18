@@ -1,0 +1,36 @@
+FROM node:20-alpine AS build
+RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
+WORKDIR /app
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/api/package.json apps/api/
+COPY apps/web/package.json apps/web/
+COPY apps/mobile/package.json apps/mobile/
+COPY apps/news-api/package.json apps/news-api/
+COPY apps/news-web/package.json apps/news-web/
+COPY packages/shared/package.json packages/shared/
+COPY packages/news-core/package.json packages/news-core/
+COPY packages/news-schema/package.json packages/news-schema/
+COPY workers/ingest/package.json workers/ingest/
+COPY workers/analytics/package.json workers/analytics/
+
+RUN pnpm install --frozen-lockfile
+
+COPY packages/news-schema packages/news-schema
+COPY packages/news-core packages/news-core
+COPY apps/news-api apps/news-api
+
+ENV NEWS_DATABASE_URL=postgresql://prvtnews:prvtnews@127.0.0.1:5432/prvtnews
+RUN pnpm --filter @atlas-v1/news-schema generate
+RUN pnpm --filter @atlas-v1/news-core build
+RUN pnpm --filter @atlas-v1/news-api build
+
+FROM node:20-alpine AS runner
+RUN apk add --no-cache wget
+ENV NODE_ENV=production
+WORKDIR /app
+COPY --from=build /app /app
+EXPOSE 3101
+HEALTHCHECK --interval=30s --timeout=5s --start-period=25s --retries=3 \
+  CMD wget -qO- http://127.0.0.1:3101/api/health || exit 1
+CMD ["node", "apps/news-api/dist/server.js"]

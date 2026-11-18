@@ -1,0 +1,22 @@
+services:
+  prvtnews-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: prvtnews
+      POSTGRES_PASSWORD: prvtnews
+      POSTGRES_DB: prvtnews
+    ports:
+      - "5434:5432"
+    volumes:
+      - prvtnews-data:/var/lib/postgresql/data
+
+  prvtnews-gost:
+    image: ginuerzh/gost:2.11.5
+    profiles: ["gost"]
+    restart: unless-stopped
+    command: ["-L=socks5://:1080", "-F=${RAPIDAPI_PROXY_URL}"]
+    ports:
+      - "127.0.0.1:1080:1080"
+
+volumes:
+  prvtnews-data:
